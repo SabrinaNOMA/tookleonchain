@@ -22,7 +22,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // 2. Get Project ID from URL
 if (!isset($_GET['id']) || empty($_GET['id'])) {
-    header("Location: /dashboard?error=no_project_id");
+    header("Location: /founder/dashboard?error=no_project_id");
     exit;
 }
 $project_id = $_GET['id'];
@@ -44,7 +44,7 @@ try {
 
     // If no project is found, it doesn't exist or doesn't belong to the user.
     if (!$project) {
-        header("Location: /dashboard?error=project_not_found");
+        header("Location: /founder/dashboard?error=project_not_found");
         exit;
     }
 
@@ -53,30 +53,30 @@ try {
 
     // Step 1: If the project description is not complete, send to the setup page.
     if (!$project['project_described']) {
-        header("Location: /setup");
+        header("Location: /founder/setup");
         exit;
     }
 
     // Step 2: If description is done, but tokenomics are not, send to the tokenomics page.
     if (!$project['tokenomics_done']) {
-        header("Location: /tokenname");
+        header("Location: /founder/tokenname");
         exit;
     }
     
     // Step 3: If tokenomics are done, but the sale page isn't ready, send to that setup page.
     if (!$project['token_sale_page_ready']) {
-        header("Location: /story");
+        header("Location: /founder/story");
         exit;
     }
 
     // FINAL STEP: If all the above checks have passed, it means setup is complete.
     // Redirect to the main project management page.
-    header("Location: /investors");
+    header("Location: /founder/investors");
     exit;
 
 } catch (PDOException $e) {
     // Log the error and redirect to a generic error page.
     error_log("Project Router Error: " . $e->getMessage());
-    header("Location: /dashboard?error=database_error");
+    header("Location: /founder/dashboard?error=database_error");
     exit;
 }

@@ -221,7 +221,7 @@ if (session_status() === PHP_SESSION_NONE) {
         </div>
 
         <footer class="mt-12 text-center text-sm text-gray-400">
-            &copy; <?php echo date('Y'); ?> Tookle. All rights reserved. <a href="/privacy" class="hover:text-gray-600 ml-2">Privacy Policy</a>
+            &copy; <?php echo date('Y'); ?> Tookle. All rights reserved. <a href="<?= get_url('privacy') ?>" class="hover:text-gray-600 ml-2">Privacy Policy</a>
         </footer>
     </main>
 </body>

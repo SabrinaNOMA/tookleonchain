@@ -21,7 +21,7 @@ require_once '../src/db.php';
 // Check if both project_id and sale_name are provided in the URL.
 if (!isset($_GET['project_id']) || !isset($_GET['sale_name'])) {
     // Redirect to the projects page with an error if parameters are missing.
-    header('Location: /projects?error=missing_selection_details');
+    header('Location: /investor/projects?error=missing_selection_details');
     exit();
 }
 
@@ -41,7 +41,7 @@ try {
 
     // If no matching live sale is found, redirect back with an error.
     if (!$sale_exists) {
-        header('Location: /projects?error=sale_not_found_or_not_live');
+        header('Location: /investor/projects?error=sale_not_found_or_not_live');
         exit();
     }
 
@@ -53,13 +53,13 @@ try {
 
     // 4. Redirect to the main Sale Page
     // The redirection is now hardcoded to the generic salepage.
-    header('Location: /salepage');
+    header('Location: /investor/salepage');
     exit();
 
 } catch (PDOException $e) {
     // In case of a database error, log the error and show a generic message.
     error_log('Database error in select_project.php: ' . $e->getMessage());
-    header('Location: /projects?error=database_error');
+    header('Location: /investor/projects?error=database_error');
     exit();
 }
 ?>

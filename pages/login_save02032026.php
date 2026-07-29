@@ -227,7 +227,7 @@
       try{
         const res = await fetch('/backend/login_backend.php', { method:'POST', body: fd, credentials:'include' });
         const txt = await res.text(); let j=null; try{ j=JSON.parse(txt);}catch{}
-        if (j && j.success){ location.href='/settings'; return; }
+        if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
         showMsg((j && j.error) ? j.error : 'Unexpected server response.');
       }catch(err){ showMsg('Could not connect to the server.'); }
     });
@@ -250,7 +250,7 @@
               body: JSON.stringify({ action: 'login_google', id_token: resp.credential })
             });
             const t = await r.text(); let j=null; try{ j=JSON.parse(t);}catch{}
-            if (j && j.success){ location.href='/settings'; return; }
+            if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
             showMsg((j && j.error) ? j.error : 'Google login failed.');
           }catch(e){ showMsg('Network error during Google login.'); }
         }
@@ -294,7 +294,7 @@
             })
           });
           const j = await res.json().catch(()=>({}));
-          if (j && j.success){ location.href='/settings'; return; }
+          if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
           modalMsg.textContent = (j && j.error) ? j.error : 'Signup (wallet) failed.'; modalMsg.className='message-area error'; return;
         }
 
@@ -313,7 +313,7 @@
             })
           });
           const j = await res.json().catch(()=>({}));
-          if (j && j.success){ location.href='/settings'; return; }
+          if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
           modalMsg.textContent = (j && j.error) ? j.error : 'Signup (phantom) failed.'; modalMsg.className='message-area error'; return;
         }
 
@@ -362,7 +362,7 @@
         });
         const j = await r.json().catch(()=>({}));
 
-        if (j && j.success){ location.href='/settings'; return; }
+        if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
 
         if (j && j.need_signup){
           modal.dataset.flow = 'evm';
@@ -421,7 +421,7 @@
         });
         const j = await r.json().catch(()=>({}));
 
-        if (j && j.success){ location.href='/settings'; return; }
+        if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
 
         if (j && j.need_signup){
           modal.dataset.flow = 'solana';

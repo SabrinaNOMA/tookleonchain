@@ -324,7 +324,7 @@ if (!$current_project_id) {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script>
     const currentProjectId = <?php echo json_encode($current_project_id); ?>;
-    const BACKEND_URL = 'backend/rounds_backend.php';
+    const BACKEND_URL = '/backend/rounds_backend.php';
     let isDirty = false;
     let isEditMode = false;
     let allocationPieChart, emissionChart;

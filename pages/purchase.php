@@ -66,6 +66,9 @@ try {
     $contract_address = $round_data['contract_address'];
     $payment_token_address = $round_data['payment_token'];
     
+    $gnosis_safe_address = $round_data['gnosis_safe_address'] ?? null;
+    $is_direct_gnosis = !empty($gnosis_safe_address);
+    
     // Fetch Agreement
     $stmt_agreement = $pdo->prepare("SELECT id, content FROM agreement_versions WHERE projet_id = :pid AND is_active = 1 LIMIT 1");
     $stmt_agreement->execute(['pid' => $project_id_for_data]);
@@ -85,7 +88,7 @@ try {
     // Limits
     $min_amount = (float)($round_data['min_investment_usd'] ?? 100);
     $max_amount = (float)($round_data['max_investment_usd'] ?? 50000);
-    $initial_investment = max($min_amount, 1000);
+    $initial_investment = $min_amount;
 
     // 3. Contribution History
     $stmt_prev = $pdo->prepare("
@@ -189,72 +192,9 @@ try {
 
             <div class="flex flex-col lg:flex-row gap-8">
                 <!-- MAIN COLUMN -->
-                <div class="lg:w-2/3 space-y-6">
+                <div class="lg:w-2/3 space-y-6 order-last lg:order-first">
                     
-                    <!-- ALCHEMY POWERED STATUS CARD -->
-                    <div id="vault-status-card" class="section-card p-8 bg-white relative overflow-hidden">
-                        <div class="flex justify-between items-start mb-6 relative z-10">
-                            <div>
-                                <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center mb-1">
-                                    <i data-lucide="activity" class="w-3 h-3 mr-2"></i> Vault Telemetry
-                                </h3>
-                                <div class="flex items-center gap-2">
-                                    <span id="vault-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5 animate-pulse"></span> Connecting...
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Contract</p>
-                                <a href="https://basescan.org/address/<?php echo $contract_address; ?>" target="_blank" class="text-xs font-mono text-gray-500 hover:text-black hover:underline flex items-center justify-end">
-                                    <?php echo substr($contract_address, 0, 8) . '...' . substr($contract_address, -6); ?> 
-                                    <i data-lucide="external-link" class="w-3 h-3 ml-1"></i>
-                                </a>
-                            </div>
-                        </div>
 
-                        <div id="vault-loading" class="space-y-4 relative z-10">
-                            <div class="h-10 w-1/3 skeleton rounded-lg"></div>
-                            <div class="h-4 w-full skeleton rounded-full"></div>
-                        </div>
-
-                        <div id="vault-content" class="hidden relative z-10">
-                            <!-- METRICS GRID -->
-                            <div class="grid grid-cols-2 gap-8 mb-6 border-b border-gray-50 pb-6">
-                                <div>
-                                    <p class="text-xs text-gray-400 font-medium mb-1 uppercase tracking-wide">Total Raised</p>
-                                    <div class="flex items-baseline gap-1">
-                                        <span id="onchain-raised" class="text-3xl font-extrabold text-gray-900 stat-value">$0</span>
-                                        <span class="text-sm text-gray-400 font-medium">USD</span>
-                                    </div>
-                                    <p id="onchain-softcap" class="text-xs text-gray-400 mt-1">Goal: $0</p>
-                                </div>
-                                <div>
-                                    <p id="time-label" class="text-xs text-gray-400 font-medium mb-1 uppercase tracking-wide">Time Remaining</p>
-                                    <div id="time-remaining-box" class="flex items-baseline gap-1">
-                                        <span id="time-remaining" class="text-3xl font-extrabold text-gray-900 stat-value">--</span>
-                                    </div>
-                                    <p class="text-xs text-gray-400 mt-1" id="deadline-date">Ends: --</p>
-                                </div>
-                            </div>
-
-                            <!-- PROGRESS BAR -->
-                            <div>
-                                <div class="flex justify-between text-xs font-bold text-gray-900 mb-2 uppercase tracking-tight">
-                                    <span>Progress</span>
-                                    <span id="progress-percent-label">0%</span>
-                                </div>
-                                <div class="progress-bar-bg relative">
-                                    <div id="progress-fill" class="progress-bar-fill relative z-10"></div>
-                                    <!-- Goal Marker -->
-                                    <div class="absolute top-0 bottom-0 w-0.5 bg-white z-20 border-l border-r border-gray-300 h-full" style="left: 100%" title="Goal"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Background Decor -->
-                        <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-gray-50 rounded-full blur-3xl opacity-50 z-0"></div>
-                    </div>
 
                     <!-- CAMPAIGN ENDED BANNER -->
                     <div id="campaign-ended-banner" class="hidden section-card p-6 bg-gray-50 border-gray-200 text-center">
@@ -265,10 +205,16 @@ try {
                         <p class="text-sm text-gray-500 mt-1">This vault is closed for new contributions.</p>
                     </div>
 
-                    <!-- INVESTMENT INPUT -->
-                    <div id="invest-ui-container">
-                        <div class="section-card p-8">
-                            <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Your Contribution</h2>
+                    <!-- INVESTMENT INPUT WIZARD -->
+                    <div id="invest-ui-container" class="section-card p-0 bg-white overflow-hidden shadow-sm border border-gray-200">
+                        
+                        <!-- STEP 1: CONTRIBUTION -->
+                        <div class="p-6 md:p-8 border-b border-gray-100">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs">1</div>
+                                <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide">Your Contribution</h2>
+                            </div>
+                            
                             <div class="relative rounded-2xl border border-gray-200 hover:border-gray-300 focus-within:border-black focus-within:ring-1 focus-within:ring-black transition-all bg-gray-50/50">
                                 <div class="absolute inset-y-0 left-5 flex items-center pointer-events-none font-medium text-gray-400 text-2xl">$</div>
                                 <input type="number" id="investment-amount" step="any" class="block w-full pl-10 pr-6 py-6 border-none bg-transparent text-3xl font-bold text-gray-900 placeholder-gray-300 focus:ring-0 stat-value" 
@@ -285,66 +231,81 @@ try {
                             </div>
                         </div>
 
-                        <div class="section-card p-8 mt-6">
-                            
-                            <div class="confirm-box mb-8" id="disclaimer-container">
+                        <!-- STEP 2: LEGAL AGREEMENT -->
+                        <div class="p-6 md:p-8 border-b border-gray-100 bg-gray-50/50">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs">2</div>
+                                <div>
+                                    <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide">Legal Agreement</h2>
+                                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">Required for allocation</p>
+                                </div>
+                            </div>
+
+                            <div class="confirm-box mb-6 bg-white" id="disclaimer-container">
                                 <input id="disclaimer-checkbox" type="checkbox" class="h-5 w-5 rounded-md border-gray-300 text-black focus:ring-black cursor-pointer mt-0.5">
                                 <label for="disclaimer-checkbox" class="text-sm text-gray-600 cursor-pointer select-none leading-relaxed">
                                     <span class="font-bold text-gray-900 block mb-0.5">I confirm understanding.</span> 
-                                    I acknowledge my funds are held in the non-custodial Smart Vault and settle only upon success.
+                                    <?php if ($is_direct_gnosis): ?>
+                                        I acknowledge this sale routes stablecoins directly to the project's verified Gnosis Safe multisig wallet.
+                                    <?php else: ?>
+                                        I acknowledge my funds are held in the non-custodial Smart Vault and settle only upon success.
+                                    <?php endif; ?>
                                 </label>
                             </div>
 
                             <div id="step-sign-wrapper">
-                                <div class="flex justify-between items-center mb-6 border-b border-gray-50 pb-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xs">1</div>
-                                        <div>
-                                            <h3 class="font-bold text-gray-900 text-sm">Sign Agreement</h3>
-                                            <p class="text-xs text-gray-500">Legal allocation lock.</p>
-                                        </div>
-                                    </div>
-                                    <span class="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Required</span>
-                                </div>
                                 <button id="btn-open-agreement" disabled class="w-full btn-primary py-4 rounded-xl font-bold flex items-center justify-center text-sm uppercase tracking-wide">
                                     Review & Sign Agreement
                                     <i data-lucide="arrow-right" class="ml-2 w-4 h-4"></i>
                                 </button>
                             </div>
+                        </div>
 
-                            <div id="step-pay-wrapper" class="hidden">
-                                <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center mb-8">
-                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600 mr-3"></i>
-                                    <span class="text-sm font-bold text-emerald-800">Agreement Secured</span>
+                        <!-- STEP 3: TRANSFER FUNDS -->
+                        <div id="step-pay-wrapper" class="hidden p-6 md:p-8 bg-gray-50/50">
+                            <div class="flex items-center gap-3 mb-8 pb-6 border-b border-gray-200">
+                                <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"><i data-lucide="check" class="w-4 h-4"></i></div>
+                                <div>
+                                    <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide">Agreement Secured</h2>
+                                    <p class="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mt-0.5">Proceed to payment</p>
                                 </div>
-                                
-                                <div class="flex items-center gap-3 mb-6">
-                                    <div class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs">2</div>
-                                    <h3 class="font-bold text-gray-900 text-sm">Fund Vault</h3>
-                                </div>
-                                
-                                <div class="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center">
-                                    <div id="web3-connect-section">
-                                        <button id="connectBtn" class="btn-primary px-10 py-4 rounded-xl font-bold shadow-lg text-sm uppercase tracking-wide">Connect Wallet</button>
-                                        <div class="flex justify-center gap-4 mt-6 opacity-40 grayscale">
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" class="h-6 w-6">
-                                            <img src="https://seeklogo.com/images/C/coinbase-coin-logo-C86F46D7B8-seeklogo.com.png" class="h-6 w-6">
-                                            <img src="https://seeklogo.com/images/W/walletconnect-logo-EE83B50C97-seeklogo.com.png" class="h-6 w-6">
-                                        </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs">3</div>
+                                <h3 class="font-bold text-gray-900 text-sm uppercase tracking-wide">Fund Vault</h3>
+                            </div>
+                            
+                            <div class="bg-white border border-gray-200 rounded-2xl p-8 text-center shadow-sm">
+                                <div id="web3-connect-section">
+                                    <button id="connectBtn" class="btn-primary px-10 py-4 rounded-xl font-bold shadow-lg text-sm uppercase tracking-wide">Connect Wallet</button>
+                                    <div class="flex justify-center gap-4 mt-6 opacity-40 grayscale">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" class="h-6 w-6">
+                                        <img src="https://seeklogo.com/images/C/coinbase-coin-logo-C86F46D7B8-seeklogo.com.png" class="h-6 w-6">
+                                        <img src="https://seeklogo.com/images/W/walletconnect-logo-EE83B50C97-seeklogo.com.png" class="h-6 w-6">
                                     </div>
+                                </div>
+                                
+                                <div id="web3-action-section" class="hidden space-y-4 max-w-sm mx-auto">
+                                    <?php if ($is_direct_gnosis): ?>
+                                    <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg text-left mb-4 shadow-sm">
+                                        <div class="flex items-center text-xs font-bold text-emerald-900 mb-1">
+                                            <i data-lucide="lock" class="w-3.5 h-3.5 mr-1.5 text-emerald-600"></i> Verified Safe Transfer
+                                        </div>
+                                        <p class="text-[10px] text-emerald-700 leading-relaxed">Your deposit securely transfers directly to the verified Gnosis Safe: <span class="font-mono bg-white px-1 border border-emerald-200 rounded text-emerald-900 font-bold"><?php echo substr($gnosis_safe_address, 0, 6) . '...' . substr($gnosis_safe_address, -4); ?></span>.</p>
+                                    </div>
+                                    <?php endif; ?>
                                     
-                                    <div id="web3-action-section" class="hidden space-y-4 max-w-sm mx-auto">
-                                        <div class="flex gap-3">
-                                            <button id="approveBtn" class="flex-1 bg-white border border-gray-200 text-gray-900 py-4 rounded-xl font-bold hover:bg-gray-50 transition-all text-xs uppercase tracking-wide">
-                                                Authorize USDC
-                                            </button>
-                                            <button id="investBtn" disabled class="flex-1 btn-primary py-4 rounded-xl font-bold disabled:opacity-50 text-xs uppercase tracking-wide">
-                                                Deposit Funds
-                                            </button>
-                                        </div>
-                                        <div class="h-6">
-                                            <p id="tx-logs" class="text-[10px] font-mono text-gray-400 uppercase"></p>
-                                        </div>
+                                    <div class="flex gap-3">
+                                        <button id="approveBtn" class="flex-1 bg-white border border-gray-200 text-gray-900 py-4 rounded-xl font-bold hover:bg-gray-50 transition-all text-xs uppercase tracking-wide">
+                                            Authorize USDC
+                                        </button>
+                                        <button id="investBtn" disabled class="flex-1 btn-primary py-4 rounded-xl font-bold disabled:opacity-50 text-xs uppercase tracking-wide">
+                                            Deposit Funds
+                                        </button>
+                                    </div>
+                                    <div class="h-6">
+                                        <p id="tx-logs" class="text-[10px] font-mono text-gray-400 uppercase"></p>
                                     </div>
                                 </div>
                             </div>
@@ -352,10 +313,71 @@ try {
                     </div>
                 </div>
 
-                <!-- SIDEBAR -->
-                <div class="lg:w-1/3">
+                <!-- RIGHT COLUMN: OFFERING SUMMARY -->
+                <div class="lg:w-1/3 order-first lg:order-last">
                     <div class="section-card p-8 sticky top-6">
+                    
+                        <!-- ONCHAIN ROUTING MOVED HERE AS A BADGE -->
+                        <div id="vault-status-card" class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
+                            <div class="flex justify-between items-center relative z-10">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center">
+                                        <?php if ($is_direct_gnosis): ?>
+                                            <i data-lucide="shield-check" class="w-3 h-3 mr-1.5"></i> Onchain
+                                        <?php else: ?>
+                                            <i data-lucide="activity" class="w-3 h-3 mr-1.5"></i> Telemetry
+                                        <?php endif; ?>
+                                    </h3>
+                                    <?php if (!$is_direct_gnosis): ?>
+                                    <span id="vault-badge" class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-200 text-gray-600">
+                                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1 animate-pulse"></span> Connect...
+                                    </span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="text-right">
+                                    <?php if ($is_direct_gnosis): ?>
+                                        <a href="https://basescan.org/address/<?php echo $gnosis_safe_address; ?>" target="_blank" class="text-[10px] font-mono text-gray-500 hover:text-black flex items-center">
+                                            <?php echo substr($gnosis_safe_address, 0, 6) . '...' . substr($gnosis_safe_address, -4); ?> 
+                                            <i data-lucide="external-link" class="w-3 h-3 ml-1"></i>
+                                        </a>
+                                    <?php else: ?>
+                                        <a href="https://basescan.org/address/<?php echo $contract_address; ?>" target="_blank" class="text-[10px] font-mono text-gray-500 hover:text-black flex items-center">
+                                            <?php echo substr($contract_address, 0, 6) . '...' . substr($contract_address, -4); ?> 
+                                            <i data-lucide="external-link" class="w-3 h-3 ml-1"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <div id="vault-loading" class="mt-3 relative z-10">
+                                <div class="h-4 w-1/3 skeleton rounded"></div>
+                            </div>
+
+                            <div id="vault-content" class="hidden mt-3 pt-3 border-t border-gray-200 flex justify-between items-center relative z-10">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Raised:</span>
+                                    <span id="onchain-raised" class="text-xs font-extrabold text-gray-900 stat-value">$0</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span id="time-label" class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Time:</span>
+                                    <div id="time-remaining-box">
+                                        <span id="time-remaining" class="text-xs font-extrabold text-gray-900 stat-value">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-4 mb-6">Offering Summary</h3>
+                        
+                        <?php if ($is_direct_gnosis): ?>
+                        <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl mb-6 shadow-sm">
+                            <h4 class="text-xs font-bold text-emerald-900 mb-1 flex items-center">
+                                <i data-lucide="shield-check" class="w-4 h-4 mr-1.5 text-emerald-600"></i> Trusted Direct Settlement
+                            </h4>
+                            <p class="text-[10px] text-emerald-700 leading-relaxed">This offering utilizes a secure direct settlement model. Your stablecoins are routed directly to the project's verified Gnosis Safe multisig wallet.</p>
+                        </div>
+                        <?php endif; ?>
+
                         <div class="space-y-5 mb-8">
                             <div class="flex justify-between text-sm group">
                                 <span class="text-gray-500 font-medium">Asset</span>
@@ -407,7 +429,8 @@ try {
             <i data-lucide="check" class="w-10 h-10 text-emerald-500"></i>
         </div>
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Deposit Successful</h2>
-        <p class="text-gray-500 text-sm mb-8 leading-relaxed max-w-xs mx-auto">Your funds are now securely held in the Smart Vault. If the campaign is successfull, your tokens will be distributed to your wallet upon TGE, otherwise you will be able to claim your funds in your dashboard.</p>
+        <p id="success-modal-msg" class="text-gray-500 text-sm mb-4 leading-relaxed max-w-sm mx-auto">Your funds are now securely held in the Smart Vault. If the campaign is successful, your tokens will be distributed to your wallet upon TGE, otherwise you will be able to claim your funds in your dashboard.</p>
+        <div id="success-modal-tx" class="hidden mb-8 text-[10px] font-mono bg-emerald-50 border border-emerald-100 text-emerald-700 py-2 px-4 rounded-lg inline-block"></div>
         <a href="portfolio" class="block w-full btn-primary py-4 rounded-xl font-bold text-sm uppercase tracking-wide">View Portfolio</a>
     </div>
 </div>
@@ -434,7 +457,9 @@ try {
 
     // Data from PHP (Sanitized)
     const VAULT_ADDRESS = "<?php echo $contract_address; ?>";
-    const USDC_ADDRESS = "<?php echo $payment_token_address; ?>";
+    const IS_DIRECT_GNOSIS = <?php echo $is_direct_gnosis ? 'true' : 'false'; ?>;
+    const PAYMENT_DESTINATION = IS_DIRECT_GNOSIS ? "<?php echo $gnosis_safe_address; ?>" : VAULT_ADDRESS;
+    const USDC_ADDRESS = "<?php echo !empty($payment_token_address) ? $payment_token_address : '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; ?>";
     const TOKEN_PRICE = <?php echo $token_price; ?>;
     const TOKEN_NAME = "<?php echo htmlspecialchars($round_data['token_name']); ?>";
     const AGREEMENT_JSON = <?php echo json_encode($agreement_text_content); ?>;
@@ -443,6 +468,9 @@ try {
     const SALE_NAME = "<?php echo $sale_name_for_data; ?>";
     const AGREEMENT_ID = "<?php echo $active_agreement_version_id; ?>";
     const BASE_CHAIN_ID = 8453;
+    const DB_TOTAL_RAISED = <?php echo floatval($round_data['total_raised'] ?? 0); ?>;
+    const DB_START_TIME = <?php echo intval(strtotime($round_data['start_time'] ?? '0')); ?>;
+    const DB_END_TIME = <?php echo intval(strtotime($round_data['end_time'] ?? '0')); ?>;
 
     // --- 1. SILICON VALLEY ENGINE (RPC FAILOVER) ---
     // Alchemy High Performance Node included
@@ -460,6 +488,10 @@ try {
         "function startTimestamp() view returns (uint256)", // V6: Publicly fetch start
         "function isFinalized() view returns (bool)",
         "function contribute(uint256 amount) external"
+    ];
+
+    const ERC20_TRANSFER_ABI = [
+        "function transfer(address to, uint256 amount) external returns (bool)"
     ];
 
     const ERC20_ABI = [
@@ -520,6 +552,46 @@ try {
 
     async function initWeb3AndSync() {
         try {
+            if (IS_DIRECT_GNOSIS) {
+                // Bypass Smart Vault stats for Direct Gnosis, use DB values
+                document.getElementById('vault-loading').classList.add('hidden');
+                document.getElementById('vault-content').classList.remove('hidden');
+                
+                document.getElementById('onchain-raised').innerText = "$" + DB_TOTAL_RAISED.toLocaleString(undefined, {maximumFractionDigits: 0});
+                
+                const now = Math.floor(Date.now() / 1000);
+                const timeLeft = DB_END_TIME - now;
+                
+                if (timeLeft <= 0) {
+                     document.getElementById('time-remaining').innerText = "Expired";
+                } else if (now < DB_START_TIME) {
+                     document.getElementById('time-label').innerText = "Opens In";
+                     const timerEl = document.getElementById('time-remaining');
+                     const updateWarmup = () => {
+                         const nowLoop = Math.floor(Date.now() / 1000);
+                         const diff = DB_START_TIME - nowLoop;
+                         if(diff <= 0) location.reload();
+                         timerEl.innerText = formatTimeRemaining(diff);
+                     };
+                     updateWarmup();
+                     setInterval(updateWarmup, 1000);
+                } else {
+                     const timerEl = document.getElementById('time-remaining');
+                     const updateTimer = () => {
+                         const nowLoop = Math.floor(Date.now() / 1000);
+                         const diff = DB_END_TIME - nowLoop;
+                         if (diff <= 0) {
+                             timerEl.innerText = "Expired";
+                             return;
+                         }
+                         timerEl.innerText = formatTimeRemaining(diff);
+                     };
+                     updateTimer();
+                     setInterval(updateTimer, 1000);
+                }
+                return;
+            }
+
             const readProvider = await getWorkingProvider();
             const readVault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, readProvider);
             
@@ -541,30 +613,26 @@ try {
             
             // 1. Update Raised Amount
             document.getElementById('onchain-raised').innerText = "$" + raised.toLocaleString(undefined, {maximumFractionDigits: 0});
-            document.getElementById('onchain-softcap').innerText = "Goal: $" + goal.toLocaleString(undefined, {maximumFractionDigits: 0});
             
             // 2. Update Progress Bar
-            const percent = goal > 0 ? (raised / goal) * 100 : 0;
-            document.getElementById('progress-fill').style.width = Math.min(percent, 100) + "%";
-            document.getElementById('progress-percent-label').innerText = percent.toFixed(1) + "%";
+            // Removed for compact UI
 
             // 3. Campaign Status Logic (V6 Upgrade)
             const timeLeft = deadline - now;
             
             // Format deadline date for display
             const deadlineDate = new Date(deadline * 1000).toLocaleString();
-            document.getElementById('deadline-date').innerText = "Ends: " + deadlineDate;
 
             if (isFinalized || (timeLeft <= 0)) {
                 // CAMPAIGN DEAD/ENDED
                 campaignEnded = true;
                 const badge = document.getElementById('vault-badge');
-                badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800";
-                badge.innerHTML = `<span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span> ${isFinalized ? 'Finalized' : 'Ended'}`;
+                if (badge) {
+                    badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800";
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span> ${isFinalized ? 'Finalized' : 'Ended'}`;
+                }
                 
                 document.getElementById('time-remaining').innerText = isFinalized ? "Closed" : "Expired";
-                // Show closing date clearly when ended
-                document.getElementById('deadline-date').innerText = "Closed on: " + deadlineDate;
                 
                 // Disable UI
                 document.getElementById('invest-ui-container').classList.add('hidden');
@@ -574,8 +642,10 @@ try {
                 // V6: WARMUP MODE (The "15 Minute" Fix)
                 isWarmup = true;
                 const badge = document.getElementById('vault-badge');
-                badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800";
-                badge.innerHTML = `<span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1.5 animate-pulse"></span> Opening Soon`;
+                if (badge) {
+                    badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800";
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1.5 animate-pulse"></span> Opening Soon`;
+                }
                 
                 document.getElementById('time-label').innerText = "Opens In";
 
@@ -601,8 +671,10 @@ try {
             else {
                 // CAMPAIGN LIVE
                 const badge = document.getElementById('vault-badge');
-                badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800";
-                badge.innerHTML = `<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse"></span> Live`;
+                if (badge) {
+                    badge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800";
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse"></span> Connected`;
+                }
 
                 // Start Countdown
                 const timerEl = document.getElementById('time-remaining');
@@ -621,7 +693,8 @@ try {
             
         } catch (err) {
             console.error("Alchemy Sync Error:", err);
-            document.getElementById('vault-badge').innerText = "Connection Error";
+            const badge = document.getElementById('vault-badge');
+            if (badge) badge.innerText = "Connection Error";
         }
 
         if (window.ethereum && !campaignEnded) {
@@ -640,7 +713,8 @@ try {
         
         const network = await web3Provider.getNetwork();
         if (network.chainId !== BASE_CHAIN_ID) {
-            document.getElementById('vault-badge').innerText = "Wrong Network";
+            const badge = document.getElementById('vault-badge');
+            if (badge) badge.innerText = "Wrong Network";
             return;
         }
 
@@ -650,7 +724,9 @@ try {
         document.getElementById('web3-action-section').classList.remove('hidden');
         
         usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, signer);
-        vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+        if (!IS_DIRECT_GNOSIS && VAULT_ADDRESS && VAULT_ADDRESS !== "0x0000000000000000000000000000000000000000") {
+            vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+        }
         tokenDecimals = await usdcContract.decimals();
         
         checkAndSyncAllowance();
@@ -715,7 +791,7 @@ try {
         formData.append('terms', details.terms || 'on');
 
         try {
-            const json = await fetchJsonOrError('backend/purchase_backend.php', { method: 'POST', body: formData });
+            const json = await fetchJsonOrError('/backend/purchase_backend.php', { method: 'POST', body: formData });
             if(json.success) {
                 if(window.showLegalSuccess) window.showLegalSuccess();
                 window.onLegalSigningComplete = function() {
@@ -749,7 +825,17 @@ try {
             const userAddress = await signer.getAddress();
             if (!usdcContract) usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, signer);
             
-            const currentAllowance = await usdcContract.allowance(userAddress, VAULT_ADDRESS);
+            if (IS_DIRECT_GNOSIS) {
+                // No allowance needed for direct transfer
+                approveBtn.innerText = "Authorized";
+                approveBtn.disabled = true;
+                approveBtn.classList.remove('text-gray-900', 'bg-white', 'border');
+                approveBtn.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
+                if (!isWarmup) investBtn.disabled = false;
+                return;
+            }
+            
+            const currentAllowance = await usdcContract.allowance(userAddress, PAYMENT_DESTINATION);
             const requiredAmount = ethers.utils.parseUnits(amountInput.value || "0", tokenDecimals);
 
             if (currentAllowance.gte(requiredAmount) && requiredAmount.gt(0)) {
@@ -774,7 +860,7 @@ try {
 
     if (connectBtn) {
         connectBtn.addEventListener('click', async () => {
-            if(!window.ethereum) return showError("Web3 Wallet Not Found.");
+            if(!window.ethereum) return showError("Wallet Not Found.");
             try {
                 const wp = new ethers.providers.Web3Provider(window.ethereum);
                 await wp.send("eth_requestAccounts", []);
@@ -783,17 +869,39 @@ try {
                     await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x2105' }] });
                 }
                 await connectWalletInternal(wp);
-            } catch (e) { showError("Wallet connection failed."); }
+            } catch (e) { 
+                console.error("Wallet Connection Debug:", e);
+                showError("Wallet connection failed.", e.message || String(e)); 
+            }
         });
     }
 
     if (approveBtn) {
         approveBtn.addEventListener('click', async () => {
             approveBtn.innerHTML = "Processing... <span class='loader'></span>";
-            approveBtn.disabled = true;
+            approveBtn.disabled = true;            
             try {
                 if (!usdcContract) usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, signer);
-                const tx = await usdcContract.approve(VAULT_ADDRESS, ethers.constants.MaxUint256);
+                
+                // IF DIRECT GNOSIS: We don't need allowance! We just do transfer() later.
+                if (IS_DIRECT_GNOSIS) {
+                    approveBtn.innerText = "Authorized";
+                    approveBtn.disabled = true;
+                    investBtn.disabled = false;
+                    return;
+                }
+
+                const userAddress = await signer.getAddress();
+                const amount = ethers.utils.parseUnits(amountInput.value, tokenDecimals);
+                const allowance = await usdcContract.allowance(userAddress, PAYMENT_DESTINATION);
+                
+                if (allowance.gte(amount)) {
+                    showError("You are already authorized for this amount.");
+                    return;
+                }
+
+                txLogs.innerText = "Requesting Authorization...";
+                const tx = await usdcContract.approve(PAYMENT_DESTINATION, ethers.constants.MaxUint256);
                 txLogs.innerText = "Broadcasting Authorization...";
                 await tx.wait();
                 txLogs.innerText = "Authorized. Syncing...";
@@ -822,46 +930,91 @@ try {
             investBtn.innerHTML = "Depositing... <span class='loader'></span>";
             investBtn.disabled = true;
             try {
-                if (!vaultContract) vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+                if (!IS_DIRECT_GNOSIS && !vaultContract && VAULT_ADDRESS && VAULT_ADDRESS !== "0x0000000000000000000000000000000000000000") {
+                    vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
+                }
                 const amount = ethers.utils.parseUnits(amountInput.value, tokenDecimals);
                 const userAddress = await signer.getAddress();
 
                 const balance = await usdcContract.balanceOf(userAddress);
                 if (balance.lt(amount)) throw new Error("Insufficient USDC Balance.");
 
-                const allowance = await usdcContract.allowance(userAddress, VAULT_ADDRESS);
-                if (allowance.lt(amount)) throw new Error("Allowance too low. Re-Authorize.");
-                
-                // V6: Simulation Check
-                try {
-                    await vaultContract.callStatic.contribute(amount);
-                } catch(simErr) {
-                    console.error("Simulation failed", simErr);
-                    let reason = simErr.reason || simErr.message;
-                    if(reason.includes("started")) throw new Error("Round hasn't started yet.");
-                    if(reason.includes("ended")) throw new Error("Round has ended.");
-                    // Fallback to let real tx try if unsure
+                let txHash = "";
+
+                if (IS_DIRECT_GNOSIS) {
+                    // --- DIRECT GNOSIS ROUTING ---
+                    const erc20TransferContract = new ethers.Contract(USDC_ADDRESS, ERC20_TRANSFER_ABI, signer);
+                    txLogs.innerText = "Broadcasting Direct Transfer...";
+                    const tx = await erc20TransferContract.transfer(PAYMENT_DESTINATION, amount);
+                    txHash = tx.hash;
+                    await tx.wait();
+                } else {
+                    // --- SMART VAULT ESCROW ---
+                    const allowance = await usdcContract.allowance(userAddress, PAYMENT_DESTINATION);
+                    if (allowance.lt(amount)) throw new Error("Allowance too low. Re-Authorize.");
+                    
+                    // V6: Simulation Check
+                    try {
+                        await vaultContract.callStatic.contribute(amount);
+                    } catch(simErr) {
+                        console.error("Simulation failed", simErr);
+                        let reason = simErr.reason || simErr.message;
+                        if(reason.includes("started")) throw new Error("Round hasn't started yet.");
+                        if(reason.includes("ended")) throw new Error("Round has ended.");
+                        // Fallback to let real tx try if unsure
+                    }
+
+                    // V6: Dynamic Gas + 50% Buffer
+                    let estimatedGas = await vaultContract.estimateGas.contribute(amount);
+                    estimatedGas = estimatedGas.mul(150).div(100);
+
+                    const tx = await vaultContract.contribute(amount, { gasLimit: estimatedGas });
+                    txLogs.innerText = "Broadcasting Deposit...";
+                    txHash = tx.hash;
+                    await tx.wait();
                 }
-
-                // V6: Dynamic Gas + 50% Buffer
-                let estimatedGas = await vaultContract.estimateGas.contribute(amount);
-                estimatedGas = estimatedGas.mul(150).div(100);
-
-                const tx = await vaultContract.contribute(amount, { gasLimit: estimatedGas });
-                txLogs.innerText = "Broadcasting Deposit...";
-                await tx.wait();
                 
                 const formData = new FormData();
                 formData.append('csrf_token', CSRF_TOKEN);
-                formData.append('action', 'record_tx');
-                formData.append('tx_hash', tx.hash);
-                formData.append('amount_usd', amountInput.value); 
-                formData.append('project_id', PROJECT_ID);
-                formData.append('sale_name', SALE_NAME);
                 
-                const json = await fetchJsonOrError('backend/purchase_backend.php', { method: 'POST', body: formData });
-                if (json.success) document.getElementById('success-modal').classList.add('active');
-                else showError("Record Warning: " + json.message);
+                // If Direct Gnosis, call our new backend API instead of purchase_backend.php
+                if (IS_DIRECT_GNOSIS) {
+                    formData.append('tx_hash', txHash);
+                    formData.append('amount_usd', amountInput.value); 
+                    formData.append('project_id', PROJECT_ID);
+                    formData.append('sale_name', SALE_NAME);
+                    formData.append('sale_id', "<?php echo $round_data['id']; ?>");
+                    
+                    const json = await fetchJsonOrError('/backend/record_direct_investment.php', { method: 'POST', body: formData });
+                    if (json.success) {
+                        document.getElementById('success-modal-msg').innerText = "Your funds have been sent directly to the creator's Gnosis Safe. You can track your investment and follow the token distribution directly from your dashboard.";
+                        if (txHash) {
+                            const txEl = document.getElementById('success-modal-tx');
+                            txEl.innerHTML = `<i data-lucide="external-link" class="w-3 h-3 inline mr-1"></i>TX: <a href="https://basescan.org/tx/${txHash}" target="_blank" class="underline hover:text-emerald-900">${txHash.substring(0,6)}...${txHash.substring(txHash.length-4)}</a>`;
+                            txEl.classList.remove('hidden');
+                            lucide.createIcons();
+                        }
+                        document.getElementById('success-modal').classList.add('active');
+                    } else showError("Record Warning: " + json.error);
+                } else {
+                    formData.append('action', 'record_tx');
+                    formData.append('tx_hash', txHash);
+                    formData.append('amount_usd', amountInput.value); 
+                    formData.append('project_id', PROJECT_ID);
+                    formData.append('sale_name', SALE_NAME);
+                    
+                    const json = await fetchJsonOrError('/backend/purchase_backend.php', { method: 'POST', body: formData });
+                    if (json.success) {
+                        document.getElementById('success-modal-msg').innerText = "Your funds are now securely held in the Smart Vault. If the campaign is successful, your tokens will be distributed to your wallet upon TGE, otherwise you will be able to claim your funds in your dashboard.";
+                        if (txHash) {
+                            const txEl = document.getElementById('success-modal-tx');
+                            txEl.innerHTML = `<i data-lucide="external-link" class="w-3 h-3 inline mr-1"></i>TX: <a href="https://basescan.org/tx/${txHash}" target="_blank" class="underline hover:text-emerald-900">${txHash.substring(0,6)}...${txHash.substring(txHash.length-4)}</a>`;
+                            txEl.classList.remove('hidden');
+                            lucide.createIcons();
+                        }
+                        document.getElementById('success-modal').classList.add('active');
+                    } else showError("Record Warning: " + json.message);
+                }
             } catch (e) {
                 let msg = e.reason || e.message;
                 if (msg.includes("user rejected")) msg = "Transaction rejected.";

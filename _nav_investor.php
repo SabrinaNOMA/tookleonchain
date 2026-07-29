@@ -12,6 +12,10 @@
 
 // Helper function to render investor navigation links.
 function render_investor_nav_link($icon, $label, $href, $nav_key) {
+    // Convert hardcoded paths using the namespace helper
+    if ($href !== '#' && strpos($href, '/') === 0) {
+        $href = get_url(ltrim($href, '/'));
+    }
     // The 'data-nav-key' is used by layout.php to highlight the active page.
     // FIX: Added text-sm to match the font size of the founder nav.
     echo "<a href='{$href}' class='sidebar-link py-2 px-3 text-sm' data-nav-key='{$nav_key}'>";
@@ -38,7 +42,7 @@ function render_investor_nav_link($icon, $label, $href, $nav_key) {
     render_investor_nav_link('layout-dashboard', 'Portfolio', '/portfolio', 'portfolio');
     render_investor_nav_link('briefcase', 'Projects', '/projects', 'projects');
     // --- End Modification ---
-    
+    render_investor_nav_link('file-text', 'Regulatory', '/legal', 'legal');
     render_investor_nav_link('wallet', 'Wallet', '/wallet', 'wallet', 'wallets');
     
     // MASKED INVITES

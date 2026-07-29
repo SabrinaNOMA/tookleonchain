@@ -28,6 +28,10 @@ if (!isset($_SESSION['user_id'])) {
 $userId = $_SESSION['user_id'];
 $response = [];
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    session_write_close(); // Unlock session for read-only GET requests!
+}
+
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         // --- FETCH USER DATA ---

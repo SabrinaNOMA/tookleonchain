@@ -911,7 +911,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fd.append('address', address);
 
             // CHANGED PATH: Pointing to backend/save_coinbase_backend.php
-            fetch('backend/save_coinbase_backend.php', { method: 'POST', body: fd })
+            fetch('/backend/save_coinbase_backend.php', { method: 'POST', body: fd })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
@@ -990,7 +990,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 newConfirm.textContent = "Deleting...";
                 
                 // Call Backend (Use Relative Path)
-                fetch('backend/delete_coinbase_backend.php', { method: 'POST' })
+                fetch('/backend/delete_coinbase_backend.php', { method: 'POST' })
                 .then(r => {
                     if(!r.ok) throw new Error("Backend not found");
                     return r.json();
@@ -1111,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function fetchWallets() {
-        fetch('backend/wallet_backend.php').then(r => r.json()).then(data => {
+        fetch('/backend/wallet_backend.php').then(r => r.json()).then(data => {
             walletList.querySelectorAll('.wallet-item').forEach(item => item.remove());
             if (data.wallets) data.wallets.forEach(wallet => createWalletRow(wallet));
         });
@@ -1120,7 +1120,7 @@ document.addEventListener('DOMContentLoaded', function() {
     addWalletButton.addEventListener('click', (e) => { e.preventDefault(); createWalletRow(); saveChangesButton.classList.remove('hidden'); });
     walletForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        fetch('backend/wallet_save.php', { method: 'POST', body: new FormData(walletForm) })
+        fetch('/backend/wallet_save.php', { method: 'POST', body: new FormData(walletForm) })
         .then(r => r.json()).then(d => { showModal(d.success ? 'Saved!' : 'Error'); if(d.success) { saveChangesButton.classList.add('hidden'); fetchWallets(); } });
     });
 

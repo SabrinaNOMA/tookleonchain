@@ -475,7 +475,7 @@ try {
             <h2 id="project-overview-title" class="section-title text-2xl md:text-4xl !mb-4">Project Overview</h2>
             <p id="project-description-display" class="text-center text-base md:text-lg text-gray-600 max-w-3xl mx-auto mb-6 md:mb-10 leading-relaxed px-2">Loading...</p>
             <div class="text-center mb-4 md:mb-8">
-                <a href="/purchase" id="top-invest-now-button" class="button button-gradient w-full md:w-auto !py-3 md:!py-4 !px-8 md:!px-12 !text-base md:!text-lg !font-bold">Join Now!</a>
+                <a href="<?= get_url('purchase') ?>" id="top-invest-now-button" class="button button-gradient w-full md:w-auto !py-3 md:!py-4 !px-8 md:!px-12 !text-base md:!text-lg !font-bold">Join Now!</a>
             </div>
         </section>
 
@@ -594,7 +594,7 @@ try {
 
 <div id="sticky-invest-bar" class="sticky-invest-bar">
     <span id="sticky-project-name" class="sticky-project-name"></span>
-    <a href="/purchase" id="sticky-invest-button" class="button button-gradient !py-2 md:!py-3 !px-6 md:!px-10 !text-sm md:!text-base !font-bold">Join Now</a>
+    <a href="<?= get_url('purchase') ?>" id="sticky-invest-button" class="button button-gradient !py-2 md:!py-3 !px-6 md:!px-10 !text-sm md:!text-base !font-bold">Join Now</a>
 </div>
 
 <div id="agreement-view-modal" class="modal-overlay">

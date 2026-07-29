@@ -53,6 +53,7 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
                 SELECT 
                     tsp.id, tsp.sale_name, tsp.contract_address, tsp.payment_token, 
                     tsp.soft_cap_usd, tsp.hard_cap_usd, tsp.status, 
+                    tsp.gnosis_safe_address, tsp.fee_settled,
                     p.project_name,
                     JSON_UNQUOTE(JSON_EXTRACT(tsp.sale_terms_json, '$.vault_custody_wallet')) as recipient_wallet
                 FROM token_sale_pages tsp 
@@ -65,8 +66,8 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
 
         if (!$sale) {
             $error_message = "No active sale found or access denied.";
-        } elseif (empty($sale['contract_address'])) {
-            $error_message = "This sale does not have a Smart Vault deployed.";
+        } elseif (empty($sale['contract_address']) && empty($sale['gnosis_safe_address'])) {
+            $error_message = "This sale does not have a Smart Vault or Gnosis Safe attached.";
         } else {
             if (isset($pdo) && $pdo instanceof PDO) {
                 $stmt_fee = $pdo->prepare("SELECT id FROM success_fee WHERE sale_id = ? AND status = 'confirmed' LIMIT 1");
@@ -74,10 +75,24 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
                 if ($stmt_fee->fetch()) $is_fee_paid = 'true';
             }
         }
+        }
     } catch (Exception $e) {
         $error_message = "Database System Error: " . $e->getMessage();
     }
 }
+
+$is_direct_gnosis = !empty($sale['gnosis_safe_address']);
+$fee_settled = (int)($sale['fee_settled'] ?? 0);
+
+$db_total_raised = 0;
+if ($is_direct_gnosis && !$error_message) {
+    // For Direct Gnosis, we rely on the DB for total raised to compute the fee.
+    $stmt_raised = $pdo->prepare("SELECT SUM(amount_usd) as total FROM investments WHERE project_id = ? AND sale_name = ? AND status = 'released_to_creator'");
+    $stmt_raised->execute([$project_id, $sale['sale_name']]);
+    $res = $stmt_raised->fetch(PDO::FETCH_ASSOC);
+    $db_total_raised = $res['total'] ? (float)$res['total'] : 0;
+}
+
 ?>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
@@ -119,7 +134,7 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
         </div>
         <div class="flex flex-col gap-2 max-w-xs mx-auto">
             <p class="text-xs text-gray-400 font-medium">Please create a new vault or wait for synchronization.<br>Do not share this vault until it is fully synced.</p>
-            <a href="/dashboard" class="mt-4 block w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black transition-colors text-xs uppercase tracking-widest text-center">Return to Dashboard</a>
+            <a href="<?= get_url('dashboard') ?>" class="mt-4 block w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black transition-colors text-xs uppercase tracking-widest text-center">Return to Dashboard</a>
         </div>
     </div>
 
@@ -129,7 +144,7 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
             <div class="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 mb-6 flex flex-col items-start gap-2">
                 <p class="font-semibold"><i data-lucide="alert-circle" class="inline w-4 h-4 mr-1"></i> Error</p>
                 <p><?php echo htmlspecialchars($error_message ?? ''); ?></p>
-                <a href="/dashboard" class="underline font-semibold text-sm mt-2">Return to Dashboard</a>
+                <a href="<?= get_url('dashboard') ?>" class="underline font-semibold text-sm mt-2">Return to Dashboard</a>
             </div>
             <?php return; ?>
         <?php endif; ?>
@@ -149,6 +164,25 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
             </div>
         </div>
         
+        <?php if ($is_direct_gnosis): ?>
+            <?php if (!$fee_settled): ?>
+            <div class="bg-red-50 border border-red-200 p-6 rounded-xl mb-8 flex gap-4">
+                <i data-lucide="alert-triangle" class="w-8 h-8 text-red-500 flex-shrink-0"></i>
+                <div>
+                    <h3 class="text-red-900 font-bold text-lg">🚨 Fee Outstanding</h3>
+                    <p class="text-red-700 text-sm mt-1">Your funds were routed directly to your Gnosis Safe. However, you must settle the Tookle protocol fee to unlock the investor claim portal.</p>
+                </div>
+            </div>
+            <?php else: ?>
+            <div class="bg-emerald-50 border border-emerald-200 p-6 rounded-xl mb-8 flex gap-4">
+                <i data-lucide="check-circle" class="w-8 h-8 text-emerald-500 flex-shrink-0"></i>
+                <div>
+                    <h3 class="text-emerald-900 font-bold text-lg">Setup Complete</h3>
+                    <p class="text-emerald-700 text-sm mt-1">Fees are settled. The investor claim portal is now open.</p>
+                </div>
+            </div>
+            <?php endif; ?>
+        <?php else: ?>
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 sm:p-8 mb-8">
             <div class="flex items-start justify-between mb-6">
                 <div class="flex items-center gap-3">
@@ -185,6 +219,7 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
                 </div>
             </div>
         </div>
+        <?php endif; ?>
         
         <div id="action-area" class="hidden border border-gray-200 bg-white rounded-xl p-8 mb-8">
             <div class="flex items-center mb-10 max-w-md mx-auto">
@@ -262,6 +297,8 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
     let totalRaisedHuman = 0;
     let safeSdk, safeConnected = false;
     let isRefreshing = false;
+    const IS_DIRECT_GNOSIS = <?php echo $is_direct_gnosis ? 'true' : 'false'; ?>;
+    const DB_TOTAL_RAISED = <?php echo $db_total_raised; ?>;
 
     // --- 1. ROBUST PROVIDER FINDER ---
     async function getWorkingProvider() {
@@ -288,7 +325,7 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
             const provider = await getWorkingProvider();
             
             // --- UI SAFEGUARD: VERIFY CONTRACT CODE ---
-            if (CONTRACT_ADDR && CONTRACT_ADDR.length > 20) {
+            if (!IS_DIRECT_GNOSIS && CONTRACT_ADDR && CONTRACT_ADDR.length > 20) {
                 console.log("Verifying bytecode integrity...");
                 const code = await provider.getCode(CONTRACT_ADDR);
                 if (!code || code === '0x') {
@@ -300,8 +337,10 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
             }
             // ------------------------------------------
 
-            // 2. Initialize Contracts
-            readContract = new ethers.Contract(CONTRACT_ADDR, CAMPAIGN_ABI, provider);
+            // 2. Initialize Contracts (only if not Direct Gnosis)
+            if (!IS_DIRECT_GNOSIS) {
+                readContract = new ethers.Contract(CONTRACT_ADDR, CAMPAIGN_ABI, provider);
+            }
             
             // 3. Fetch Token Info
             if(FEE_TOKEN_ADDR) {
@@ -343,12 +382,22 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
         try {
             console.log("Fetching Data...");
             
-            // Serial Fetching (Safe)
-            const raised = await readContract.totalContributed();
-            const goal = await readContract.goal();
-            const deadline = await readContract.deadline();
-            const startTimestamp = await readContract.startTimestamp();
-            const isFinalized = await readContract.isFinalized();
+            let raised, goal, deadline, startTimestamp, isFinalized;
+
+            if (IS_DIRECT_GNOSIS) {
+                raised = ethers.utils.parseUnits(DB_TOTAL_RAISED.toString(), decimals);
+                goal = ethers.utils.parseUnits("0", decimals);
+                deadline = 0;
+                startTimestamp = { toNumber: () => 0 };
+                isFinalized = true;
+            } else {
+                // Serial Fetching (Safe)
+                raised = await readContract.totalContributed();
+                goal = await readContract.goal();
+                deadline = await readContract.deadline();
+                startTimestamp = await readContract.startTimestamp();
+                isFinalized = await readContract.isFinalized();
+            }
 
             updateUI(raised, goal, deadline, startTimestamp, isFinalized);
 
@@ -384,10 +433,14 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
         const feeAmount = totalRaisedHuman * (PLATFORM_FEE_BPS / 10000);
 
         document.getElementById('ui-raised').innerText = `$${totalRaisedHuman.toLocaleString()}`;
-        document.getElementById('ui-goal').innerText = `$${goalNum.toLocaleString()}`;
+        document.getElementById('ui-goal').innerText = IS_DIRECT_GNOSIS ? 'Direct' : `$${goalNum.toLocaleString()}`;
         
         // Handle Warmup
-        if (now < start) {
+        if (IS_DIRECT_GNOSIS) {
+             document.getElementById('ui-time').innerText = "Ended";
+             document.getElementById('contract-status-badge').innerText = "Direct Settle";
+             document.getElementById('contract-status-badge').className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 uppercase tracking-wide";
+        } else if (now < start) {
              const diff = start - now;
              document.getElementById('ui-time').innerText = `Opens in ${formatRemaining(start)}`;
              document.getElementById('contract-status-badge').innerText = "Warmup";
@@ -436,6 +489,15 @@ if (!isset($_SESSION['user_id']) || (!$project_id && !$requested_sale_id)) {
             if (recipientBox) recipientBox.classList.add('hidden');
             document.getElementById('step-1-circle').classList.add('complete'); document.getElementById('step-2-circle').classList.add('complete');
             stepContent.innerHTML = `<p class="text-green-600 font-bold">Vault Finalized. Funds Claimed.</p>`;
+        } else if (IS_DIRECT_GNOSIS) {
+             if (recipientBox) recipientBox.classList.add('hidden');
+             if (!HAS_PAID_FEE) {
+                 document.getElementById('step-1-circle').classList.add('active');
+                 stepContent.innerHTML = `<p class="text-sm text-gray-500 mb-1">Step 1: Protocol Settlement</p><h3 class="text-xl font-bold mb-4">Pay Platform Fee: ${feeAmount.toFixed(2)} ${feeTokenSymbol}</h3><button id="pay-fee-btn" onclick="payServiceFee('${feeAmount.toFixed(decimals)}')" class="btn-action-secondary py-4 px-10 rounded-xl font-bold uppercase tracking-wide">Pay Success Fee</button>`;
+             } else {
+                 document.getElementById('step-1-circle').classList.add('complete'); document.getElementById('step-2-circle').classList.add('complete');
+                 stepContent.innerHTML = `<h3 class="text-xl font-bold mb-4 text-emerald-600">Setup Complete</h3><p class="text-sm text-gray-500 mb-4 font-semibold">Platform Fees Paid. Your funds are in your Gnosis Safe.</p>`;
+             }
         } else if (now < start) {
              stepContent.innerHTML = `<p class="text-blue-500 font-bold">Vault is in warmup period. Please wait.</p>`;
         } else if (now < deadline) {

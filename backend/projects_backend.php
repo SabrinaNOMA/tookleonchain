@@ -58,6 +58,25 @@ try {
     // The logic to calculate funding is now moved into the main query below
     // to ensure it's calculated on a per-sale basis.
 
+    // Institutional Compliance Filter:
+    // Do not return uninvited public projects. Only return projects where:
+    // 1) The user has an existing investment/reservation, OR
+    // 2) The project's sale_url token was unlocked via direct invitation link in session.
+    $unlocked_tokens = $_SESSION['my_unlocked_sales'] ?? [];
+    $unlocked_tokens = array_filter(array_map('trim', $unlocked_tokens));
+
+    $params = [':uid' => $user_id];
+    $unlock_clause = '';
+    if (!empty($unlocked_tokens)) {
+        $placeholders = [];
+        foreach (array_values($unlocked_tokens) as $idx => $token_val) {
+            $paramName = ":token_$idx";
+            $placeholders[] = $paramName;
+            $params[$paramName] = $token_val;
+        }
+        $unlock_clause = " OR tsp.sale_url IN (" . implode(', ', $placeholders) . ")";
+    }
+
     $stmt = $pdo->prepare("
         SELECT 
             p.id, p.project_name, tsp.country, p.industry_focus, 
@@ -75,8 +94,12 @@ try {
              JOIN investments inv ON pay.investment_id = inv.id
              WHERE inv.project_id = p.id AND inv.sale_name = tsp.sale_name AND pay.status = 'successful') as current_funding
         FROM projet p
-        LEFT JOIN token_sale_pages tsp ON p.id = tsp.project_id
+        JOIN token_sale_pages tsp ON p.id = tsp.project_id
         WHERE tsp.status IN ('live', 'scheduled', 'ended_successful', 'ended_failed', 'canceled')
+          AND (
+              p.id IN (SELECT project_id FROM investments WHERE user_id = :uid)
+              $unlock_clause
+          )
         ORDER BY
             CASE
                 WHEN tsp.status = 'live' THEN 0
@@ -86,7 +109,7 @@ try {
             tsp.sale_launch_at ASC,
             tsp.sale_end_at DESC
     ");
-    $stmt->execute();
+    $stmt->execute($params);
     $discover_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $live_projects = [];

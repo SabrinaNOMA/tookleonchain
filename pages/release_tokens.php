@@ -34,7 +34,7 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
         </div>
     </header>
     
-    <a href="/distribute" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-purple-700 font-medium mb-6 transition-all">
+    <a href="<?= get_url('distribute') ?>" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-purple-700 font-medium mb-6 transition-all">
         <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Actions
     </a>
 
@@ -73,7 +73,7 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
         </div>
         <h2 class="text-xl font-bold text-gray-900">Initialization Failed</h2>
         <p id="page-error-message" class="mt-2 text-gray-600 px-4"></p>
-        <a href="/distribute" class="btn-primary inline-block mt-8">Return to Dashboard</a>
+        <a href="<?= get_url('distribute') ?>" class="btn-primary inline-block mt-8">Return to Dashboard</a>
     </div>
 
     <div id="distribution-content" class="distribution-hub" style="display: none;">

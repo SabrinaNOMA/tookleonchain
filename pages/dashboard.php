@@ -51,15 +51,36 @@ try {
         $raw_project_json
     );
 
-} catch (JsonException $e) {
-    // Escape error message for JS safety
-    $error_message = htmlspecialchars("PHP JSON Encode Error: " . $e->getMessage(), ENT_QUOTES, 'UTF-8');
-    // Ensure error JSON is also safe
-    $dashboard_data_json = json_encode(['error' => $error_message], $flags);
-    $project_data_for_js = json_encode(['error' => $error_message], $flags);
+} catch (Exception $e) {
+    error_log("Dashboard JSON encoding error: " . $e->getMessage());
+    // Fallback to safe defaults if encoding completely fails
+    $dashboard_data_json = '{"error": "Failed to encode data safely."}';
+}
+
+$show_wizard_success = false;
+if (isset($_SESSION['show_wizard_success_popup']) && $_SESSION['show_wizard_success_popup'] === true) {
+    $show_wizard_success = true;
+    unset($_SESSION['show_wizard_success_popup']); // Consume it so it only shows once
 }
 // --- END: Safer JSON encoding ---
 ?>
+
+<?php if ($show_wizard_success): ?>
+<div id="wizard-success-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden animate-fade-in-up">
+        <div class="p-6 text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check-circle" class="w-8 h-8 text-green-600"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">Setup Complete!</h3>
+            <p class="text-gray-600 mb-6">Your token sale room is fully configured. You can go live anytime directly from your dashboard and share the link to start receiving contributions!</p>
+            <button onclick="document.getElementById('wizard-success-modal').remove()" class="w-full bg-blue-600 text-white rounded-lg py-3 font-semibold hover:bg-blue-700 transition-colors">
+                Awesome, let's go!
+            </button>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Favicon Link -->
 <link id="favicon" rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAACAAAAAgACAYAAACyp9MwAAAQAElEQVR4Aezce6xuaV0f8LUPSFqstcGopI0xkEglKWkoCba2aYIYYk2LzAyTlBqVm0AFB2gqw8CAw/0ycAbExPpHm7Sx7R+WmKZRQ0SSptGKAYRBBgYYQGpiMRJNK5GLZy/X2vucmXPZl/eyLs/zfT7Dec/Z73rXep7f9/OcP+ac/R0udP4hQIAAAQIECBAgQIAAAQIECBBoXkI0CAAAECBAgQIAAAQIECBAgEC+wJhQAWBU8CJAgAABAgQIECBAgAABArkCkhEgQIAAAQIECBAgQIAAAQL5...">

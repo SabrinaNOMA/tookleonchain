@@ -1,6 +1,6 @@
 <?php
 /**
- * Login / Register backend — JSON + form POST
+ * Login / Register backend Ã¢â‚¬â€ JSON + form POST
  * Table `user` :
  *  id, first_name, last_name, email, password, country, profile_description,
  *  language, invite_code, wallet_address, coinbase_wallet_adress, phantom_pubkey,
@@ -31,28 +31,28 @@ use PHPMailer\PHPMailer\Exception;
 
 // --- Chargement de la librairie ---
 
-// Option A : Si vous avez utilisé Composer
+// Option A : Si vous avez utilisÃƒÂ© Composer
 //require 'vendor/autoload.php';
 
-// Option B : Si vous avez téléchargé manuellement
+// Option B : Si vous avez tÃƒÂ©lÃƒÂ©chargÃƒÂ© manuellement
 //  (Assurez-vous que le chemin est correct)
- require '../phpmailer/Exception.php';
- require '../phpmailer/PHPMailer.php';
- require '../phpmailer/SMTP.php';
+ require __DIR__ . '/../phpmailer/Exception.php';
+ require __DIR__ . '/../phpmailer/PHPMailer.php';
+ require __DIR__ . '/../phpmailer/SMTP.php';
 
 // ----------------------------------
-// --- À CONFIGURER (5 variables) ---
+// --- Ãƒâ‚¬ CONFIGURER (5 variables) ---
 // ----------------------------------
 
-// Mettez l'email que vous avez créé sur votre hébergement OVH
+// Mettez l'email que vous avez crÃƒÂ©ÃƒÂ© sur votre hÃƒÂ©bergement OVH
 $email_expediteur = 'contact@tookle.app'; 
 $mot_de_passe_email = 'G3RToNVgH45!';
 
 // Laissez ceci pour OVH
 $serveur_smtp = 'ssl0.ovh.net';
-$port_smtp = 465; // Port 465 pour SSL (recommandé par OVH)
+$port_smtp = 465; // Port 465 pour SSL (recommandÃƒÂ© par OVH)
 
-// Mettez l'email où vous voulez RECEVOIR le test (ex: votre Gmail)
+// Mettez l'email oÃƒÂ¹ vous voulez RECEVOIR le test (ex: votre Gmail)
 //$email_destinataire = 'philippe@ifabe.fr';
 
 // ----------------------------------
@@ -142,17 +142,17 @@ try {
 
         $stmt = $pdo->prepare("
             INSERT INTO user (first_name, last_name, email, password, invite_code, activation_token,is_active, created_at, terms_accepted_at)
-            VALUES (?, ?, ?, ?, ?, ?,0, NOW(),NOW())
+            VALUES (?, ?, ?, ?, ?, ?, (CASE WHEN ? = 1 THEN 1 ELSE 0 END), NOW(),NOW())
         ");
-        $stmt->execute([$first, $last, $email, $hashed, $invite , $activation_token]);
+        $stmt->execute([$first, $last, $email, $hashed, $invite, $activation_token, (in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', 'localhost:8000', '127.0.0.1', '127.0.0.1:8000'], true) || PHP_SAPI === 'cli') ? 1 : 0]);
 		
-	 // Mail d’activation non requis si tu veux activer direct, sinon décommente :
+	 // Mail dÃ¢â‚¬â„¢activation non requis si tu veux activer direct, sinon dÃƒÂ©commente :
      $activation_link = "https://preprod.tookle.app/pages/activate.php?token=" . $activation_token ."&email=".$email;
 	 
 	 
 	    // --- Configuration du serveur SMTP (Ne pas toucher) ---
  try {   
-    // Active le mode DEBUG. TRÈS IMPORTANT pour les tests !
+    // Active le mode DEBUG. TRÃƒË†S IMPORTANT pour les tests !
      //SMTP::DEBUG_OFF (0) = Pas de debug
     // SMTP::DEBUG_SERVER (2) = Affiche toute la conversation avec le serveur
     //$mail->SMTPDebug = SMTP::DEBUG_SERVER; 
@@ -168,7 +168,7 @@ try {
 
     // --- Configuration de l'email ---
 
-    // Expéditeur (Doit être le même que $email_expediteur)
+    // ExpÃƒÂ©diteur (Doit ÃƒÂªtre le mÃƒÂªme que $email_expediteur)
     $mail->setFrom($email_expediteur, 'contact@tooke.app');
     
     // Destinataire
@@ -210,9 +210,14 @@ Best regards,<br>
 
 
     // Envoi
-    $mail->send();
+    if (in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', 'localhost:8000', '127.0.0.1', '127.0.0.1:8000'], true) || PHP_SAPI === 'cli') {
+        try { $mail->send(); } catch (Exception $e) { error_log('Local SMTP skip: ' . $mail->ErrorInfo); }
+        respond_success(['message' => 'Registration successful! Please log in.', 'activation_link' => $activation_link]);
+    } else {
+        $mail->send();
+    }
 } catch (Exception $e) {
-    respond_error("L'email n'a pas pu être envoyé. Erreur : {$mail->ErrorInfo}");
+    respond_error("L'email n'a pas pu ÃƒÂªtre envoyÃƒÂ©. Erreur : {$mail->ErrorInfo}");
 }	 
 	 
      //mail($email, "Activate your account", "Click this link: $activation_link");
@@ -233,10 +238,10 @@ Best regards,<br>
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // 2. Vérification du mot de passe
+        // 2. VÃƒÂ©rification du mot de passe
         if ($user && password_verify($password, $user['password'])) {
             
-            // 3. NOUVELLE VÉRIFICATION : Le compte est-il actif ?
+            // 3. NOUVELLE VÃƒâ€°RIFICATION : Le compte est-il actif ?
             if ((int)$user['is_active'] !== 1) {
                 respond_error('Your account is not activated. Please check your emails.');
             }
@@ -254,7 +259,7 @@ Best regards,<br>
         $idToken = trim($data['id_token'] ?? '');
         if ($idToken === '') respond_error('Missing id_token.');
 
-        // parse local du JWT (remplacer par une vérif signature en prod)
+        // parse local du JWT (remplacer par une vÃƒÂ©rif signature en prod)
         $parts = explode('.', $idToken);
         if (count($parts) !== 3) respond_error('Malformed id_token.');
         $payloadJson = b64url_decode($parts[1]);
@@ -294,16 +299,16 @@ Best regards,<br>
     // -------- LOGIN WALLET (EVM) --------
     if ($action === 'login_wallet') {
 
-        // --- PHASE 2: Compléter l'inscription (Popup Modal) ---
+        // --- PHASE 2: ComplÃƒÂ©ter l'inscription (Popup Modal) ---
         if (($data['phase'] ?? '') === 'complete_signup') {
             
-            // Récupérer l'adresse vérifiée de la session (placée en Phase 1)
+            // RÃƒÂ©cupÃƒÂ©rer l'adresse vÃƒÂ©rifiÃƒÂ©e de la session (placÃƒÂ©e en Phase 1)
             $ver = $_SESSION['evm_verified'] ?? null;
             if (!$ver || empty($ver['address']) || empty($ver['ts']) || (time() - (int)$ver['ts'] > 300)) {
                 respond_error('Session not verified for EVM or expired. Please sign again.');
             }
             
-            $wallet_address = $ver['address']; // Utiliser l'adresse sécurisée de la session
+            $wallet_address = $ver['address']; // Utiliser l'adresse sÃƒÂ©curisÃƒÂ©e de la session
             $first = trim($data['first_name'] ?? '');
             $last  = trim($data['last_name'] ?? '');
             $email = trim($data['email'] ?? '');
@@ -312,7 +317,7 @@ Best regards,<br>
                 respond_error('Missing or invalid required fields.');
             }
 
-            // ** CORRECTION DEMANDÉE : VÉRIFICATION DE L'EMAIL **
+            // ** CORRECTION DEMANDÃƒâ€°E : VÃƒâ€°RIFICATION DE L'EMAIL **
             $stmt = $pdo->prepare("SELECT id FROM user WHERE email = ?");
             $stmt->execute([$email]);
             if ($stmt->fetchColumn()) {
@@ -320,7 +325,7 @@ Best regards,<br>
             }
             // ** FIN CORRECTION **
             
-            // L'email est unique, créer le compte
+            // L'email est unique, crÃƒÂ©er le compte
             $token  = bin2hex(random_bytes(32));
             $invite = generate_unique_invite_code($pdo);
             $randPass = password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT);
@@ -339,19 +344,19 @@ Best regards,<br>
             respond_success();
         }
 
-        // --- PHASE 1: Vérification de l'adresse (connexion initiale) ---
+        // --- PHASE 1: VÃƒÂ©rification de l'adresse (connexion initiale) ---
         $wallet = strtolower(trim($data['wallet_address'] ?? ''));
         if (!is_valid_evm($wallet)) {
             respond_error('Missing or invalid wallet address.');
         }
 
-        // (!!) AVERTISSEMENT DE SÉCURITÉ :
-        // Votre script original NE VÉRIFIE PAS LA SIGNATURE (SIWE).
+        // (!!) AVERTISSEMENT DE SÃƒâ€°CURITÃƒâ€° :
+        // Votre script original NE VÃƒâ€°RIFIE PAS LA SIGNATURE (SIWE).
         // Un attaquant peut usurper n'importe quelle adresse.
-        // Je m'en tiens à la logique de votre fichier (sans vérification) 
-        // mais je vous recommande fortement d'implémenter la vérification de signature.
+        // Je m'en tiens ÃƒÂ  la logique de votre fichier (sans vÃƒÂ©rification) 
+        // mais je vous recommande fortement d'implÃƒÂ©menter la vÃƒÂ©rification de signature.
 
-        // L'utilisateur existe-t-il déjà ?
+        // L'utilisateur existe-t-il dÃƒÂ©jÃƒÂ  ?
         $stmt = $pdo->prepare("SELECT id FROM user WHERE wallet_address = ?");
         $stmt->execute([$wallet]);
         $uid = $stmt->fetchColumn();
@@ -363,14 +368,14 @@ Best regards,<br>
             respond_success();
         }
 
-        // Non: Marquer la session comme vérifiée et demander l'inscription (Phase 2)
+        // Non: Marquer la session comme vÃƒÂ©rifiÃƒÂ©e et demander l'inscription (Phase 2)
         $_SESSION['evm_verified'] = ['address' => $wallet, 'ts' => time()];
         respond_error('Wallet not found, signup required.', 200, ['need_signup' => true]);
     }
 
          // -------- LOGIN PHANTOM (Solana) --------
    	
-		// ---- Vérification Ed25519 (Phantom / Solana) avec libsodium ----
+		// ---- VÃƒÂ©rification Ed25519 (Phantom / Solana) avec libsodium ----
 
     // -------- LOGIN PHANTOM (Solana) --------
     if ($action === 'login_phantom') {
@@ -378,9 +383,9 @@ Best regards,<br>
             session_start();
         }
 
-        // PHASE 2: Compléter inscription depuis la popup, sans re-signer
+        // PHASE 2: ComplÃƒÂ©ter inscription depuis la popup, sans re-signer
         if (($data['phase'] ?? '') === 'complete_signup') {
-            // Doit venir juste après une phase 1 validée
+            // Doit venir juste aprÃƒÂ¨s une phase 1 validÃƒÂ©e
             $ver = $_SESSION['phantom_verified'] ?? null;
             if (!$ver || empty($ver['pubkey']) || empty($ver['ts']) || (time() - (int)$ver['ts'] > 300)) {
                 respond_error('Session not verified for Phantom or expired. Please sign again.');
@@ -390,12 +395,12 @@ Best regards,<br>
             $last  = trim($data['last_name'] ?? '');
             $email = trim($data['email'] ?? '');
             
-            // Validation améliorée
+            // Validation amÃƒÂ©liorÃƒÂ©e
             if ($first === '' || $last === '' || !is_valid_email($email)) {
                 respond_error('Missing or invalid required fields.');
             }
             
-            // ** CORRECTION DEMANDÉE : VÉRIFICATION DE L'EMAIL **
+            // ** CORRECTION DEMANDÃƒâ€°E : VÃƒâ€°RIFICATION DE L'EMAIL **
             $stmt = $pdo->prepare("SELECT id FROM user WHERE email = ?");
             $stmt->execute([$email]);
             if ($stmt->fetchColumn()) {
@@ -403,10 +408,10 @@ Best regards,<br>
             }
             // ** FIN CORRECTION **
 
-            // Utiliser la pubkey de la session (sécurisé)
+            // Utiliser la pubkey de la session (sÃƒÂ©curisÃƒÂ©)
             $pubkey = $ver['pubkey']; 
             
-            // Créer l’utilisateur
+            // CrÃƒÂ©er lÃ¢â‚¬â„¢utilisateur
             $token = bin2hex(random_bytes(32));
             $randPass = password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT);
             $invite = generate_unique_invite_code($pdo);
@@ -425,8 +430,8 @@ Best regards,<br>
             respond_success();
         }
 
-        // PHASE 1: Vérifier signature+nonce (SIWS). 
-        // (Le reste de votre code de Phase 1 reste inchangé)
+        // PHASE 1: VÃƒÂ©rifier signature+nonce (SIWS). 
+        // (Le reste de votre code de Phase 1 reste inchangÃƒÂ©)
         $pubkey  = trim($data['phantom_pubkey'] ?? '');
         $message = (string)($data['message'] ?? '');
         $sig_hex = strtolower(trim($data['signature'] ?? ''));
@@ -450,7 +455,7 @@ Best regards,<br>
         // Consommer le nonce (anti-replay)
         unset($_SESSION['phantom_nonce']);
 
-        // Vérification ed25519 (libsodium)
+        // VÃƒÂ©rification ed25519 (libsodium)
         if (!function_exists('sodium_crypto_sign_verify_detached')) {
             respond_error('Sodium not available on server.');
         }
@@ -485,12 +490,12 @@ Best regards,<br>
             respond_error('Invalid signature or public key.');
         }
 
-        // Le message signé est EXACTEMENT $message
+        // Le message signÃƒÂ© est EXACTEMENT $message
         if (!sodium_crypto_sign_verify_detached($sig_bin, $message, $pk_bin)) {
             respond_error('Invalid Solana signature.');
         }
 
-        // Déjà inscrit ?
+        // DÃƒÂ©jÃƒÂ  inscrit ?
         $stmt = $pdo->prepare("SELECT id FROM user WHERE phantom_pubkey = ?");
         $stmt->execute([$pubkey]);
         $uid = $stmt->fetchColumn();
@@ -500,11 +505,11 @@ Best regards,<br>
             respond_success();
         }
 
-        // Pas inscrit : marquer la session comme "clé vérifiée" pour 5 min
+        // Pas inscrit : marquer la session comme "clÃƒÂ© vÃƒÂ©rifiÃƒÂ©e" pour 5 min
         $_SESSION['phantom_verified'] = ['pubkey' => $pubkey, 'ts' => time()];
         
         // (Le reste de votre code avec l'ancienne logique est maintenant inatteignable
-        // grâce à la ligne ci-dessous, ce qui est correct)
+        // grÃƒÂ¢ce ÃƒÂ  la ligne ci-dessous, ce qui est correct)
         
         respond_error('Phantom key not found, signup required.', 200, ['need_signup'=>true]);
     }
@@ -517,3 +522,4 @@ Best regards,<br>
     respond_error('Internal server error.', 500);
 }
 ?>
+

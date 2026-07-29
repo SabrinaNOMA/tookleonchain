@@ -20,7 +20,7 @@ $sale_name = isset($_GET['sale_name']) ? urldecode($_GET['sale_name']) : null;
 $redirect_to = $_GET['redirect_to'] ?? 'portfolio'; 
 
 if (!$project_id || !$sale_name) {
-    header('Location: /portfolio?error=missing_details');
+    header('Location: /investor/portfolio?error=missing_details');
     exit();
 }
 
@@ -36,7 +36,7 @@ try {
     ]);
 
     if (!$stmt->fetch()) {
-        header('Location: /portfolio?error=access_denied');
+        header('Location: /investor/portfolio?error=access_denied');
         exit();
     }
     
@@ -53,12 +53,12 @@ try {
         header('Location: /' . $redirect_to);
     } else {
         // Fallback to portfolio if an invalid redirect is specified
-        header('Location: /portfolio');
+        header('Location: /investor/portfolio');
     }
     exit();
 
 } catch (PDOException $e) {
     error_log('Error in select_investment.php: ' . $e->getMessage());
-    header('Location: /portfolio?error=db_error');
+    header('Location: /investor/portfolio?error=db_error');
     exit();
 }

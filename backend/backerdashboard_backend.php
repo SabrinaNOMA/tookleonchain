@@ -61,7 +61,7 @@ function getInvestorStatus($investmentStatus, $paymentStatus, $saleStatus) {
     }
     
     // Active / Paid (FIXED: Changed 'Payment Received' to 'Active')
-    if ($inv === 'in_escrow' && $pay === 'successful' && $is_live_sale) {
+    if (in_array($inv, ['in_escrow', 'released_to_creator']) && $pay === 'successful' && $is_live_sale) {
         return ['status' => 'Active', 'description' => 'Payment received - campaign active.'];
     }
     
@@ -175,10 +175,12 @@ try {
             tsp.status as sale_status,
             tsp.sale_terms_json,
             tsp.contract_address as sale_contract_address, -- The Smart Vault
+            tsp.fee_settled,
+            tsp.gnosis_safe_address,
             
             -- AUDIT TRAIL (Hashes)
             (SELECT p.status FROM payments p WHERE p.investment_id = i.id ORDER BY p.created_at DESC LIMIT 1) as payment_status,
-            (SELECT p.transaction_hash FROM payments p WHERE p.investment_id = i.id ORDER BY p.created_at DESC LIMIT 1) as payment_tx_hash,
+            COALESCE((SELECT p.transaction_hash FROM payments p WHERE p.investment_id = i.id ORDER BY p.created_at DESC LIMIT 1), i.payment_tx_hash) as payment_tx_hash,
             i.distribution_tx_hash,
             i.refund_tx_hash,
             

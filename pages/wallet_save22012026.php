@@ -895,7 +895,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fd.append('address', address);
 
             // CHANGED PATH: Pointing to backend/save_coinbase_backend.php
-            fetch('backend/save_coinbase_backend.php', { method: 'POST', body: fd })
+            fetch('/backend/save_coinbase_backend.php', { method: 'POST', body: fd })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
@@ -974,7 +974,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 newConfirm.textContent = "Deleting...";
                 
                 // Call Backend (Use Relative Path)
-                fetch('backend/delete_coinbase_backend.php', { method: 'POST' })
+                fetch('/backend/delete_coinbase_backend.php', { method: 'POST' })
                 .then(r => {
                     if(!r.ok) throw new Error("Backend not found");
                     return r.json();

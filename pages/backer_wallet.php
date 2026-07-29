@@ -38,11 +38,18 @@ try {
         }
     }
     
+    $user_email = $_SESSION['user_email'] ?? $_SESSION['email'] ?? '';
     if (isset($_SESSION['user_id']) && $pdo) {
         // UPDATED: Using 'coinbase_wallet_adress' (one 'd') to match your DB
-        $stmt = $pdo->prepare("SELECT coinbase_wallet_adress FROM user WHERE id = :uid LIMIT 1");
+        $stmt = $pdo->prepare("SELECT coinbase_wallet_adress, email FROM user WHERE id = :uid LIMIT 1");
         $stmt->execute([':uid' => $_SESSION['user_id']]);
-        $existingCoinbaseWallet = $stmt->fetchColumn();
+        $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($userRow) {
+            $existingCoinbaseWallet = $userRow['coinbase_wallet_adress'] ?? null;
+            if (empty($user_email) && !empty($userRow['email'])) {
+                $user_email = $userRow['email'];
+            }
+        }
     }
 } catch (Exception $e) {
     $dbError = $e->getMessage();
@@ -110,6 +117,12 @@ try {
         transition: all 0.2s;
     }
     .modern-input:focus { border-color: #111827; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05); }
+
+    .form-input, .form-input[readonly], input[readonly] {
+        background-color: #ffffff !important;
+        color: #1f2937;
+        border-color: #e5e7eb;
+    }
 
     /* Address Result Chip */
     .address-chip {
@@ -206,20 +219,25 @@ try {
 
     /* Modern OTP Input Style */
     #branded-modal-input {
-        font-family: 'Courier New', Courier, monospace; 
-        letter-spacing: 0.5rem;
+        font-family: 'Outfit', 'Inter', monospace;
+        letter-spacing: 0.6rem;
         font-size: 1.5rem;
+        font-weight: 700;
         text-align: center;
         border: 2px solid #e5e7eb;
-        border-radius: 0.75rem;
-        padding: 0.75rem;
+        border-radius: 1rem;
+        padding: 0.85rem;
         transition: all 0.2s;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.02) inset;
+        background-color: #f8fafc;
+        color: #0f172a;
+        width: 100%;
         margin-top: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03) inset;
     }
     #branded-modal-input:focus {
-        border-color: #4f46e5;
-        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        border-color: #9333ea;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.12);
         outline: none;
     }
 
@@ -252,15 +270,8 @@ try {
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Manage Wallets</h1>
                 <p class="text-sm text-gray-500 mt-1">Connect your existing wallets or create a new one.</p>
-            </div>
-            
-            <div class="flex gap-3">
-                <button type="button" class="btn btn-neutral text-xs open-onramp-trigger">
-                    <i data-lucide="credit-card" class="w-4 h-4 mr-2 text-gray-400"></i>
-                    Fund your wallet
-                </button>
-            </div>
         </div>
+
         
         <!-- ERROR DISPLAY FOR DEBUGGING -->
         <?php if($dbError): ?>
@@ -270,7 +281,7 @@ try {
         <?php endif; ?>
 
         <!-- VERTICAL STACK LAYOUT -->
-        <div class="flex flex-col gap-8">
+        <div class="flex flex-col gap-6">
             
             <!-- SECTION 1: External Wallets -->
             <div class="w-full">
@@ -294,112 +305,57 @@ try {
                 </div>
             </div>
 
-            <!-- SECTION 2: Embedded Wallet (Below & Same Size) -->
+            <!-- ADDITIONAL WALLET SERVICES (SMOOTH MODERN DESIGN) -->
             <div class="w-full">
-                <!-- Case 1: Already Exists (UPDATED UI) -->
-                <div id="existing-wallet-card" class="simple-card p-6" style="<?php echo empty($existingCoinbaseWallet) ? 'display:none;' : ''; ?>">
-                    <!-- Header with Badge -->
-                    <div class="flex items-center justify-between mb-6">
-                         <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                            <i data-lucide="wallet" class="w-4 h-4 text-gray-500"></i>
-                            Embedded Wallet Active
-                        </h3>
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-green-600 bg-green-50 border border-green-100 px-2 py-1 rounded">Connected</span>
-                    </div>
-                    
-                    <!-- Address Display -->
-                    <div class="coinbase-address-display mb-6">
-                        <span id="saved-wallet-address" class="font-mono text-xs text-gray-600 break-all"><?php echo htmlspecialchars($existingCoinbaseWallet ?? ''); ?></span>
-                        <button type="button" class="text-indigo-600 hover:text-indigo-800" onclick="copySavedAddress()">
-                            <i data-lucide="copy" class="w-4 h-4"></i>
-                        </button>
+                <div class="simple-card p-6 bg-white shadow-sm border border-gray-100">
+                    <div class="mb-5">
+                        <h2 class="text-base font-semibold text-gray-800 flex items-center gap-2">
+                            <span>Optional Services</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-purple-600 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-full">Additional</span>
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Access additional non-custodial utilities or fund your connected wallets.
+                        </p>
                     </div>
 
-                    <!-- Divider -->
-                    <div class="h-px bg-gray-100 w-full mb-6"></div>
-
-                    <!-- Actions Section -->
-                    <div class="space-y-4">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Security & Management</h4>
-                        
-                        <!-- REVEAL KEY FEATURE -->
-                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                            <div>
-                                 <h5 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                                     Private Key
-                                 </h5>
-                                 <p class="text-xs text-gray-500 mt-1 max-w-lg">
-                                    <i data-lucide="shield-alert" class="w-3 h-3 inline mr-1 text-orange-500"></i>
-                                    <span class="font-medium text-gray-700">TOOKLE does not see or have access to your private key.</span>
-                                    It is stored securely on your device.
-                                 </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Service 1: Embedded Wallet -->
+                        <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-200 transition-all group">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 shrink-0 group-hover:scale-105 transition-transform">
+                                    <i data-lucide="zap" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-xs font-semibold text-gray-900">Embedded Wallet Service</h3>
+                                        <span class="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">Being Integrated</span>
+                                    </div>
+                                    <p class="text-[11px] text-gray-500 mt-0.5">2-of-2 MPC non-custodial EVM wallet</p>
+                                </div>
                             </div>
-                            <button type="button" id="export-wallet-btn" class="btn btn-neutral text-xs whitespace-nowrap">
-                                <i data-lucide="eye" class="w-4 h-4 mr-2"></i> Reveal Private Key
+                            <button type="button" class="btn btn-neutral text-xs px-3.5 py-2 whitespace-nowrap open-embedded-modal-trigger">
+                                Open Service
                             </button>
                         </div>
 
-                        <!-- DELETE WALLET FEATURE -->
-                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-red-50/50 rounded-lg border border-red-100/50">
-                            <div>
-                                 <h5 class="text-sm font-semibold text-red-900">Danger Zone</h5>
-                                 <p class="text-xs text-red-800/70 mt-1">
-                                    Remove this wallet from your account. This action cannot be undone unless you have backed up your key.
-                                 </p>
+                        <!-- Service 2: Fund Wallet -->
+                        <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-200 transition-all group">
+                            <div class="flex items-center gap-3.5">
+                                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                                    <i data-lucide="credit-card" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-xs font-semibold text-gray-900">Fiat On-Ramp</h3>
+                                        <span class="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">Being Integrated</span>
+                                    </div>
+                                    <p class="text-[11px] text-gray-500 mt-0.5">Fund your wallet with fiat currency</p>
+                                </div>
                             </div>
-                            <button type="button" id="delete-wallet-btn" class="btn btn-danger-outline text-xs whitespace-nowrap">
-                                <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> Delete Wallet
+                            <button type="button" class="btn btn-neutral text-xs px-3.5 py-2 whitespace-nowrap open-onramp-trigger">
+                                Fund Wallet
                             </button>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Case 2: Create New (Simplified UI) -->
-                <div id="create-wallet-section" style="<?php echo !empty($existingCoinbaseWallet) ? 'display:none;' : ''; ?>">
-                    
-                    <!-- BOX STYLE CHANGE: White/Blue Border to look PREMIUM/ACTIVE -->
-                    <div class="simple-card p-6 bg-indigo-50/20 border border-indigo-100 shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h2 class="text-base font-bold text-indigo-950 mb-1">No wallet yet?</h2>
-                                <p class="text-xs text-indigo-800/70">
-                                    Create a new secure embedded wallet using just your email.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Phase 1: Creation -->
-                        <div class="space-y-3 max-w-md"> 
-                            <!-- INPUT STYLE: Clean white input -->
-                            <input type="email" id="email-input" placeholder="Enter your email" class="modern-input bg-white border-indigo-100 focus:border-indigo-500 focus:ring-indigo-100">
-                            
-                            <!-- Connect to Main.js logic -->
-                            <!-- ADDED type="button" to prevent form submission -->
-                            <button type="button" id="wallet-btn" class="btn btn-primary w-full text-xs py-2.5 mt-3 justify-center">
-                                <i data-lucide="mail" class="w-4 h-4 mr-2"></i> Create Embedded Wallet
-                            </button>
-                        </div>
-
-                        <!-- Hidden Result Area -->
-                        <div id="address-container" class="address-chip bg-white shadow-sm max-w-md border border-indigo-100">
-                            <div class="flex flex-col min-w-0">
-                                <span class="text-[10px] uppercase font-bold text-gray-400">New ID</span>
-                                <span id="wallet-address" class="font-bold text-gray-800 text-xs truncate"></span>
-                            </div>
-                            <button type="button" class="text-indigo-600 text-xs font-bold hover:underline ml-2" onclick="copyAddressToClipboard()">Copy</button>
-                        </div>
-
-                        <!-- Phase 2: Linking -->
-                        <div id="step-2-area" class="step-hidden mt-4 pt-4 border-t border-indigo-100 max-w-md">
-                            <p class="text-xs text-indigo-900 mb-2 font-semibold">Confirm to link:</p>
-                            <div class="flex gap-2">
-                                <input type="text" id="manual-address-input" class="modern-input bg-white text-xs border-indigo-100" placeholder="Paste 0x... address">
-                                <button type="button" id="manual-save-btn" class="btn btn-success px-3 py-1">
-                                    <i data-lucide="check" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
@@ -453,7 +409,63 @@ try {
               CDP_PROJECT_ID: "<?= htmlspecialchars($CDP_PROJECT_ID, ENT_QUOTES) ?>",
               CDP_ENV: "<?= htmlspecialchars($CDP_ENV, ENT_QUOTES) ?>",
               CSRF_TOKEN: "<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES) ?>",
+              USER_EMAIL: "<?= htmlspecialchars($user_email ?? '', ENT_QUOTES) ?>",
               
+              askEmail: function() {
+                return new Promise((resolve, reject) => {
+                    const modal = document.getElementById('branded-modal');
+                    const msg = document.getElementById('branded-modal-message');
+                    const title = document.getElementById('branded-modal-title');
+                    const inputContainer = document.getElementById('branded-modal-input-container');
+                    const input = document.getElementById('branded-modal-input');
+                    const actions = document.getElementById('branded-modal-actions');
+                    const confirmActions = document.getElementById('branded-modal-confirm-actions');
+                    const confirmBtn = document.getElementById('branded-modal-confirm-button');
+                    const iconContainer = document.getElementById('branded-modal-icon-container');
+                    const icon = document.getElementById('branded-modal-icon');
+
+                    title.textContent = "Email Required";
+                    msg.textContent = "Please enter your email address to continue with your Coinbase embedded wallet.";
+                    iconContainer.className = "mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-purple-50 mb-5 shadow-sm border border-purple-100";
+                    icon.setAttribute('data-lucide', 'mail');
+                    icon.className = "h-7 w-7 text-purple-600";
+
+                    inputContainer.style.display = 'block';
+                    actions.style.display = 'none';
+                    confirmActions.style.display = 'block';
+                    input.type = 'email';
+                    input.placeholder = 'you@example.com';
+                    input.value = window.TOOKLE.USER_EMAIL || '';
+
+                    setTimeout(() => input.focus(), 100);
+
+                    modal.classList.add('show');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                    const handleConfirm = () => {
+                        const val = input.value.trim();
+                        if (val.length > 0) {
+                            cleanup();
+                            resolve(val);
+                        } else {
+                            input.style.borderColor = '#ef4444';
+                            setTimeout(() => input.style.borderColor = '#e5e7eb', 500);
+                        }
+                    };
+
+                    const cleanup = () => {
+                        modal.classList.remove('show');
+                        inputContainer.style.display = 'none';
+                        actions.style.display = 'block';
+                        confirmActions.style.display = 'none';
+                        confirmBtn.removeEventListener('click', handleConfirm);
+                    };
+
+                    confirmBtn.addEventListener('click', handleConfirm);
+                    input.onkeydown = (e) => { if(e.key === 'Enter') handleConfirm(); };
+                });
+              },
+
               // OTP Handler for Main.js to call
               askOtp: function() {
                 return new Promise((resolve, reject) => {
@@ -470,10 +482,10 @@ try {
 
                     // Setup UI for OTP Input
                     title.textContent = "Verification Required";
-                    msg.textContent = "Enter the verification code sent to your email.";
-                    iconContainer.className = "mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 mb-5 shadow-sm border border-indigo-100";
+                    msg.textContent = "Enter the 6-digit verification code sent to your email by Coinbase Security.";
+                    iconContainer.className = "mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-purple-50 mb-5 shadow-sm border border-purple-100";
                     icon.setAttribute('data-lucide', 'shield-check'); 
-                    icon.className = "h-7 w-7 text-indigo-600";
+                    icon.className = "h-7 w-7 text-purple-600";
                     
                     inputContainer.style.display = 'block';
                     actions.style.display = 'none';
@@ -524,6 +536,118 @@ try {
         <script type="module" src="./main.js?v=<?= time() ?>"></script>
     </div>
 </main>
+
+<!-- EMBEDDED WALLET ADDITIONAL SERVICE MODAL -->
+<div id="embedded-wallet-modal" class="modal-overlay">
+    <div class="modal-content relative bg-white max-w-xl p-6 md:p-8 rounded-2xl shadow-xl">
+        <div class="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">T</div>
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Embedded Wallet Service</h3>
+                    <p class="text-xs text-gray-400">Optional non-custodial EVM wallet utility</p>
+                </div>
+            </div>
+            <button type="button" class="text-gray-400 hover:text-gray-600 close-embedded-modal-btn">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="mb-6 p-4 bg-amber-50/90 border border-amber-200 rounded-xl text-amber-900 text-xs leading-relaxed flex items-start gap-3">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+            <div>
+                <strong>Being Integrated:</strong> Embedded Wallets are currently being integrated as an additional optional service. <strong>Use at your own risk.</strong> Please verify all addresses and transactions before confirming.
+            </div>
+        </div>
+
+        <div id="existing-wallet-card" class="simple-card p-6 border border-gray-200" style="<?php echo empty($existingCoinbaseWallet) ? 'display:none;' : ''; ?>">
+            <div class="flex items-center justify-between mb-6">
+                 <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <i data-lucide="wallet" class="w-4 h-4 text-gray-500"></i>
+                    Embedded Wallet Active
+                </h3>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-green-600 bg-green-50 border border-green-100 px-2 py-1 rounded">Connected</span>
+            </div>
+
+            <div class="coinbase-address-display mb-6">
+                <span id="saved-wallet-address" class="font-mono text-xs text-gray-600 break-all"><?php echo htmlspecialchars($existingCoinbaseWallet ?? ''); ?></span>
+                <button type="button" class="text-indigo-600 hover:text-indigo-800" onclick="copySavedAddress()">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="h-px bg-gray-100 w-full mb-6"></div>
+
+            <div class="space-y-4">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Security & Management</h4>
+
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div>
+                         <h5 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                             Private Key
+                         </h5>
+                         <p class="text-xs text-gray-500 mt-1 max-w-lg">
+                            <i data-lucide="shield-alert" class="w-3 h-3 inline mr-1 text-orange-500"></i>
+                            <span class="font-medium text-gray-700">TOOKLE does not see or have access to your private key.</span>
+                            It is stored securely on your device.
+                         </p>
+                    </div>
+                    <button type="button" id="export-wallet-btn" class="btn btn-neutral text-xs whitespace-nowrap">
+                        <i data-lucide="eye" class="w-4 h-4 mr-2"></i> Reveal Private Key
+                    </button>
+                </div>
+
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-red-50/50 rounded-lg border border-red-100/50">
+                    <div>
+                         <h5 class="text-sm font-semibold text-red-900">Danger Zone</h5>
+                         <p class="text-xs text-red-800/70 mt-1">
+                            Remove this wallet from your account. This action cannot be undone unless you have backed up your key.
+                         </p>
+                    </div>
+                    <button type="button" id="delete-wallet-btn" class="btn btn-danger-outline text-xs whitespace-nowrap">
+                        <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> Delete Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="create-wallet-section" style="<?php echo !empty($existingCoinbaseWallet) ? 'display:none;' : ''; ?>">
+            <div class="simple-card p-6 bg-purple-50/20 border border-purple-100 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-gray-900 mb-1">No wallet yet?</h2>
+                        <p class="text-xs text-gray-500">Create a new secure embedded wallet using just your email.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3 w-full">
+                    <input type="email" id="email-input" value="<?= htmlspecialchars($user_email ?? '', ENT_QUOTES) ?>" placeholder="Enter your email" class="modern-input bg-white border-gray-200 focus:border-purple-500 focus:ring-purple-100 w-full">
+                    <button type="button" id="wallet-btn" class="btn btn-primary w-full text-xs py-2.5 mt-3 justify-center">
+                        <i data-lucide="mail" class="w-4 h-4 mr-2"></i> Create Embedded Wallet
+                    </button>
+                </div>
+
+                <div id="address-container" class="address-chip bg-white shadow-sm w-full border border-purple-100 mt-4">
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-[10px] uppercase font-bold text-gray-400">New ID</span>
+                        <span id="wallet-address" class="font-bold text-gray-800 text-xs truncate"></span>
+                    </div>
+                    <button type="button" class="text-purple-600 text-xs font-bold hover:underline ml-2" onclick="copyAddressToClipboard()">Copy</button>
+                </div>
+
+                <div id="step-2-area" class="step-hidden mt-4 pt-4 border-t border-purple-100 w-full">
+                    <p class="text-xs text-gray-800 mb-2 font-semibold">Confirm to link:</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="manual-address-input" class="modern-input bg-white text-xs border-purple-100" placeholder="Paste 0x... address">
+                        <button type="button" id="manual-save-btn" class="btn btn-success px-3 py-1">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- TOP UP MODAL -->
 <div id="onramp-modal" class="modal-overlay">
@@ -611,12 +735,13 @@ try {
 <!-- UNIVERSAL BRANDED MODAL (Used for Alerts, Success AND OTP Input) -->
 <div id="branded-modal" class="modal-overlay">
     <div class="branded-modal-content relative">
-        <!-- Brand Watermark -->
-        <div class="absolute top-6 left-0 w-full flex justify-center pointer-events-none">
-             <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300">TOOKLE</span>
+        <div class="flex items-center justify-center gap-2 mb-4">
+             <div class="w-7 h-7 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-purple-600/30">T</div>
+             <span class="text-xs font-bold tracking-widest uppercase text-gray-900">TOOKLE</span>
+             <span class="text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full">Security</span>
         </div>
 
-        <div class="mt-8 mb-4">
+        <div class="mt-6 mb-4">
             <!-- Icon Container (Dynamic) -->
             <div id="branded-modal-icon-container" class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-black mb-5 shadow-lg shadow-gray-200 transition-all duration-300">
                 <i id="branded-modal-icon" data-lucide="check" class="h-8 w-8 text-white"></i>
@@ -664,12 +789,45 @@ try {
                 Verify
             </button>
         </div>
+
+        <div class="mt-6 pt-4 border-t border-gray-100 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-purple-600"></i>
+            <span>Secured by Coinbase MPC Threshold Cryptography</span>
+        </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
+
+    // --- EMBEDDED WALLET SERVICE MODAL ---
+    const embeddedModal = document.getElementById('embedded-wallet-modal');
+    const openEmbeddedTriggers = document.querySelectorAll('.open-embedded-modal-trigger');
+    const closeEmbeddedBtns = document.querySelectorAll('.close-embedded-modal-btn');
+
+    openEmbeddedTriggers.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if(embeddedModal) {
+                embeddedModal.classList.add('show');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        });
+    });
+
+    closeEmbeddedBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if(embeddedModal) embeddedModal.classList.remove('show');
+        });
+    });
+
+    if(embeddedModal) {
+        embeddedModal.addEventListener('click', (e) => {
+            if(e.target === embeddedModal) embeddedModal.classList.remove('show');
+        });
+    }
+
     // --- TOP UP MODAL LOGIC ---
     const onrampModal = document.getElementById('onramp-modal');
     const onrampTriggers = document.querySelectorAll('.open-onramp-trigger');
@@ -820,7 +978,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('branded-modal-confirm-actions').style.display = 'none';
         document.getElementById('branded-modal-delete-actions').style.display = 'none';
 
-        document.getElementById('branded-modal-message').textContent = message;
+        let displayMessage = message;
+        if (String(displayMessage).toLowerCase().includes('network error') || String(displayMessage).toLowerCase().includes('failed to fetch')) {
+            displayMessage = "Network Error (CORS): Coinbase CDP API blocked the request from http://localhost:8000. Please add http://localhost:8000 to the Allowed Domains list in your Coinbase Developer Portal settings.";
+        }
+
+        document.getElementById('branded-modal-message').textContent = displayMessage;
         modal.classList.add('show');
         
         // HARDENED CLOSE BUTTON: Prevent Default to avoid any accidental form submission
@@ -911,7 +1074,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fd.append('address', address);
 
             // CHANGED PATH: Pointing to backend/save_coinbase_backend.php
-            fetch('backend/save_coinbase_backend.php', { method: 'POST', body: fd })
+            fetch('/backend/save_coinbase_backend.php', { method: 'POST', body: fd })
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
@@ -990,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 newConfirm.textContent = "Deleting...";
                 
                 // Call Backend (Use Relative Path)
-                fetch('backend/delete_coinbase_backend.php', { method: 'POST' })
+                fetch('/backend/delete_coinbase_backend.php', { method: 'POST' })
                 .then(r => {
                     if(!r.ok) throw new Error("Backend not found");
                     return r.json();
@@ -1091,14 +1254,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const labelInput = document.createElement('input'); labelInput.type = 'text'; labelInput.name = 'walletName[]'; labelInput.className = 'form-input border rounded p-2 w-full'; labelInput.value = wallet.label || ''; 
         const addressInput = document.createElement('input'); addressInput.type = 'text'; addressInput.name = 'walletAddress[]'; addressInput.className = 'form-input border rounded p-2 w-full'; addressInput.value = wallet.wallet_address || '';
         
-        if (!isNew) { labelInput.readOnly = true; addressInput.readOnly = true; labelInput.className += ' bg-gray-100'; addressInput.className += ' bg-gray-100'; }
+        if (!isNew) { labelInput.readOnly = true; addressInput.readOnly = true; labelInput.className += ' bg-white'; addressInput.className += ' bg-white'; }
 
         let networkElement;
         if (isNew) {
-            networkElement = document.createElement('select'); networkElement.name = 'walletNetwork[]'; networkElement.className = 'form-select border rounded p-2 w-full';
+            networkElement = document.createElement('select'); networkElement.name = 'walletNetwork[]'; networkElement.className = 'form-select border rounded p-2 w-full bg-white';
             networks.forEach(net => { const opt = document.createElement('option'); opt.value = net.value; opt.textContent = net.name; networkElement.appendChild(opt); });
         } else {
-            networkElement = document.createElement('input'); networkElement.type = 'text'; networkElement.name = 'walletNetwork[]'; networkElement.className = 'form-input border rounded p-2 w-full bg-gray-100'; networkElement.value = wallet.network || ''; networkElement.readOnly = true;
+            networkElement = document.createElement('input'); networkElement.type = 'text'; networkElement.name = 'walletNetwork[]'; networkElement.className = 'form-input border rounded p-2 w-full bg-white'; networkElement.value = wallet.network || ''; networkElement.readOnly = true;
         }
 
         const removeButton = document.createElement('button'); removeButton.type = 'button'; removeButton.className = 'text-red-500 hover:text-red-700';
@@ -1111,7 +1274,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function fetchWallets() {
-        fetch('backend/wallet_backend.php').then(r => r.json()).then(data => {
+        fetch('/backend/wallet_backend.php').then(r => r.json()).then(data => {
             walletList.querySelectorAll('.wallet-item').forEach(item => item.remove());
             if (data.wallets) data.wallets.forEach(wallet => createWalletRow(wallet));
         });
@@ -1120,7 +1283,7 @@ document.addEventListener('DOMContentLoaded', function() {
     addWalletButton.addEventListener('click', (e) => { e.preventDefault(); createWalletRow(); saveChangesButton.classList.remove('hidden'); });
     walletForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        fetch('backend/wallet_save.php', { method: 'POST', body: new FormData(walletForm) })
+        fetch('/backend/wallet_save.php', { method: 'POST', body: new FormData(walletForm) })
         .then(r => r.json()).then(d => { showModal(d.success ? 'Saved!' : 'Error'); if(d.success) { saveChangesButton.classList.add('hidden'); fetchWallets(); } });
     });
 

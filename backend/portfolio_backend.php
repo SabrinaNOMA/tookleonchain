@@ -70,8 +70,8 @@ function getInvestorStatus($investmentStatus, $paymentStatus, $saleStatus) {
         return ['status' => 'Processing', 'description' => 'The sale was a success! Funds will be distributed to the founder and your allocation is being prepared.'];
     }
 
-    // 4. FULFILLED
-    if ($invStatus === 'released_to_creator' && ($payStatus === 'successful' || $payStatus === '') && $saleStatus === 'ended_successful') {
+    // 4. FULFILLED: Funds were released to the creator, regardless of whether the sale is officially marked closed
+    if ($invStatus === 'released_to_creator' && ($payStatus === 'successful' || $payStatus === '')) {
         return ['status' => 'Fulfilled', 'description' => 'Success! The project was funded. Check your dashboard to follow your token distribution.'];
     }
     
@@ -157,6 +157,7 @@ try {
                 p.id, p.project_name, p.industry_focus, p.selected_category, tsp.country,
                 tsp.sale_name, tsp.sale_url, tsp.status, tsp.soft_cap_usd, tsp.hard_cap_usd,
                 tsp.sale_end_at as sale_end_date, tsp.video_file_path, tsp.general_images_json,
+                tsp.fee_settled, tsp.gnosis_safe_address,
                 (SELECT COALESCE(SUM(pay.amount), 0)
                  FROM payments pay
                  JOIN investments inv ON pay.investment_id = inv.id

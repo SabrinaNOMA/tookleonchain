@@ -154,7 +154,7 @@ $form_supply_value = $form_data['supply_value'] ?? $projectInfo['supply_value'] 
                     </div>
 
                     <div class="flex justify-between items-center mt-8">
-                        <a href="/tokenname" class="px-6 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg font-medium hover:bg-gray-50 transition">Back</a>
+                        <a href="<?= get_url('tokenname') ?>" class="px-6 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg font-medium hover:bg-gray-50 transition">Back</a>
                         <button type="submit" class="btn-gradient px-8 py-2 rounded-lg font-medium">Next</button>
                     </div>
                 </form>

@@ -10,35 +10,28 @@
 function get_wizard_config() {
     return [
         'describe' => [
-            'mainStep' => 'Project Overview', // Renamed from 'Describe Project'
+            'mainStep' => 'Project Overview', // Part 1: Project Overview
             'icon' => 'file-text',
             'subSteps' => [
                 'setup' => ['title' => 'Project Details', 'url' => '/setup'],
             ]
         ],
         'tokenomics' => [
-            'mainStep' => 'Funding Plan', // Renamed from 'Design Tokenomics'
+            'mainStep' => 'Funding Plan', // Part 2: Funding Plan
             'icon' => 'drafting-compass',
             'subSteps' => [
-                'token_name' => ['title' => 'Token Name', 'url' => '/tokenname'],
-                'token_supply' => ['title' => 'Token Supply', 'url' => '/tokensupply'],
-                'fundraising' => ['title' => 'Fundraising', 'url' => '/fundraising'],
-                'vesting' => ['title' => 'Vesting', 'url' => '/vesting'],
-                'validate' => ['title' => 'Validate', 'url' => '/validate'],
-
+                'token_name' => ['title' => 'Token & Supply', 'url' => '/tokenname'],
+                'token_supply' => ['title' => 'Supply & Inflation', 'url' => '/tokensupply'],
+                'fundraising' => ['title' => 'Fundraising Plan', 'url' => '/fundraising'],
             ]
         ],
         'private_sale' => [
-            'mainStep' => 'Private Sale Room', // Renamed from 'Private Sale'
+            'mainStep' => 'Private Sale Room', // Part 3: Private Sale Room
             'icon' => 'rocket',
             'subSteps' => [
-                'story' => ['title' => 'Story', 'url' => '/story'],
-                'parameter' => ['title' => 'Parameter', 'url' => '/parameter'],
-                'compliance' => ['title' => 'Compliance', 'url' => '/compliance'],
-                'approve' => ['title' => 'Validate', 'url' => '/approve'],
-
+                'story' => ['title' => 'Project Story', 'url' => '/story'],
+                'approve' => ['title' => 'Review & Launch', 'url' => '/approve'],
             ]
         ]
-        // Removed 'escrow_kyc' step to match the 3-step dashboard layout
     ];
 }

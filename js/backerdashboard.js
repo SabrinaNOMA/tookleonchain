@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- State ---
     let provider, signer, userAccount;
+    let holdingsChartInstance = null;
     let availableProviders = [];
     
     // ... (Keep existing State & Elements) ...
@@ -114,6 +115,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (error.code === 'ACTION_REJECTED') return 'User rejected transaction.';
             
             if (error.message && (error.message.includes('estimateGas') || error.code === 'CALL_EXCEPTION')) {
+                if (context.action === 'claim') {
+                    return `<b>On-chain Revert:</b> The Vesting Contract rejected the claim.<br><br>Connected Wallet: <code>${context.active?.slice(0,12)}...</code><br><br><b>Probable Cause:</b> No tokens are available to claim yet, or the distribution stream hasn't been funded by the founder.`;
+                }
                 return `<b>On-chain Revert:</b> The Vault rejected the refund.<br><br>Connected Wallet: <code>${context.active?.slice(0,12)}...</code><br>Vault Address: <code>${context.vault?.slice(0,12)}...</code><br><br><b>Probable Cause:</b> This wallet has 0 balance in the vault. Either it was already refunded, or you are connected with the wrong wallet.`;
             }
             if (error.reason) return error.reason;
@@ -326,7 +330,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     contract.getDepositedAmount(streamId)
                 ]);
 
-                const withdrawableFormatted = parseFloat(ethers.formatUnits(withdrawable, decimals));
+                const withdrawableExactString = ethers.formatUnits(withdrawable, decimals);
+                const withdrawableFormatted = parseFloat(withdrawableExactString);
                 const withdrawnFormatted = parseFloat(ethers.formatUnits(withdrawn, decimals));
                 const depositedFormatted = parseFloat(ethers.formatUnits(totalInStream, decimals));
                 const lockedFormatted = depositedFormatted - withdrawnFormatted - withdrawableFormatted;
@@ -343,7 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (rowClaimableContainer) rowClaimableContainer.classList.add('hidden');
                 } else {
                     btn.classList.remove('hidden');
-                    btn.onclick = (e) => openClaimModal(e, streamId, withdrawableFormatted, decimals);
+                    btn.onclick = (e) => openClaimModal(e, streamId, withdrawableExactString, withdrawableFormatted, decimals);
                     if (rowClaimableContainer) {
                         rowClaimableContainer.classList.remove('hidden');
                         if (rowClaimableVal) rowClaimableVal.textContent = numberFormatter.format(withdrawableFormatted);
@@ -355,29 +360,118 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (totalClaimableEl) totalClaimableEl.textContent = numberFormatter.format(globalClaimable);
         if (totalClaimedEl) totalClaimedEl.textContent = numberFormatter.format(globalClaimed);
         if (totalLockedEl) totalLockedEl.textContent = numberFormatter.format(globalLocked);
+        
+        renderOrUpdateChart(globalClaimed, globalClaimable, globalLocked);
+    }
+
+    function renderOrUpdateChart(claimed, claimable, locked) {
+        const ctx = document.getElementById('holdingsChart');
+        if (!ctx) return;
+
+        const total = claimed + claimable + locked;
+        let percentUnlocked = 0;
+        if (total > 0) {
+            percentUnlocked = Math.min(100, Math.round(((claimed + claimable) / total) * 100));
+        }
+
+        // Update Text & Progress Bar
+        const percentTextEl = document.getElementById('chart-percent-unlocked');
+        const percentLabelEl = percentTextEl ? percentTextEl.nextElementSibling : null;
+        let chartData = [claimed, claimable, locked];
+        
+        if (!userAccount) {
+            if (percentTextEl) {
+                percentTextEl.textContent = 'No Wallet';
+                percentTextEl.className = 'text-xs font-bold text-gray-500';
+            }
+            if (percentLabelEl) percentLabelEl.textContent = 'Connected';
+            chartData = [0, 0, 1]; // Solid gray circle
+        } else {
+            if (percentTextEl) {
+                percentTextEl.textContent = percentUnlocked + '%';
+                percentTextEl.className = 'text-xl font-bold text-gray-900';
+            }
+            if (percentLabelEl) percentLabelEl.textContent = 'Unlocked';
+        }
+        
+        const progressBarEl = document.getElementById('vesting-progress-bar');
+        if (progressBarEl) progressBarEl.style.width = percentUnlocked + '%';
+        
+        if (holdingsChartInstance) {
+            holdingsChartInstance.data.datasets[0].data = chartData;
+            holdingsChartInstance.update();
+        } else {
+            // Strict Brand Colors (Monochrome/Green)
+            const brandColors = [
+                '#10B981', // Emerald-500 (Claimed)
+                '#34D399', // Emerald-400 (Claimable)
+                '#E5E7EB'  // Gray-200 (Locked)
+            ];
+
+            holdingsChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Claimed', 'Claimable', 'Locked'],
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: brandColors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%', // Thin Donut
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('en-US').format(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     }
 
     // --- VESTING CLAIM LOGIC ---
     let activeStreamId = null;
     let activeDecimals = 18;
+    let activeExactMax = "0";
 
-    function openClaimModal(e, streamId, amount, decimals) {
+    function openClaimModal(e, streamId, exactAmountString, displayAmountFloat, decimals) {
         e.preventDefault();
         modalTitle.textContent = 'Claim Tokens';
         refundDetailsSection.classList.add('hidden');
         executeRefundBtn.classList.add('hidden');
         vestingDetailsSection.classList.remove('hidden');
+
         activeStreamId = streamId;
         activeDecimals = decimals;
-        claimAmountInput.value = amount; 
-        claimModalIntro.textContent = `You have ${numberFormatter.format(amount)} tokens available to claim.`;
+        activeExactMax = exactAmountString;
+        claimAmountInput.value = exactAmountString; 
+        claimModalIntro.textContent = `You have ${numberFormatter.format(displayAmountFloat)} tokens available to claim.`;
+        
         step1.classList.remove('bg-emerald-50', 'border-emerald-200');
         step1.querySelector('.step-status').classList.add('hidden');
         payFeeBtn.disabled = false;
         payFeeBtn.textContent = 'Pay Fee';
+
         step2.classList.remove('bg-white', 'border-emerald-200');
         step2.classList.add('bg-gray-50');
         claimTokensBtn.disabled = true;
+        claimTokensBtn.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+        claimTokensBtn.classList.remove('bg-emerald-600', 'text-white', 'hover:bg-emerald-700');
+
         claimModal.classList.remove('hidden');
         claimModal.classList.add('flex');
         setTimeout(() => claimModal.classList.remove('opacity-0', 'pointer-events-none'), 10);
@@ -417,9 +511,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         claimTokensBtn.textContent = 'Claiming...';
         claimTokensBtn.disabled = true;
         try {
-            const contract = new ethers.Contract(VESTING_CONTRACT_ADDRESS, VESTING_ABI, signer);
-            const amountToWithdraw = ethers.parseUnits(claimAmountInput.value, activeDecimals);
-            const tx = await contract.withdraw(activeStreamId, userAccount, amountToWithdraw);
+            const contract = new ethers.Contract(VESTING_CONTRACT_ADDRESS, [
+                "function withdraw(uint256 streamId, address to, uint128 amount) external",
+                "function withdrawMax(uint256 streamId, address to) external"
+            ], signer);
+            
+            let tx;
+            if (claimAmountInput.value === activeExactMax) {
+                // Safest route for maximum claim: Let the contract handle the exact balance
+                tx = await contract.withdrawMax(activeStreamId, userAccount);
+            } else {
+                // Partial claim
+                const amountToWithdraw = ethers.parseUnits(claimAmountInput.value, activeDecimals);
+                tx = await contract.withdraw(activeStreamId, userAccount, amountToWithdraw);
+            }
+            
             const receipt = await tx.wait();
             if (receipt.status === 1) {
                 showSuccess(receipt.hash);
@@ -427,7 +533,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             claimTokensBtn.disabled = false;
             claimTokensBtn.textContent = 'Retry Claim';
-            showError(getFriendlyErrorMessage(error));
+            showError(getFriendlyErrorMessage(error, { action: 'claim', active: userAccount }));
         }
     });
 
@@ -462,29 +568,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 3. Estimate Gas
             try {
                 await campaignContract.claimRefund.estimateGas();
-            } catch (gasErr) {
-                console.error("Contract level revert detected:", gasErr);
-                throw gasErr; 
+            } catch (err) {
+                console.error("Contract level revert detected:", err);
+                hideRefundLoading();
+                showError(getFriendlyErrorMessage(err, { action: 'refund', active: activeAddr, vault: currentEscrowAddress }));
+                return;
             }
 
-            executeRefundBtn.innerText = "Confirm in Wallet...";
+            executeRefundBtn.innerText = "Processing Transaction...";
             const tx = await campaignContract.claimRefund();
-            
-            // IMPORTANT: Optimistically allow the user to see progress
-            executeRefundBtn.innerText = "Processing...";
             const receipt = await tx.wait();
             
             if (receipt.status === 1) {
-                // 4. Force DB Update with Retries AND Keepalive
                 executeRefundBtn.innerText = "Saving to DB...";
-                
-                // We await this, but even if user navigates away, 'keepalive' inside syncRefundToDb helps.
                 await syncRefundToDb(currentInvestmentId, receipt.hash);
-                
                 showSuccess(receipt.hash);
-            } else throw new Error("On-chain transaction failure.");
+            } else {
+                throw new Error("On-chain transaction failure.");
+            }
 
         } catch (error) {
+            hideRefundLoading();
             executeRefundBtn.disabled = false;
             executeRefundBtn.textContent = 'Retry Refund';
             showError(getFriendlyErrorMessage(error, { vault: currentEscrowAddress, active: userAccount }));

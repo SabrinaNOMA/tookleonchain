@@ -198,6 +198,41 @@ $current_project_id = $project_uuid;
                                 <input type="radio" name="hosting" value="tookle" class="h-4 w-4 text-purple-600 border-gray-300 focus:ring-purple-500" required>
                                 <span class="ml-3 text-sm font-medium text-gray-900">TOOKLE</span>
                             </label>
+                            
+                            <!-- Sub-section: Direct Gnosis Routing vs. On-Chain Escrow -->
+                            <div id="tookle-settlement-details" class="hidden pl-8 pt-2 space-y-4">
+                                <label class="form-label text-xs font-semibold text-slate-700">Settlement Trust Model</label>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Card 1: Direct Gnosis Safe -->
+                                    <label class="relative flex flex-col p-4 border-2 border-slate-900 bg-slate-50/20 rounded-lg cursor-pointer transition-all" id="label-routing-multisig">
+                                        <input type="radio" name="payment_routing" value="multisig" class="sr-only" checked>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="font-bold text-xs text-slate-900">Direct Gnosis Safe</span>
+                                            <span class="text-[9px] bg-slate-900 text-white px-2 py-0.5 rounded font-medium">Direct Settle</span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500">Funds route directly to your Gnosis Safe. Settle the 3.5% TOOKLE fee on-chain post-sale.</p>
+                                    </label>
+
+                                    <!-- Card 2: On-Chain Escrow -->
+                                    <label class="relative flex flex-col p-4 border border-slate-200 rounded-lg cursor-pointer transition-all hover:bg-slate-50/50" id="label-routing-escrow">
+                                        <input type="radio" name="payment_routing" value="escrow" class="sr-only">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="font-bold text-xs text-slate-900">On-Chain Escrow</span>
+                                            <span class="text-[9px] bg-slate-100 text-slate-800 px-2 py-0.5 rounded font-medium">Trust Gated</span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500">Capital is locked in a smart contract escrow and released as milestones are completed. Automated 3.5% success fee.</p>
+                                    </label>
+                                </div>
+                                
+                                <div id="gnosis-address-container" class="block">
+                                    <label for="gnosis_safe_address" class="form-label text-xs">Gnosis Safe Address (Base Network - USDC/USDT)<span class="text-red-500">*</span></label>
+                                    <input type="text" id="gnosis_safe_address" name="gnosis_safe_address" class="form-input text-xs" placeholder="e.g. 0x71C2345678901234567890123456789012345678" required>
+                                    <p id="gnosis-address-status" class="text-[10px] text-red-500 mt-1 hidden"></p>
+                                    <p class="text-[10px] text-slate-400 mt-1">Once live, this destination address is locked and cannot be edited.</p>
+                                    <p class="text-[10px] text-slate-500 font-semibold mt-1">⚠️ Note: TOOKLE success fee (3.5%) must be paid on-chain before the token claim portal is unlocked for investors.</p>
+                                </div>
+                            </div>
+
                             <label class="flex items-center p-3 border border-gray-200 rounded-md">
                                 <input type="radio" name="hosting" value="external" class="h-4 w-4 text-purple-600 border-gray-300 focus:ring-purple-500" required>
                                 <span class="ml-3 text-sm font-medium text-gray-900">External Platform</span>

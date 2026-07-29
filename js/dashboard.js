@@ -280,7 +280,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('[id^="sale-menu-"]').forEach(m => m.classList.add('hidden'));
     });
 
-    window.startPrivateSale = function(saleId) {
+    window.startPrivateSale = function(saleJsonBase64) {
+        const sale = JSON.parse(decodeURIComponent(escape(atob(saleJsonBase64))));
+        const isDirectGnosis = sale.gnosis_safe_address && sale.gnosis_safe_address.trim() !== '';
+
         let modal = document.getElementById('start-sale-confirmation-modal');
         if (!modal) {
             modal = document.createElement('div');
@@ -288,6 +291,36 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.className = 'modal-overlay modal-center';
             modal.style.display = 'none';
             modal.style.zIndex = '1000';
+            document.body.appendChild(modal);
+        }
+
+        if (isDirectGnosis) {
+            modal.innerHTML = `
+                <div class="modal-content relative bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full">
+                    <button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="document.getElementById('start-sale-confirmation-modal').style.display='none'">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                    <div class="text-center">
+                        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 mb-4">
+                            <i data-lucide="rocket" class="h-7 w-7 text-white"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Activate Private Sale</h3>
+                        <p class="text-sm text-gray-600 leading-relaxed px-2 mb-4">
+                            This is a Direct Gnosis sale. Capital will route directly to your Gnosis Safe:
+                            <br><span class="font-mono text-xs bg-gray-100 p-1 rounded mt-2 block break-all text-slate-800">${sale.gnosis_safe_address}</span>
+                        </p>
+                        <p class="text-sm text-gray-700 bg-blue-50 border border-blue-100 p-3 rounded text-left mt-4 shadow-sm">
+                            <strong>Your Private Sale Link:</strong><br>
+                            <span class="font-mono text-xs block break-all text-blue-800 mt-1 select-all">${window.location.origin}/p/${sale.sale_url}</span>
+                        </p>
+                    </div>
+                    <div class="mt-6 flex justify-center gap-3">
+                        <button type="button" class="btn btn-secondary w-full py-2.5 font-medium" onclick="document.getElementById('start-sale-confirmation-modal').style.display='none'">Cancel</button>
+                        <button type="button" id="start-sale-confirm-btn" class="btn w-full py-2.5 font-medium shadow-md bg-slate-900 text-white hover:bg-black">Activate Now</button>
+                    </div>
+                </div>
+            `;
+        } else {
             modal.innerHTML = `
                 <div class="modal-content relative bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full">
                     <button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="document.getElementById('start-sale-confirmation-modal').style.display='none'">
@@ -308,16 +341,67 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
-            document.body.appendChild(modal);
-            if (window.lucide) window.lucide.createIcons();
         }
+        
+        if (window.lucide) window.lucide.createIcons();
+        modal.style.display = 'flex';
 
         const confirmBtn = modal.querySelector('#start-sale-confirm-btn');
         const newConfirmBtn = confirmBtn.cloneNode(true);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
 
-        newConfirmBtn.addEventListener('click', () => {
-             window.location.href = `/setup_vault?sale_id=${saleId}`;
+        newConfirmBtn.addEventListener('click', async () => {
+            if (isDirectGnosis) {
+                newConfirmBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i> Activating...';
+                newConfirmBtn.disabled = true;
+                if (window.lucide) window.lucide.createIcons();
+
+                try {
+                    const response = await fetch('/backend/go_live.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sale_id: sale.id })
+                    });
+                    const res = await response.json();
+                    
+                    if (res.success) {
+                        const linkUrl = window.location.origin + '/p/' + res.public_token;
+                        modal.innerHTML = `
+                            <div class="modal-content relative bg-white rounded-xl shadow-2xl p-6 max-w-md w-full">
+                                <button class="modal-close-btn absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="window.location.reload()">
+                                    <i data-lucide="x" class="w-6 h-6"></i>
+                                </button>
+                                <div class="text-center">
+                                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-50 mb-4">
+                                        <i data-lucide="check-circle" class="h-8 w-8 text-green-600"></i>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-gray-900 mb-2">Sale is Live!</h3>
+                                    <p class="text-sm text-gray-600 mb-4">Your Direct Gnosis sale is now active. Share this unique link with your community.</p>
+                                    
+                                    <div class="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                        <input type="text" readonly value="${linkUrl}" class="w-full bg-transparent text-sm font-medium text-gray-800 outline-none truncate" id="public-link-input">
+                                        <button onclick="navigator.clipboard.writeText(document.getElementById('public-link-input').value); this.innerHTML='<i data-lucide=\\'check\\' class=\\'w-4 h-4 text-green-600\\'></i>'; if(window.lucide) window.lucide.createIcons();" class="p-2 hover:bg-gray-200 rounded shrink-0 transition-colors">
+                                            <i data-lucide="copy" class="w-4 h-4 text-gray-600"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-6 flex justify-center">
+                                    <button type="button" class="btn w-full py-2.5 font-medium shadow-md bg-slate-900 text-white hover:bg-black" onclick="window.location.reload()">Done</button>
+                                </div>
+                            </div>
+                        `;
+                        if (window.lucide) window.lucide.createIcons();
+                    } else {
+                        throw new Error(res.error || "Failed to activate sale.");
+                    }
+                } catch (e) {
+                    alert("Error: " + e.message);
+                    newConfirmBtn.innerHTML = 'Activate Now';
+                    newConfirmBtn.disabled = false;
+                }
+            } else {
+                window.location.href = `/setup_vault?sale_id=${sale.id}`;
+            }
         });
 
         modal.style.display = 'flex';
@@ -490,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
                      actionButtons += `<a href="/sales?sale_id=${sale.id}" class="${btnClass}">Edit</a>`;
                  } else {
                      // INTERNAL DRAFT -> SHOW START PRIVATE SALE BUTTON AND VIEW DETAILS
-                     actionButtons += `<button onclick="window.startPrivateSale('${sale.id}')" class="${btnClass}">Start Private Sale</button>`;
+                     actionButtons += `<button onclick="window.startPrivateSale('${saleJsonBase64}')" class="${btnClass}">Start Private Sale</button>`;
                      // NEW: Added View Details button for self-hosted drafts
                      actionButtons += `<button onclick="window.openDetailsModal('${saleJsonBase64}')" class="${btnClass}">View Details</button>`;
                  }
@@ -572,11 +656,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         <img src="${logoSrc}" alt="" class="h-full w-full object-contain">
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-base font-semibold text-gray-900 tracking-tight">${sale.sale_name}</span>
-                        <div class="flex items-center gap-2 mt-1 text-sm text-gray-500 font-medium">
+                        <span class="text-base font-semibold text-gray-900 tracking-tight">${sale.sale_name || 'Untitled Sale'}</span>
+                        <div class="flex items-center gap-2 mt-1 text-sm text-gray-500 font-medium flex-wrap">
                             <span>${sale.round || 'Private Round'}</span>
                             <span class="text-gray-300">•</span>
                             ${getStatusBadge(status)}
+                            <span class="text-gray-300">•</span>
+                            ${
+                                !isSelfHosted 
+                                ? `<span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-800 border border-slate-200 font-semibold uppercase tracking-wider">External</span>`
+                                : (status === 'draft' 
+                                    ? `<span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-800 border border-slate-200 font-semibold uppercase tracking-wider">Self-Hosted</span>`
+                                    : (sale.gnosis_safe_address && sale.gnosis_safe_address.trim() !== ''
+                                        ? `<span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-900 text-white font-semibold uppercase tracking-wider">Direct Gnosis</span>`
+                                        : `<span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-800 border border-slate-200 font-semibold uppercase tracking-wider">On-Chain Escrow</span>`
+                                      )
+                                  )
+                            }
                         </div>
                     </div>
                 </div>

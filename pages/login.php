@@ -1,5 +1,5 @@
 <?php
-// (session déjà démarrée par le routeur principal si besoin)
+// (session dÃ©jÃ  dÃ©marrÃ©e par le routeur principal si besoin)
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -8,7 +8,7 @@
   <title>Login - Tookle</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Tailwind (facultatif si déjà global) -->
+  <!-- Tailwind (facultatif si dÃ©jÃ  global) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Google Fonts -->
@@ -206,7 +206,10 @@
     // Utils
     const messageArea = document.getElementById('message-area');
     function showMsg(txt, kind='error'){ messageArea.textContent = txt; messageArea.className = 'message-area '+(kind==='success'?'success':'error'); }
-    function needCaptcha(){
+        function needCaptcha(){
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'localhost-dev-bypass';
+      }
       const token = (typeof grecaptcha!=='undefined') ? grecaptcha.getResponse() : '';
       if (!token){ showMsg('Veuillez cocher le captcha avant de continuer.'); return null; }
       return token;
@@ -248,7 +251,7 @@
       try{
         const res = await fetch('/backend/login_backend.php', { method:'POST', body: fd, credentials:'include' });
         const txt = await res.text(); let j=null; try{ j=JSON.parse(txt);}catch{}
-        if (j && j.success){ location.href='/settings'; return; }
+        if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
         showMsg((j && j.error) ? j.error : 'Unexpected server response.');
       }catch(err){ showMsg('Could not connect to the server.'); }
     });
@@ -271,7 +274,7 @@
               body: JSON.stringify({ action: 'login_google', id_token: resp.credential })
             });
             const t = await r.text(); let j=null; try{ j=JSON.parse(t);}catch{}
-            if (j && j.success){ location.href='/settings'; return; }
+            if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
             showMsg((j && j.error) ? j.error : 'Google login failed.');
           }catch(e){ showMsg('Network error during Google login.'); }
         }
@@ -315,7 +318,7 @@
             })
           });
           const j = await res.json().catch(()=>({}));
-          if (j && j.success){ location.href='/settings'; return; }
+          if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
           modalMsg.textContent = (j && j.error) ? j.error : 'Signup (wallet) failed.'; modalMsg.className='message-area error'; return;
         }
 
@@ -334,7 +337,7 @@
             })
           });
           const j = await res.json().catch(()=>({}));
-          if (j && j.success){ location.href='/settings'; return; }
+          if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
           modalMsg.textContent = (j && j.error) ? j.error : 'Signup (phantom) failed.'; modalMsg.className='message-area error'; return;
         }
 
@@ -383,7 +386,7 @@
         });
         const j = await r.json().catch(()=>({}));
 
-        if (j && j.success){ location.href='/settings'; return; }
+        if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
 
         if (j && j.need_signup){
           modal.dataset.flow = 'evm';
@@ -442,7 +445,7 @@
         });
         const j = await r.json().catch(()=>({}));
 
-        if (j && j.success){ location.href='/settings'; return; }
+        if (j && j.success){ location.href='<?= get_url('settings') ?>'; return; }
 
         if (j && j.need_signup){
           modal.dataset.flow = 'solana';
@@ -527,3 +530,5 @@
   </script>
 </body>
 </html>
+
+

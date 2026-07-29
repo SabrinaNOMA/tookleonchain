@@ -108,6 +108,7 @@ try {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     
     <title><?php echo $pageTitle; ?></title>
     <meta name="description" content="<?php echo $pageDesc; ?>">
@@ -160,7 +161,7 @@ try {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-24 items-center">
                 <div class="flex-shrink-0 flex items-center gap-2">
-                    <a href="/login" class="flex items-center gap-2 group">
+                    <a href="<?= get_url('login') ?>" class="flex items-center gap-2 group">
                         <img id="public-logo" src="" alt="Tookle" class="h-20 w-auto transition-opacity hover:opacity-80">
                     </a>
                     <span class="hidden sm:inline-block px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200 ml-2">
@@ -170,7 +171,7 @@ try {
 
                 <div class="flex items-center gap-3">
                     <?php if (isset($_SESSION['user_id'])): ?>
-                        <a href="/logout" class="text-sm font-medium text-gray-500 hover:text-red-500 transition-colors">
+                        <a href="<?= get_url('logout') ?>" class="text-sm font-medium text-gray-500 hover:text-red-500 transition-colors">
                             Log out
                         </a>
                     <?php else: ?>
@@ -245,7 +246,7 @@ try {
 
                     <div class="flex flex-col sm:flex-row gap-3 justify-center">
                         <?php if (isset($_SESSION['user_id'])): ?>
-                            <a href="/settings" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-black hover:bg-gray-800 transition-all shadow-lg hover:shadow-gray-900/10">
+                            <a href="<?= get_url('settings') ?>" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-black hover:bg-gray-800 transition-all shadow-lg hover:shadow-gray-900/10">
                                 Settings
                             </a>
                         <?php endif; ?>
@@ -290,7 +291,7 @@ try {
             const stickyBtn = document.getElementById('sticky-invest-button');
 
             const handleJoinClick = (e) => {
-                e.preventDefault(); // Stop the default <a href="/purchase"> navigation
+                e.preventDefault(); // Stop the default <a href="<?= get_url('purchase') ?>"> navigation
                 joinSaleAsInvestor(e.currentTarget); // Trigger role switch logic
             };
 

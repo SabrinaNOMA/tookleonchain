@@ -221,7 +221,7 @@ try {
 
 <footer class="sticky-approve-footer">
     <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-        <a href="/compliance" class="button button-secondary">Back to Edit</a>
+        <a href="<?= get_url('story') ?>" class="button button-secondary">Back to Edit</a>
         <button id="approve-submit-button" type="button" class="button button-gradient">Approve</button>
     </div>
     <p class="text-xs text-gray-500 text-center mt-2">Note: This page has been realised with the '<?php echo htmlspecialchars($projectData['scenarioLabel'] ?? 'Initial Version'); ?>' version of the tokenomics.</p>

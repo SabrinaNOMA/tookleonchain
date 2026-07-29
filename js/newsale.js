@@ -19,6 +19,33 @@ const projectUuid = window.TOOKLE_CONFIG?.projectUuid || '';
 let dbProjectDataGlobal = {}; 
 let availableRoundsGlobal = {}; 
 let hasOpenedAgreement = false; // Flag to enforce mandatory agreement review
+window.validateGnosisInput = function() {
+    const gnosisInput = document.getElementById('gnosis_safe_address');
+    const gnosisStatus = document.getElementById('gnosis-address-status');
+    if (!gnosisInput || !gnosisStatus) return true;
+    const val = gnosisInput.value.trim();
+    if (val === '') {
+        gnosisStatus.textContent = '';
+        gnosisStatus.classList.add('hidden');
+        gnosisInput.classList.remove('border-red-500');
+        return false;
+    }
+    
+    const isHex = /^0x[0-9a-fA-F]{40}$/.test(val);
+    const isZero = /^0x0+$/.test(val);
+    
+    if (!isHex || isZero) {
+        gnosisStatus.textContent = 'Please enter a valid Gnosis Safe Base address (starts with 0x, exactly 42 characters).';
+        gnosisStatus.classList.remove('hidden');
+        gnosisInput.classList.add('border-red-500');
+        return false;
+    } else {
+        gnosisStatus.textContent = '';
+        gnosisStatus.classList.add('hidden');
+        gnosisInput.classList.remove('border-red-500');
+        return true;
+    }
+};
 
 // --- 1. CORE UTILITIES ---
 
@@ -46,6 +73,7 @@ function toggleExternalMode(isExternal) {
     const extSpecifics = document.getElementById('external-specific-fields');
     const minPContainer = document.getElementById('min-purchase-container');
     const maxPContainer = document.getElementById('max-purchase-container');
+    const tookleSettlement = document.getElementById('tookle-settlement-details');
 
     // inputs that change requirement status
     const extNameInput = document.getElementById('external_platform_name');
@@ -58,6 +86,7 @@ function toggleExternalMode(isExternal) {
         if(tookleFields) tookleFields.style.display = 'none';
         if(extDetails) extDetails.classList.remove('hidden');
         if(extSpecifics) extSpecifics.classList.remove('hidden');
+        if(tookleSettlement) tookleSettlement.classList.add('hidden');
         
         // Hide Internal-Only Fields
         if(minPContainer) minPContainer.style.display = 'none';
@@ -82,6 +111,7 @@ function toggleExternalMode(isExternal) {
         if(tookleFields) tookleFields.style.display = 'block';
         if(extDetails) extDetails.classList.add('hidden');
         if(extSpecifics) extSpecifics.classList.add('hidden');
+        if(tookleSettlement) tookleSettlement.classList.remove('hidden');
 
         // Show Internal-Only Fields
         if(minPContainer) minPContainer.style.display = 'block';
@@ -350,6 +380,46 @@ async function fetchAndInitialize() {
 
     document.querySelectorAll('input[name="hosting"]').forEach(radio => {
         radio.addEventListener('change', (e) => toggleExternalMode(e.target.value === 'external'));
+    });
+
+    // Settlement Payment Routing Toggles
+    const cardEscrow = document.getElementById('label-routing-escrow');
+    const cardMultisig = document.getElementById('label-routing-multisig');
+    const gnosisContainer = document.getElementById('gnosis-address-container');
+    const gnosisInput = document.getElementById('gnosis_safe_address');
+    const gnosisStatus = document.getElementById('gnosis-address-status');
+    
+    if (gnosisInput) {
+        gnosisInput.addEventListener('input', validateGnosisInput);
+    }
+    
+    document.querySelectorAll('input[name="payment_routing"]').forEach(radio => {
+        const updateRoutingCards = (val) => {
+            const isMultisig = val === 'multisig';
+            if (isMultisig) {
+                if(cardMultisig) cardMultisig.className = "relative flex flex-col p-4 border-2 border-slate-900 bg-slate-50/20 rounded-lg cursor-pointer transition-all";
+                if(cardEscrow) cardEscrow.className = "relative flex flex-col p-4 border border-slate-200 rounded-lg cursor-pointer transition-all hover:bg-slate-50/50";
+                if(gnosisContainer) gnosisContainer.classList.remove('hidden');
+                if(gnosisInput) gnosisInput.setAttribute('required', 'true');
+            } else {
+                if(cardEscrow) cardEscrow.className = "relative flex flex-col p-4 border-2 border-slate-900 bg-slate-50/20 rounded-lg cursor-pointer transition-all";
+                if(cardMultisig) cardMultisig.className = "relative flex flex-col p-4 border border-slate-200 rounded-lg cursor-pointer transition-all hover:bg-slate-50/50";
+                if(gnosisContainer) gnosisContainer.classList.add('hidden');
+                if(gnosisInput) {
+                    gnosisInput.removeAttribute('required');
+                    gnosisInput.value = '';
+                }
+                if(gnosisStatus) {
+                    gnosisStatus.classList.add('hidden');
+                    gnosisStatus.textContent = '';
+                }
+            }
+        };
+        radio.addEventListener('change', (e) => updateRoutingCards(e.target.value));
+        radio.closest('label')?.addEventListener('click', () => {
+            radio.checked = true;
+            updateRoutingCards(radio.value);
+        });
     });
 
     try {
@@ -656,6 +726,35 @@ function applyPrefill(data) {
     setVal('project-description', data.projectDescription || data.project_description_story || '');
     setVal('min-purchase', data.min_purchase_limit || data.min_investment_usd || '');
     setVal('max-purchase', data.max_purchase_limit || data.max_investment_usd || '');
+
+    // 5b. Gnosis Safe Routing Prefill
+    const gnosisAddr = data.gnosis_safe_address || '';
+    if (gnosisAddr) {
+        // Select the "multisig" routing card
+        const multisigRadio = document.querySelector('input[name="payment_routing"][value="multisig"]');
+        if (multisigRadio) {
+            multisigRadio.checked = true;
+            multisigRadio.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        setVal('gnosis_safe_address', gnosisAddr);
+
+        // Lock address field if sale is not draft
+        const saleStatus = (data.status || 'draft').toLowerCase();
+        if (saleStatus !== 'draft') {
+            const addrInput = document.getElementById('gnosis_safe_address');
+            if (addrInput) {
+                addrInput.setAttribute('readonly', 'true');
+                addrInput.classList.add('bg-slate-50', 'cursor-not-allowed', 'opacity-75');
+            }
+        }
+    } else {
+        // Default: escrow selected (already default in HTML)
+        const escrowRadio = document.querySelector('input[name="payment_routing"][value="escrow"]');
+        if (escrowRadio) {
+            escrowRadio.checked = true;
+            escrowRadio.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
     
     const video = data.videoFilePath || data.video_url || data.video_path;
     if(video) prefillDropzone('video_dropzone', video);
@@ -806,6 +905,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (!checkCaps()) {
                 showValidationModal('Check Max Purchase Limit.');
+                return;
+            }
+            const routingMode = document.querySelector('input[name="payment_routing"]:checked')?.value;
+            if (isInternal && routingMode === 'multisig' && !validateGnosisInput()) {
+                showValidationModal('Please enter a valid Gnosis Safe Base address.');
                 return;
             }
             if (!document.getElementById('country').value) {

@@ -27,6 +27,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $userId = $_SESSION['user_id'];
+session_write_close(); // CRITICAL: Unlock session immediately so we don't block the UI during slow API calls!
+
 $applicantId = filter_input(INPUT_GET, 'applicantId', FILTER_SANITIZE_STRING);
 $externalUserId = filter_input(INPUT_GET, 'externalUserId', FILTER_SANITIZE_STRING);
 $force = filter_input(INPUT_GET, 'force', FILTER_VALIDATE_BOOLEAN);
@@ -46,7 +48,8 @@ try {
     // Connexion DB KYC
     $pdoKyc = new PDO($dbCfg['dsn'], $dbCfg['user'], $dbCfg['pass'], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_TIMEOUT => 2
     ]);
 
     // Connexion DB App (pour mise à jour user)
@@ -215,7 +218,10 @@ try {
         if (isset($pdo)) {
             $upUser = $pdo->prepare("UPDATE user SET kyc_status = 'COMPLETED' WHERE id = ?");
             $upUser->execute([$userId]);
+            
+            session_start(); // Re-open session to update it
             $_SESSION['user_info']['kyc_status'] = 'COMPLETED';
+            session_write_close();
         }
     }
 

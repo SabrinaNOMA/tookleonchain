@@ -577,6 +577,17 @@ if ($requestMethod == "GET") {
                 $dataToInsert['max_investment_usd'] = str_replace(',', '', trim($_POST['max_purchase']));
                 $dataToInsert['project_description_story'] = trim($_POST['project_description'] ?? '');
 
+                // Direct Gnosis Routing Address Settle & Verification
+                $routingMode = trim($_POST['payment_routing'] ?? 'escrow');
+                if ($routingMode === 'multisig') {
+                    $gnosisAddr = trim($_POST['gnosis_safe_address'] ?? '');
+                    if (empty($gnosisAddr)) throw new Exception("Gnosis Safe Address is mandatory.");
+                    if (!preg_match('/^0x[0-9a-fA-F]{40}$/', $gnosisAddr)) throw new Exception("Invalid Gnosis Safe Address format.");
+                    $dataToInsert['gnosis_safe_address'] = $gnosisAddr;
+                } else {
+                    $dataToInsert['gnosis_safe_address'] = null;
+                }
+
                 // File Uploads
                 $upload_dir = __DIR__ . '/../uploads/';
                 $db_base_path = '/uploads';

@@ -15,7 +15,7 @@ require_once __DIR__ . '/../wizard_nav.php'; // Includes the config
 $wizard_config = get_wizard_config();
 
 $form_page_url = $wizard_config['tokenomics']['subSteps']['token_name']['url'];
-$next_page_url = $wizard_config['tokenomics']['subSteps']['token_supply']['url'];
+$next_page_url = $wizard_config['tokenomics']['subSteps']['token_supply']['url'] ?? '/tokensupply';
 
 $upload_dir_base = '/uploads/logos/';
 $upload_dir_system = $_SERVER['DOCUMENT_ROOT'] . $upload_dir_base;

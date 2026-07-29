@@ -65,7 +65,7 @@ function render_form(string $email, string $token, string $error = '', string $s
             </form>
 
             <div class="mt-4 text-center text-sm">
-                <a href="/login" class="text-purple-600 hover:underline">Back to login</a>
+                <a href="<?= get_url('login') ?>" class="text-purple-600 hover:underline">Back to login</a>
             </div>
         </div>
     </body>

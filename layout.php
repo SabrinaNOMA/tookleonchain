@@ -42,8 +42,11 @@ if (empty($_SESSION['csrf_token'])) {
 }
 $csrf_token_for_meta = $_SESSION['csrf_token'];
 
-$user_role_for_layout = $_SESSION['user_role'] ?? 'investor';
+$user_role_for_layout = (isset($url_context) && in_array($url_context, ['founder', 'investor'])) 
+    ? $url_context 
+    : ($_SESSION['user_role'] ?? 'investor');
 $user_info_for_layout = $_SESSION['user_info'] ?? null;
+$user_has_membership_for_layout = !empty($user_info_for_layout['has_membership']);
 // The $sidebar_mode variable is passed from index.php
 $sidebar_mode = $sidebar_mode ?? 'full';
 $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Project';
@@ -88,9 +91,10 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
             --theme-primary: #10B981; /* Green */
             --theme-secondary: #3B82F6; /* Blue */
             --theme-primary-light: #D1FAE5;
-            --gradient-start: #34D399;
-            --gradient-mid: #8B5CF6;
-            --gradient-end: #34D399;
+            /* PHASE 0: BRAND ALIGNMENT - Use founder gradient for investor nav */
+            --gradient-start: #6D28D9;
+            --gradient-mid: #06b6d4;
+            --gradient-end: #6D28D9;
             <?php endif; ?>
         }
         body { font-family: 'Montserrat', sans-serif; background-color: var(--main-bg); color: var(--text-primary); }
@@ -149,7 +153,7 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
 
              <div class="p-4 flex-shrink-0 flex items-center justify-center">
                 <!-- LOGO SIZE INCREASED: h-14 to h-20 -->
-                <a href="/dashboard"><img id="tookle-logo" src="" alt="Tookle Logo" class="h-20 w-auto"></a>
+                <a href="<?= get_url('dashboard') ?>"><img id="tookle-logo" src="" alt="Tookle Logo" class="h-20 w-auto"></a>
             </div>
             <div class="flex-grow overflow-y-auto px-4">
                 <nav class="space-y-1">
@@ -203,22 +207,28 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
                                     <span>Backer</span>
                                     <i data-lucide="check" class="w-5 h-5 ml-auto text-gray-900"></i>
                                 </div>
-                                <!-- Switch Link: Founder -->
-                                <!-- UPDATED: Added class 'js-role-switcher' and data-role attribute -->
-                                <a href="#" class="js-role-switcher flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md" data-role="founder">
-                                    <i data-lucide="rocket" class="w-5 h-5 mr-3"></i>
-                                    <span>Founder</span>
-                                </a>
+                                <!-- Switch Link: Founder OR Subscribe CTA -->
+                                <?php if ($user_has_membership_for_layout): ?>
+                                    <a href="#" class="js-role-switcher flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md" data-role="founder">
+                                        <i data-lucide="rocket" class="w-5 h-5 mr-3"></i>
+                                        <span>Founder</span>
+                                    </a>
+                                <?php else: ?>
+                                    <a href="<?= get_url('subscription') ?>" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
+                                        <i data-lucide="rocket" class="w-5 h-5 mr-3"></i>
+                                        <span>Subscribe as Founder</span>
+                                    </a>
+                                <?php endif; ?>
                             <?php endif; ?>
                             
                             <div class="my-2 h-px bg-gray-100"></div>
                             <!-- === NEW: ROLE SWITCHER END === -->
 
-                            <a href="/settings" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"><i data-lucide="user-cog" class="w-5 h-5 mr-3"></i> Settings</a>
+                            <a href="<?= get_url('settings') ?>" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"><i data-lucide="user-cog" class="w-5 h-5 mr-3"></i> Settings</a>
                             <a href="https://noma-2.gitbook.io/tookle/" target="_blank" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"><i data-lucide="help-circle" class="w-5 h-5 mr-3"></i> Help</a>
                             <div class="my-1 h-px bg-gray-100"></div>
                             <!-- MOD: Changed text-red-600 hover:bg-red-50 to text-gray-700 hover:bg-gray-50 -->
-                            <a href="/logout" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"><i data-lucide="log-out" class="w-5 h-5 mr-3"></i> Logout</a>
+                            <a href="<?= get_url('logout') ?>" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"><i data-lucide="log-out" class="w-5 h-5 mr-3"></i> Logout</a>
                         </div>
                     </div>
                 </div>
@@ -230,8 +240,9 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
           - Replaces the old <main> tag.
           - Is now a flex-col container to hold the mobile header and the main content.
           - ADDED BLUR CLASS WHEN IN FOCUS MODE
+          - CHANGED overflow-y-auto to overflow-y-scroll to prevent horizontal jittering in wizards
         -->
-        <main class="flex-1 overflow-y-auto flex flex-col w-full lg:w-auto 
+        <main class="flex-1 overflow-y-scroll flex flex-col w-full lg:w-auto 
                      <?php echo $sidebar_mode === 'focus' ? 'blur-sm pointer-events-none' : ''; ?>">
             <!-- 
               NEW: Mobile Header
@@ -243,9 +254,9 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
                     <i data-lucide="menu" class="w-6 h-6"></i>
                 </button>
                 <!-- INCREASED MOBILE LOGO SIZE: h-14 to h-16 -->
-                <a href="/dashboard"><img id="tookle-logo-mobile" src="" alt="Tookle Logo" class="h-16 w-auto"></a>
+                <a href="<?= get_url('dashboard') ?>"><img id="tookle-logo-mobile" src="" alt="Tookle Logo" class="h-16 w-auto"></a>
                 <!-- Mobile user settings icon -->
-                <a href="/settings" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+                <a href="<?= get_url('settings') ?>" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
                     <i data-lucide="user-cog" class="w-6 h-6"></i>
                 </a>
             </header>

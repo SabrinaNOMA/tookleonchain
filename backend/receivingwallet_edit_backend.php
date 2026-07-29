@@ -30,7 +30,7 @@ $allowed_redirects = ['/edit-wallet']; // Add more paths here if needed in the f
 // Validate inputs: investment ID must be a positive integer, redirect URL must be present and allowed
 if (!$investment_id || $investment_id <= 0 || !$redirect_to || !in_array($redirect_to, $allowed_redirects)) {
     // If inputs are invalid or disallowed, redirect to a safe default page
-    header('Location: /portfolio?error=invalid_context');
+    header('Location: /investor/portfolio?error=invalid_context');
     exit;
 }
 
@@ -61,7 +61,7 @@ try {
     } else {
         // Authorization failed: No matching record found for this user and investment ID.
         // Redirect to portfolio page with an access denied error.
-        header('Location: /portfolio?error=access_denied');
+        header('Location: /investor/portfolio?error=access_denied');
         exit;
     }
 
@@ -69,7 +69,7 @@ try {
     // Log any errors that occur during the process
     error_log("Error in " . basename(__FILE__) . " for user {$user_id}: " . $e->getMessage());
     // Redirect to a safe error page or the portfolio page
-    header('Location: /portfolio?error=server_error');
+    header('Location: /investor/portfolio?error=server_error');
     exit;
 }
 

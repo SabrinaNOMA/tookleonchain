@@ -81,6 +81,14 @@ if (isset($_SESSION['user_id']) && $sale_id && isset($pdo)) {
 $isEditingSafe = isset($_GET['edit_safe']) && $_GET['edit_safe'] == '1';
 $needsSafeConfig = (!$isDeployed && (!$safeAddress || strlen($safeAddress) < 40 || $isEditingSafe));
 
+// Fetch existing project wallets for the dropdown
+$projectWallets = [];
+if ($saleDetails && $needsSafeConfig) {
+    $walletsStmt = $pdo->prepare("SELECT label, wallet_address FROM project_wallet WHERE projet_id = ? ORDER BY label ASC");
+    $walletsStmt->execute([$saleDetails['project_id']]);
+    $projectWallets = $walletsStmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 // API Endpoint to refresh timestamp if expired
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'refresh_timestamp') {
     header('Content-Type: application/json');
@@ -98,8 +106,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_safe') {
     $newSafe = trim($_POST['safe_address']);
     if (preg_match('/^0x[a-fA-F0-9]{40}$/', $newSafe)) {
+        // 1. Update token_sale_pages
         $upd = $pdo->prepare("UPDATE token_sale_pages SET sale_terms_json = JSON_SET(COALESCE(sale_terms_json, '{}'), '$.vault_custody_wallet', ?) WHERE id = ?");
         $upd->execute([$newSafe, $sale_id]);
+        
+        // 2. Auto-save to project_wallet (Phase 2)
+        $saleName = $saleDetails['sale_name'] ?? 'Sale';
+        $label = $saleName . ' Beneficiary';
+        $checkStmt = $pdo->prepare("SELECT id FROM project_wallet WHERE projet_id = ? AND LOWER(wallet_address) = LOWER(?)");
+        $checkStmt->execute([$saleDetails['project_id'], $newSafe]);
+        if (!$checkStmt->fetch()) {
+            $insStmt = $pdo->prepare("INSERT INTO project_wallet (projet_id, label, wallet_address, network) VALUES (?, ?, ?, 'base')");
+            $insStmt->execute([$saleDetails['project_id'], $label, $newSafe]);
+        }
+
         header("Location: ?sale_id=" . $sale_id);
         exit;
     }
@@ -192,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             </div>
         </div>
 
-        <a href="/dashboard" class="block w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-zinc-800 transition-colors text-xs uppercase tracking-widest text-center">Return to Dashboard</a>
+        <a href="<?= get_url('dashboard') ?>" class="block w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-zinc-800 transition-colors text-xs uppercase tracking-widest text-center">Return to Dashboard</a>
     </div>
 </div>
 
@@ -272,7 +292,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <code class="font-mono text-base text-black break-all font-bold"><?php echo htmlspecialchars($saleDetails['contract_address']); ?></code>
             </div>
             
-            <a href="/dashboard" class="btn-tookle px-10 py-4 rounded-xl font-bold inline-block uppercase text-xs tracking-widest">Return to Dashboard</a>
+            <a href="<?= get_url('dashboard') ?>" class="btn-tookle px-10 py-4 rounded-xl font-bold inline-block uppercase text-xs tracking-widest">Return to Dashboard</a>
         </div>
     <?php else: ?>
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -305,8 +325,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <?php if($needsSafeConfig): ?>
                             <form method="POST" class="space-y-4">
                                 <input type="hidden" name="action" value="set_safe">
-                                <div class="relative">
-                                    <input type="text" name="safe_address" placeholder="0x..." class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl font-mono text-sm focus:ring-1 focus:ring-black outline-none transition" required pattern="^0x[a-fA-F0-9]{40}$">
+                                <div class="relative flex flex-col gap-2">
+                                    <select id="wallet_selector" onchange="handleWalletSelect()" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-1 focus:ring-black outline-none transition cursor-pointer">
+                                        <option value="">Select a wallet from your address book...</option>
+                                        <?php foreach ($projectWallets as $pw): ?>
+                                            <option value="<?php echo htmlspecialchars($pw['wallet_address']); ?>">
+                                                <?php echo htmlspecialchars($pw['label']); ?> (<?php echo substr($pw['wallet_address'], 0, 6) . '...' . substr($pw['wallet_address'], -4); ?>)
+                                            </option>
+                                        <?php endforeach; ?>
+                                        <option value="MANUAL">Enter a new address manually...</option>
+                                    </select>
+                                    
+                                    <input type="text" id="safe_address" name="safe_address" placeholder="0x..." class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl font-mono text-sm focus:ring-1 focus:ring-black outline-none transition hidden" required pattern="^0x[a-fA-F0-9]{40}$">
                                 </div>
                                 <button type="submit" class="btn-tookle px-8 py-3 rounded-lg font-bold text-xs uppercase tracking-widest w-full md:w-auto">Confirm Beneficiary</button>
                             </form>
@@ -554,7 +584,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-2">Verified Contract Address</p>
                 <code class="font-mono text-base text-black break-all font-bold">${DEPLOYED_ADDR}</code>
             </div>
-            <a href="/dashboard" class="btn-tookle px-10 py-4 rounded-xl font-bold inline-block uppercase text-xs tracking-widest">Return to Dashboard</a>
+            <a href="<?= get_url('dashboard') ?>" class="btn-tookle px-10 py-4 rounded-xl font-bold inline-block uppercase text-xs tracking-widest">Return to Dashboard</a>
         `;
         lucide.createIcons();
         
@@ -583,7 +613,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-2">Verified Contract Address</p>
                 <code class="font-mono text-base text-black break-all font-bold">${DEPLOYED_ADDR}</code>
             </div>
-            <a href="/dashboard" class="btn-tookle px-10 py-4 rounded-xl font-bold inline-block uppercase text-xs tracking-widest">Return to Dashboard</a>
+            <a href="<?= get_url('dashboard') ?>" class="btn-tookle px-10 py-4 rounded-xl font-bold inline-block uppercase text-xs tracking-widest">Return to Dashboard</a>
         `;
         lucide.createIcons();
     }
@@ -747,7 +777,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     async function finalizeDeployment(txHash) {
         deploymentComplete = true;
         const token = document.getElementById('tokenSelect').value;
-        const res = await fetch('backend/save_vault.php', {
+        const res = await fetch('/backend/save_vault.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ sale_id: SALE_ID, manual_address: currentPredictedAddress, payment_token: token, tx_hash: txHash })
@@ -764,6 +794,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             deploymentComplete = false;
         }
     }
+</script>
+<script>
+function handleWalletSelect() {
+    const selector = document.getElementById('wallet_selector');
+    const manualInput = document.getElementById('safe_address');
+    
+    if (selector.value === 'MANUAL') {
+        manualInput.classList.remove('hidden');
+        manualInput.value = ''; // Clear it so they can type
+        manualInput.focus();
+    } else if (selector.value !== '') {
+        manualInput.classList.add('hidden');
+        manualInput.value = selector.value;
+    } else {
+        manualInput.classList.add('hidden');
+        manualInput.value = '';
+    }
+}
 </script>
 </body>
 </html>

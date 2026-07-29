@@ -43,6 +43,10 @@ function render_nav_link($icon, $label, $href, $nav_key, $is_enabled = true, $to
     } else {
         $classes .= ' ' . $inactive_classes;
     }
+    // Convert hardcoded paths using the namespace helper
+    if ($href !== '#' && strpos($href, '/') === 0) {
+        $href = get_url(ltrim($href, '/'));
+    }
     
     // The 'data-nav-key' attribute is the crucial addition.
     echo "<a href='{$href}' class='{$classes}' data-nav-key='{$nav_key}' {$tooltip_attr}>";

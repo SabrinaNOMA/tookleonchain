@@ -24,7 +24,7 @@ $tokenData = null;
 $errorMessage = '';
 
 if (!$project_id) {
-    $errorMessage = 'No active project selected. Please return to your <a href="/dashboard" class="text-purple-700 underline">dashboard</a> to select a project.';
+    $errorMessage = 'No active project selected. Please return to your <a href="<?= get_url('dashboard') ?>" class="text-purple-700 underline">dashboard</a> to select a project.';
 } else {
     try {
         // --- Initialize Data Structure ---
@@ -205,7 +205,7 @@ if (!$project_id) {
                 </section>
 
                 <footer class="flex justify-between items-center mt-8">
-                    <a href="/vesting" class="px-6 py-2 border rounded-lg font-medium text-sm">Back</a>
+                    <a href="<?= get_url('vesting') ?>" class="px-6 py-2 border rounded-lg font-medium text-sm">Back</a>
                     <button type="button" id="approve-design-btn" class="bg-gradient-to-r from-purple-700 to-cyan-500 text-white px-6 py-2 rounded-lg font-medium text-sm">
                         Approve Token Economy
                     </button>
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         nextStepBtn.addEventListener('click', () => {
-            window.location.href = '/story';
+            window.location.href = '<?= get_url('story') ?>';
         });
         // --- MODIFICATION END ---
     }

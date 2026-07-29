@@ -113,7 +113,7 @@ $project_id = $_SESSION['active_project_id'] ?? null;
 
             <!-- Footer Actions -->
             <footer class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-                <a href="/fundraising" id="back-button-footer" class="nav-button bg-gray-200 text-gray-700">Back</a>
+                <a href="<?= get_url('fundraising') ?>" id="back-button-footer" class="nav-button bg-gray-200 text-gray-700">Back</a>
                  <div class="flex items-center gap-x-4">
                      <button type="button" id="save-button-footer" class="nav-button btn-gradient">Save & Continue</button>
                  </div>
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         await fetchInitialData();
         saveButton?.addEventListener('click', saveDistributionData);
-        modalValidateBtn.addEventListener('click', () => { window.location.href = '/validate'; });
+        modalValidateBtn.addEventListener('click', () => { window.location.href = '<?= get_url('validate') ?>'; });
     }
 
     // --- Data Fetching & Saving ---

@@ -10,17 +10,32 @@ if (!isset($page_data)) {
 $successful_investments = $page_data['successful_investments'] ?? [];
 $other_investments = $page_data['other_investments'] ?? [];
 
-$totalContributed = 0;
-$totalTokens = 0;
+$activeContributed = 0;
+$pendingContributed = 0;
+$activeTokens = 0;
+$pendingTokens = 0;
 
-foreach ($successful_investments as $inv) {
-    $totalContributed += $inv['investment_amount'];
-    $totalTokens += $inv['token_quantity'];
+$all_investments = array_merge($successful_investments, $other_investments);
+foreach ($all_investments as $inv) {
+    $status = strtolower($inv['investorStatus'] ?? '');
+    // Exclude refunded, failed, or canceled investments from total metrics
+    if (!in_array($status, ['refunded', 'refunding', 'failed', 'canceled'])) {
+        if ($status === 'active') {
+            $activeContributed += (float)($inv['investment_amount'] ?? 0);
+            $activeTokens += (float)($inv['token_quantity'] ?? 0);
+        } else {
+            $pendingContributed += (float)($inv['investment_amount'] ?? 0);
+            $pendingTokens += (float)($inv['token_quantity'] ?? 0);
+        }
+    }
 }
 
 $project_fee_usd = $page_data['project_fee'] ?? 1.0;
 $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_data['fee_recipient_address'] : '0x2F8039cD25814C3987Dd3d4d547bFDd5B83e357E';
 ?>
+
+<!-- Added Chart.js for Phase 1 Visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
     :root {
@@ -43,7 +58,7 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
 
     .historical-header-row, .historical-item-row {
         display: grid;
-        grid-template-columns: 1fr 1.5fr 1fr 1.2fr 1.8fr 1.1fr 0.9fr;
+        grid-template-columns: 1.5fr 1fr 1.5fr 1.8fr 1fr 1.2fr;
         gap: 1rem;
         align-items: center;
         padding: 0.75rem 1.5rem;
@@ -63,15 +78,38 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
         border: 1px solid var(--border-color);
         font-size: 0.875rem;
         margin-bottom: 0.5rem;
+        padding: 1.25rem 1.5rem;
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .historical-item-row:hover {
+        background-color: #f9fafb;
+        box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .stat-card {
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
         background-color: #ffffff;
-        border-radius: 0.75rem;
-        border: 1px solid var(--border-color);
+        border-radius: 1rem;
         padding: 1.5rem;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 1px 3px -1px rgba(0, 0, 0, 0.03);
+        border: 1px solid #e5e7eb;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    }
+    .stat-card:nth-child(1) { animation-delay: 0.05s; }
+    .stat-card:nth-child(2) { animation-delay: 0.1s; }
+    .stat-card:nth-child(3) { animation-delay: 0.15s; }
+    .stat-card:nth-child(4) { animation-delay: 0.2s; }
+    .stat-card:nth-child(5) { animation-delay: 0.25s; }
 
     .tooltip-container {
         position: relative;
@@ -178,38 +216,70 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
         </div>
     <?php else: ?>
 
-        <!-- Stats Overview Cards -->
-        <div id="portfolio-snapshot" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10" data-total-tokens="<?php echo $totalTokens; ?>">
-            <div class="stat-card">
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Contribution</p>
-                <p class="text-2xl font-bold text-gray-900">$<?php echo number_format($totalContributed, 2); ?></p>
-            </div>
-            <div class="stat-card">
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Allocated Tokens</p>
-                <p class="text-2xl font-bold text-gray-900" id="allocated-tokens-display"><?php echo number_format($totalTokens, 0); ?></p>
-            </div>
-            <div class="stat-card">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Vested</p>
-                    <i data-lucide="lock" class="w-4 h-4 text-emerald-500"></i>
+        <!-- Stats & Visualization Overview -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+            
+            <!-- Left: Stat Cards (2x2 Grid) -->
+            <div id="portfolio-snapshot" class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6" data-total-tokens="<?php echo $activeTokens; ?>">
+                <div class="stat-card">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Contribution</p>
+                    <p class="text-2xl font-bold text-gray-900">$<?php echo number_format($activeContributed, 2); ?></p>
+                    <?php if ($pendingContributed > 0): ?>
+                        <p class="text-[10px] text-gray-500 mt-1">Pending: <span class="font-bold text-gray-600">$<?php echo number_format($pendingContributed, 2); ?></span></p>
+                    <?php endif; ?>
                 </div>
-                <p id="total-locked-tokens" class="text-2xl font-bold text-gray-900">--</p>
-                <p class="text-[10px] text-gray-500 mt-1">Claimed: <span id="total-claimed-tokens">--</span></p>
-            </div>
-            <div class="stat-card">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Claimable</p>
-                    <i data-lucide="unlock" class="w-4 h-4 text-emerald-500"></i>
+                <div class="stat-card">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Allocated Tokens</p>
+                    <p class="text-2xl font-bold text-gray-900" id="allocated-tokens-display"><?php echo number_format($activeTokens, 0); ?></p>
+                    <?php if ($pendingTokens > 0): ?>
+                        <p class="text-[10px] text-gray-500 mt-1">Pending: <span class="font-bold text-gray-600"><?php echo number_format($pendingTokens, 0); ?></span></p>
+                    <?php endif; ?>
                 </div>
-                <p id="total-claimable-tokens" class="text-2xl font-bold text-gray-900">--</p>
+                <div class="stat-card">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Vested</p>
+                        <i data-lucide="lock" class="w-4 h-4 text-emerald-500"></i>
+                    </div>
+                    <p id="total-locked-tokens" class="text-2xl font-bold text-gray-900">--</p>
+                    <p class="text-[10px] text-gray-500 mt-1">Claimed: <span id="total-claimed-tokens">--</span></p>
+                </div>
+                <div class="stat-card">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Claimable</p>
+                        <i data-lucide="unlock" class="w-4 h-4 text-emerald-500"></i>
+                    </div>
+                    <p id="total-claimable-tokens" class="text-2xl font-bold text-gray-900">--</p>
+                </div>
             </div>
+
+            <!-- Right: Visual Holdings Chart -->
+            <div class="stat-card flex flex-col items-center justify-center relative">
+                <h3 class="text-sm font-bold text-gray-800 mb-2 w-full text-left uppercase tracking-wider">Holdings Overview</h3>
+                
+                <div class="relative w-40 h-40 mt-2 mb-4">
+                    <canvas id="holdingsChart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span id="chart-percent-unlocked" class="text-xl font-bold text-gray-900">0%</span>
+                        <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Unlocked</span>
+                    </div>
+                </div>
+
+                <div class="w-full mt-auto pt-4 border-t border-gray-100">
+                    <div class="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                        <span>Vesting Progress</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                        <div id="vesting-progress-bar" class="bg-emerald-500 h-1.5 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Contribution Ledger -->
         <h2 class="text-xl font-semibold text-gray-800 mb-6">Contribution Ledger</h2>
         <div class="historical-header-row">
-            <span>Date</span>
-            <span>Private Sale</span>
+            <span>Investment</span>
             <span>Contribution</span>
             <span>Tokens</span>
             <span>Vesting Terms</span>
@@ -230,32 +300,51 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
                 $hasWallet = !empty($inv['investor_wallet_address']);
                 $streamId = $inv['distribution_stream_id'] ?? null;
                 
+                // Override status if Vesting has officially started on-chain
+                if (!empty($streamId)) {
+                    $displayStatus = 'Vesting Active';
+                    $statusClass = 'bg-transparent text-emerald-700 border border-emerald-500 font-bold text-[10px]';
+                    $statusDesc = 'Distribution has begun. Tokens are streaming to your wallet live.';
+                }
+                
                 // Hide Link Wallet for refunding/failed/canceled statuses
                 $isRefundOrFailed = in_array($displayStatus, ['Refunding', 'Refunded', 'Failed', 'Canceled']);
                 $showLinkWallet = !$hasWallet && !$isRefundOrFailed;
                 ?>
                 <div class="historical-item-row <?php echo !empty($streamId) ? 'sablier-stream' : ''; ?>" <?php echo !empty($streamId) ? 'data-stream-id="'.htmlspecialchars($streamId).'"' : ''; ?>>
-                    <div class="text-gray-500 font-medium text-xs"><?php echo date('M d, Y', strtotime($inv['investment_date'])); ?></div>
                     <div>
-                        <div class="font-semibold text-gray-900"><?php echo htmlspecialchars($inv['investment_round'] ?? 'Round'); ?></div>
-                        <div class="text-[10px] text-gray-500 uppercase font-bold"><?php echo htmlspecialchars($inv['sale_name'] ?? ''); ?></div>
+                        <div class="font-semibold text-gray-900 text-sm"><?php echo htmlspecialchars($inv['investment_round'] ?? 'Round'); ?></div>
+                        <div class="text-[9px] text-gray-500 font-bold mb-1 uppercase tracking-wider"><?php echo htmlspecialchars($inv['sale_name'] ?? ''); ?></div>
+                        <div class="text-gray-400 font-medium text-[9px] flex items-center gap-1.5">
+                            <?php echo date('M d, Y', strtotime($inv['investment_date'])); ?>
+                            <?php if (!empty($inv['payment_tx_hash'])): ?>
+                                <span class="text-gray-300">•</span>
+                                <a href="https://basescan.org/tx/<?php echo htmlspecialchars($inv['payment_tx_hash']); ?>" target="_blank" class="text-emerald-600 hover:text-emerald-800 font-bold tracking-wide">
+                                    tx: <?php echo substr($inv['payment_tx_hash'], 0, 6) . '...' . substr($inv['payment_tx_hash'], -4); ?>
+                                </a>
+                            <?php endif; ?>
+                        </div>
                     </div>
                     <div class="font-bold text-gray-900">
                         $<?php echo number_format($inv['investment_amount'], 2); ?>
                     </div>
                     <div>
-                        <div class="text-gray-900 font-bold"><?php echo number_format($tokenQty, 0); ?></div>
+                        <div class="text-gray-900 font-black text-lg leading-none mb-1.5"><?php echo number_format($tokenQty, 0); ?></div>
                         <?php if($streamId): ?>
-                        <div class="text-[9px] text-gray-400 mt-1.5 pt-1.5 border-t border-gray-100 space-y-1">
-                            <div class="flex justify-between gap-2"><span>Remaining:</span> <span class="live-locked font-bold text-gray-600">--</span></div>
-                            <div class="flex justify-between gap-2 text-emerald-600"><span>Claimed:</span> <span class="live-claimed font-bold">--</span></div>
+                        <div class="text-[9px] text-gray-400 space-y-1">
+                            <div class="flex justify-between gap-2"><span>Remaining:</span> <span class="live-locked font-bold text-gray-500">--</span></div>
+                            <div class="flex justify-between gap-2"><span>Claimed:</span> <span class="live-claimed font-bold text-emerald-600">--</span></div>
+                            <!-- Mini Progress Bar (Phase 2) -->
+                            <div class="w-full bg-gray-100 rounded-full h-1 mt-1 overflow-hidden">
+                                <div class="live-progress bg-emerald-400 h-1 rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
                         </div>
                         <?php endif; ?>
                     </div>
-                    <div class="text-[10px] text-gray-500 leading-tight">
-                        <span class="block">TGE Unlock: <span class="text-gray-900 font-semibold"><?php echo $inv['percent_unlock_at_tge'] ?? 0; ?>%</span></span>
-                        <span class="block">Cliff: <span class="text-gray-900 font-semibold"><?php echo $inv['cliff_months'] ?? 0; ?> mo</span></span>
-                        <span class="block">Vesting: <span class="text-gray-900 font-semibold"><?php echo $inv['vesting_months'] ?? 0; ?> mo</span></span>
+                    <div class="flex flex-wrap gap-1.5 items-center">
+                        <span class="bg-gray-50 text-gray-600 text-[9px] px-2 py-0.5 rounded-full font-semibold border border-gray-200"><?php echo $inv['percent_unlock_at_tge'] ?? 0; ?>% TGE</span>
+                        <span class="bg-gray-50 text-gray-600 text-[9px] px-2 py-0.5 rounded-full font-semibold border border-gray-200"><?php echo $inv['cliff_months'] ?? 0; ?>mo Cliff</span>
+                        <span class="bg-gray-50 text-gray-600 text-[9px] px-2 py-0.5 rounded-full font-semibold border border-gray-200"><?php echo $inv['vesting_months'] ?? 0; ?>mo Vesting</span>
                     </div>
                     <div>
                         <div class="tooltip-container">
@@ -267,8 +356,8 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
                     </div>
                     <div class="text-right relative z-10">
                         <?php if ($canRefund): ?>
-                            <!-- Updated Refund Button: Purple & Added data-wallet for verification -->
-                            <button class="btn btn-primary text-xs py-1.5 px-4 bg-purple-600 hover:bg-purple-700 claim-refund-btn"
+                            <!-- Updated Refund Button: Polished Contrast Highlights -->
+                            <button class="btn text-xs py-1.5 px-4 bg-gray-900 text-white hover:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-300 claim-refund-btn"
                                 data-investment-id="<?php echo $inv['id']; ?>"
                                 data-contract="<?php echo htmlspecialchars($inv['sale_contract_address'] ?? ''); ?>"
                                 data-amount="<?php echo $inv['investment_amount']; ?>"
@@ -277,13 +366,23 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
                             </button>
                         <?php elseif ($showLinkWallet): ?>
                             <div class="flex flex-col items-end gap-1 unlinked-wallet-actions" data-investment-id="<?php echo $inv['id']; ?>">
-                                <span class="text-[9px] text-red-500 font-bold uppercase mb-1">wallet missing</span>
-                                <a href="/backend/receivingwallet_edit_backend.php?investment_id=<?php echo $inv['id']; ?>&redirect_to=/edit-wallet" class="text-[10px] text-emerald-600 hover:underline font-bold mb-1">
+                                <span class="text-[9px] text-red-500 font-bold uppercase mb-1 tracking-wider">wallet missing</span>
+                                <a href="/backend/receivingwallet_edit_backend.php?investment_id=<?php echo $inv['id']; ?>&redirect_to=/edit-wallet" class="inline-block text-[10px] text-white bg-red-500 hover:bg-red-600 px-3 py-1 rounded-md shadow-sm transition-colors font-bold mb-1">
                                     Link Wallet
                                 </a>
                             </div>
                         <?php elseif ($hasWallet && !$isRefundOrFailed): ?>
-                            <?php if ($streamId): ?>
+                            <?php 
+                            // Fee gating: if this is a Gnosis-routed sale and fee is not settled, lock the claim
+                            $isGnosisRouted = !empty($inv['gnosis_safe_address']);
+                            $feeSettled = (int)($inv['fee_settled'] ?? 0);
+                            ?>
+                            <?php if ($isGnosisRouted && !$feeSettled): ?>
+                                <div class="flex flex-col items-end gap-1">
+                                    <span class="text-[10px] text-slate-500 font-semibold uppercase">⏳ Finalizing Setup</span>
+                                    <span class="text-[9px] text-slate-400 text-right max-w-[140px] leading-tight">Token distribution will unlock shortly after post-sale setup.</span>
+                                </div>
+                            <?php elseif ($streamId): ?>
                                 <button class="btn btn-ghost text-xs py-1.5 px-4 claim-vesting-btn font-bold rounded-lg"
                                     data-stream-id="<?php echo htmlspecialchars($streamId); ?>"
                                     data-token-decimals="18"
@@ -335,8 +434,21 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
                         </button> 
                     </div> 
                 </div> 
-                <div id="status-legend-details" class="hidden p-6 border-t guide-details text-sm text-gray-600"> 
-                    <div class="grid grid-cols-1 gap-4">
+                <div id="status-legend-details" class="hidden border-t guide-details text-sm text-gray-600"> 
+                    
+                    <!-- Tabs Header -->
+                    <div class="flex border-b border-gray-100 bg-gray-50/50">
+                        <button class="legend-tab-btn active px-6 py-3 font-semibold text-sm border-b-2 border-emerald-500 text-emerald-700 transition-colors" data-target="direct-legend">
+                            Direct Sales
+                        </button>
+                        <button class="legend-tab-btn px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors" data-target="escrow-legend">
+                            Escrow Sales
+                        </button>
+                    </div>
+
+                    <!-- Escrow Legend Content -->
+                    <div id="escrow-legend" class="legend-tab-content p-6 hidden">
+                        <div class="grid grid-cols-1 gap-4">
                         <div class="flex items-start gap-4">
                             <span class="status-badge bg-white text-gray-500 border border-dashed border-gray-300 w-28 justify-center shrink-0">Pending</span>
                             <p class="leading-relaxed">Payment initiated. Waiting for blockchain network confirmation.</p>
@@ -363,6 +475,26 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
                             <p class="leading-relaxed">Process complete. Funds have been returned to your origin wallet.</p>
                         </div>
                     </div>
+                    </div>
+
+                    <!-- Direct Gnosis Legend Content -->
+                    <div id="direct-legend" class="legend-tab-content p-6">
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="flex items-start gap-4">
+                                <span class="status-badge bg-white text-gray-500 border border-dashed border-gray-300 w-28 justify-center shrink-0">Pending</span>
+                                <p class="leading-relaxed">Payment initiated. Waiting for blockchain network confirmation.</p>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <span class="status-badge bg-slate-100 text-slate-700 border border-slate-200 w-28 justify-center shrink-0">Processing</span>
+                                <p class="leading-relaxed">Payment successful. Funds sent directly to the project's Safe. Token allocations are being finalized.</p>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <span class="status-badge bg-transparent text-emerald-700 border border-emerald-500 font-bold w-28 justify-center shrink-0 text-[10px]">Vesting Active</span>
+                                <p class="leading-relaxed">Distribution has begun. Tokens are streaming to your wallet live.</p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div> 
             </div>
 
@@ -530,6 +662,27 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
                     lucide.createIcons();
                 }
             }
+        });
+
+        // Handle Status Legend Tabs
+        document.querySelectorAll('.legend-tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Update active state on buttons
+                document.querySelectorAll('.legend-tab-btn').forEach(b => {
+                    b.classList.remove('active', 'border-emerald-500', 'text-emerald-700');
+                    b.classList.add('border-transparent', 'text-gray-500');
+                });
+                const targetBtn = e.currentTarget;
+                targetBtn.classList.remove('border-transparent', 'text-gray-500');
+                targetBtn.classList.add('active', 'border-emerald-500', 'text-emerald-700');
+
+                // Show/hide content
+                const targetId = targetBtn.dataset.target;
+                document.querySelectorAll('.legend-tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(targetId).classList.remove('hidden');
+            });
         });
     });
 </script>

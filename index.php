@@ -87,11 +87,14 @@ if (isset($_SESSION['user_id'])) {
 
         // --- ROBUST ACTIVE PROJECT HANDLING ---
         $setup_pages = ['setup', 'story', 'tokenname', 'tokensupply', 'fundraising', 'vesting', 'validate', 'parameter', 'compliance', 'approve', 'sales'];
-        $current_page_key = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
-        if (strpos($current_page_key, 'tookle2/') === 0) {
-            $current_page_key = substr($current_page_key, strlen('tookle2/'));
+        $current_path = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+        if (strpos($current_path, 'tookle2/') === 0) {
+            $current_path = substr($current_path, strlen('tookle2/'));
         }
-        $is_in_setup_flow = in_array($current_page_key, $setup_pages);
+        $path_parts = explode('/', $current_path);
+        $base_page_key = in_array($path_parts[0], ['founder', 'investor', 'admin']) ? ($path_parts[1] ?? '') : $path_parts[0];
+        
+        $is_in_setup_flow = in_array($base_page_key, $setup_pages);
 
         // Only enforce active project outside the setup flow
         if (!$is_in_setup_flow) {
@@ -121,37 +124,69 @@ if (isset($_SESSION['user_id'])) {
 }
 
 
-// --- 2. URL PARSING ---
+// --- 2. URL PARSING & NAMESPACING ---
 $request_path = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 $project_folder = ''; // Root installation
 
-if (strpos($request_path, $project_folder . '/') === 0) {
+if (!empty($project_folder) && strpos($request_path, $project_folder . '/') === 0) {
     $request_path = substr($request_path, strlen($project_folder) + 1);
+} elseif (!empty($project_folder) && $request_path === $project_folder) {
+    $request_path = '';
 }
-// Handle potential empty path after removing folder
-$page_key = empty($request_path) ? 'home' : $request_path;
-// If the path IS the project folder, also default to home
-if ($page_key === $project_folder) {
+
+$url_context = 'public'; 
+$page_key = $request_path;
+
+if (empty($page_key)) {
     $page_key = 'home';
+} else {
+    $parts = explode('/', $page_key);
+    if ($parts[0] === 'founder' || $parts[0] === 'investor') {
+        $url_context = $parts[0];
+        array_shift($parts);
+        $page_key = empty($parts) ? 'home' : implode('/', $parts);
+    }
 }
 
 // --- HELPER: Construct Correct URL ---
-// This helper prevents the double slash (//login) issue when project folder is empty
 function get_url($path) {
-    global $project_folder;
-    $base = empty($project_folder) ? '' : '/' . $project_folder;
-    return $base . '/' . $path;
+    global $project_folder, $url_context;
+    
+    // Special public pages that don't need namespaces
+    $public_pages = ['login', 'logout', 'privacy', 'terms', 'subscription', 'activate'];
+    if (in_array($path, $public_pages)) {
+        return '/' . $path;
+    }
+    
+    // If we are in a public context (like root or settings), fallback to the session role
+    $effective_context = $url_context;
+    if ($effective_context === 'public' && isset($_SESSION['user_role'])) {
+        $effective_context = $_SESSION['user_role'];
+    }
+    
+    $context_prefix = ($effective_context === 'public') ? '' : '/' . $effective_context;
+    
+    return $context_prefix . '/' . $path;
 }
 
 
 // --- 3. PUBLIC, BACKEND & STANDALONE PAGE HANDLING ---
 $standalone_pages = ['settings', 'escrow'];
 // MODIFIED: Added 'privacy' and 'terms' to public pages to allow access without login
-$public_pages = ['login', 'logout', 'privacy', 'terms',]; 
+$public_pages = ['login', 'logout', 'privacy', 'terms', 'activate']; 
 
 // --- 3.A PUBLIC SALE PAGE ROUTE (no login) ---
 if (preg_match('#^p/([A-Za-z0-9]{6,64})$#', $page_key, $m)) {
     $sale_url_token = $m[1];
+    
+    // Automatically record visited/unlocked private sale token in session
+    if (!isset($_SESSION['my_unlocked_sales']) || !is_array($_SESSION['my_unlocked_sales'])) {
+        $_SESSION['my_unlocked_sales'] = [];
+    }
+    if (!in_array($sale_url_token, $_SESSION['my_unlocked_sales'])) {
+        $_SESSION['my_unlocked_sales'][] = $sale_url_token;
+    }
+
     $file_to_include = 'pages/salepage_public.php';
 
     if (file_exists($file_to_include)) {
@@ -213,9 +248,11 @@ $user_role = $_SESSION['user_role'] ?? 'investor';
 // --- Special case for 'home' when logged in ---
 if ($page_key === 'home') {
     if ($user_role === 'founder') {
-        $page_key = 'dashboard'; 
+        header('Location: /founder/dashboard');
+        exit;
     } else {
-        $page_key = 'portfolio'; 
+        header('Location: /investor/portfolio');
+        exit;
     }
 }
 
@@ -238,6 +275,7 @@ $pages = [
     'receivingwallet' => ['file' => 'pages/receivingwallet.php', 'roles' => ['investor'], 'nav_parent' => 'projects'], 
     'payment'         => ['file' => 'pages/payment.php', 'roles' => ['investor'], 'nav_parent' => 'projects'],
     'wallet'          => ['file' => 'pages/wallet.php', 'roles' => ['investor']],
+    'legal'           => ['file' => 'pages/legal.php', 'backend' => 'backend/legal_backend.php', 'roles' => ['investor']],
     'edit-wallet'     => ['file' => 'pages/receivingwallet.php', 'roles' => ['investor'], 'nav_parent' => 'portfolio'], 
     'backerdashboard' => [
         'file' => 'pages/backerdashboard.php',
@@ -272,6 +310,7 @@ $pages = [
     'claim_funds'     => ['file' => 'pages/claim_funds.php', 'roles' => ['founder']],
 
     // Shared Pages
+    'settings'        => ['file' => 'pages/settings.php', 'roles' => ['investor', 'founder']],
     'invites'         => ['file' => 'pages/invites.html', 'roles' => ['investor', 'founder']], 
     'subscription'    => [
         'file' => 'pages/subscription.php', 
@@ -280,6 +319,19 @@ $pages = [
     ],
 ];
 
+
+// --- GATEKEEPER: Enforce Founder Membership ---
+if ($url_context === 'founder') {
+    // $pdo is already loaded at the top of index.php
+    $stmt = $pdo->prepare("SELECT has_membership FROM user WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$user || $user['has_membership'] == 0) {
+        header('Location: /subscription?msg=access_denied');
+        exit;
+    }
+}
 
 // --- 6. ROUTING LOGIC & CONTENT LOADING ---
 ob_start(); 
@@ -292,7 +344,9 @@ $page_data = [];
 if (isset($pages[$page_key])) {
     $page_config = $pages[$page_key];
 
-    if (has_access($user_role, $page_config['roles'])) {
+    // Access is granted if the current URL context is allowed for this page.
+    // If the URL has no context (public), and the page requires a role, deny access.
+    if (in_array($url_context, $page_config['roles'])) {
         if (file_exists($page_config['file'])) {
             if (isset($page_config['backend']) && file_exists($page_config['backend'])) {
                 include $page_config['backend'];
@@ -311,10 +365,14 @@ if (isset($pages[$page_key])) {
              http_response_code(404);
         }
     } else {
-        // BUG FIX: Handling 403 Forbidden properly for UX
-        // If an investor tries to access a Founder page, send them to Subscription instead of a generic error.
-        if ($user_role === 'investor' && in_array('founder', $page_config['roles'])) {
-             // Redirect to upgrade page
+        // If they accessed a URL without a namespace (public), but they have a role that grants access, redirect them seamlessly
+        if ($url_context === 'public' && isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], $page_config['roles'])) {
+            header('Location: /' . $_SESSION['user_role'] . '/' . $page_key);
+            exit;
+        }
+
+        // If an investor context tries to access a Founder page, send them to Subscription
+        if ($url_context === 'investor' && in_array('founder', $page_config['roles'])) {
              header('Location: /subscription?msg=access_denied');
              exit;
         }
@@ -351,37 +409,37 @@ $setup_flow_pages = [
 ];
 $purchase_flow_pages = ['purchase', 'receivingwallet', 'payment', 'kyc'];
 
-$focus_mode_exit_url = '/dashboard'; 
+$focus_mode_exit_url = get_url('dashboard'); 
 $focus_mode_exit_text = 'Exit';
 $focus_mode_title = 'Manage Project'; 
 
 if ($sidebar_mode === 'focus') {
     if (in_array($original_page_key, $setup_flow_pages)) {
-        $focus_mode_exit_url = '/dashboard';
+        $focus_mode_exit_url = get_url('dashboard');
         $focus_mode_exit_text = 'Exit';
         $focus_mode_title = 'Project Setup';
     } elseif ($original_page_key === 'sales') {
-        $focus_mode_exit_url = '/dashboard'; 
+        $focus_mode_exit_url = get_url('dashboard'); 
         $focus_mode_exit_text = 'Cancel';
         $focus_mode_title = 'Private Sale';
     } elseif ($original_page_key === 'setup_vault') {
-        $focus_mode_exit_url = '/dashboard';
+        $focus_mode_exit_url = get_url('dashboard');
         $focus_mode_exit_text = 'Close';
         $focus_mode_title = 'Smart Vault Protocol';
     } elseif ($original_page_key === 'claim_funds') {
-        $focus_mode_exit_url = '/dashboard';
+        $focus_mode_exit_url = get_url('dashboard');
         $focus_mode_exit_text = 'Exit';
         $focus_mode_title = 'Vault Management';
     } elseif ($original_page_key === 'setup_escrow') {
-        $focus_mode_exit_url = '/dashboard';
+        $focus_mode_exit_url = get_url('dashboard');
         $focus_mode_exit_text = 'Cancel Deployment';
         $focus_mode_title = 'Deploy Escrow Contract';
     } elseif (in_array($original_page_key, $purchase_flow_pages)) {
-        $focus_mode_exit_url = '/projects'; 
+        $focus_mode_exit_url = get_url('projects'); 
         $focus_mode_exit_text = 'Cancel Purchase';
         $focus_mode_title = 'Complete Your Purchase';
     } elseif ($original_page_key === 'edit-wallet') {
-        $focus_mode_exit_url = '/backerdashboard'; 
+        $focus_mode_exit_url = get_url('backerdashboard'); 
         $focus_mode_exit_text = 'Back to Dashboard';
         $focus_mode_title = 'Configure Receiving Wallet'; 
     } elseif ($original_page_key === 'subscription') {

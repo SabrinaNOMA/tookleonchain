@@ -107,20 +107,50 @@
 <div class="max-w-7xl mx-auto p-6 md:p-8">
     <div class="flex flex-wrap justify-between items-center gap-4 mb-8">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Discover Projects</h1>
-            <p class="text-gray-600 mt-1">Explore new project launches and discover innovative initiatives.</p>
+            <h1 class="text-3xl font-bold text-gray-900">Private Sale Rooms</h1>
+            <p class="text-gray-600 mt-1">Access token sale rooms by direct founder invitation.</p>
+        </div>
+    </div>
+
+    <!-- Access by Invitation Card -->
+    <div class="bg-gray-900 text-white rounded-2xl p-6 md:p-8 mb-10 shadow-xl border border-gray-800">
+        <div class="max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-gray-200 text-xs font-semibold mb-3">
+                <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                <span>Private & Invitation-Only</span>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Have a Private Sale Invitation?</h2>
+            <p class="text-gray-300 text-sm mb-6 leading-relaxed">
+                TOOKLE does not operate a public marketplace. Paste your private invitation link or sale code from the project founder below to unlock and enter the sale room.
+            </p>
+            
+            <form id="invite-access-form" class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                        <i data-lucide="key" class="w-4 h-4"></i>
+                    </div>
+                    <input type="text" id="invite-token-input" 
+                        class="w-full pl-10 pr-4 py-3 bg-gray-800/80 border border-gray-700 rounded-xl text-white placeholder-gray-400 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+                        placeholder="e.g. https://tookle.io/p/ab12cd or ab12cd" required>
+                </div>
+                <button type="submit" id="unlock-btn" class="inline-flex items-center justify-center px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm rounded-xl transition-colors shrink-0 shadow-lg shadow-purple-600/20">
+                    <i data-lucide="arrow-right" class="w-4 h-4 mr-2"></i>
+                    Visit Sale Room
+                </button>
+            </form>
+            <div id="invite-error-msg" class="hidden mt-3 text-xs text-red-400 flex items-center gap-1.5"></div>
         </div>
     </div>
 
     <section id="live-projects-section" class="mb-12">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">Live & Upcoming Sales</h2>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">My Unlocked Live Sales</h2>
         <div id="live-projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <!-- Live project cards will be loaded here by JavaScript -->
         </div>
     </section>
     
     <section id="closed-projects-section" class="mb-8">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">Past Sales</h2>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">Past Unlocked Sales</h2>
         <div id="closed-projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <!-- Closed project cards will be loaded here by JavaScript -->
         </div>
@@ -180,6 +210,19 @@
             </div>
         </div>
     </section>
+
+    <!-- Compliance Notice Footer -->
+    <div class="mt-12 p-6 bg-gray-50 border border-gray-200 rounded-xl">
+        <div class="flex items-start gap-3">
+            <i data-lucide="shield-check" class="w-5 h-5 text-gray-700 shrink-0 mt-0.5"></i>
+            <div>
+                <h5 class="text-xs font-bold text-gray-900 uppercase tracking-wider mb-1">Institutional Compliance Notice</h5>
+                <p class="text-xs text-gray-600 leading-relaxed">
+                    TOOKLE does not operate a public marketplace or publicly solicit token sales under EU MiCA, Swiss FINMA, or SEC frameworks. Access to project sale rooms is strictly by direct founder invitation. TOOKLE is a non-custodial software utility provider and is not a party to any token sale transaction.
+                </p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -347,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  const container = document.getElementById('live-projects-grid');
                  const section = container.closest('section');
                  section.classList.remove('hidden');
-                 container.innerHTML = `<div class="md:col-span-2 lg:col-span-3 empty-state-placeholder"><i data-lucide="binoculars" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i><h4 class="text-xl font-bold text-gray-800">No Projects Right Now</h4><p class="mt-2 max-w-md mx-auto text-sm">Check back soon for new opportunities!</p></div>`;
+                 container.innerHTML = `<div class="md:col-span-2 lg:col-span-3 empty-state-placeholder"><div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4"><i data-lucide="lock" class="w-8 h-8 text-gray-400"></i></div><h4 class="text-xl font-bold text-gray-800">No Unlocked Private Sales</h4><p class="mt-2 max-w-md mx-auto text-sm text-gray-500">You have not visited or unlocked any private sales yet. Paste an invitation link or code from a project founder above to enter their private sale room.</p></div>`;
             }
 
             lucide.createIcons();
@@ -358,6 +401,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 liveSection.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-center" role="alert"><strong class="font-bold">Error:</strong><span class="block sm:inline"> Could not load project data. Please try refreshing the page.</span></div>`;
             }
         }
+    }
+
+    const inviteForm = document.getElementById('invite-access-form');
+    if (inviteForm) {
+        inviteForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const inputVal = document.getElementById('invite-token-input').value.trim();
+            const errorMsg = document.getElementById('invite-error-msg');
+            const unlockBtn = document.getElementById('unlock-btn');
+            
+            errorMsg.classList.add('hidden');
+            errorMsg.innerHTML = '';
+            unlockBtn.disabled = true;
+            unlockBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i> Unlocking...`;
+            lucide.createIcons();
+
+            try {
+                const res = await fetch(`/backend/unlock_sale.php?token=${encodeURIComponent(inputVal)}`);
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.error || 'Invalid invitation code or link.');
+                }
+                window.location.href = data.redirect_url;
+            } catch (err) {
+                errorMsg.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4"></i> <span>${err.message}</span>`;
+                errorMsg.classList.remove('hidden');
+                unlockBtn.disabled = false;
+                unlockBtn.innerHTML = `<i data-lucide="arrow-right" class="w-4 h-4 mr-2"></i> Visit Sale Room`;
+                lucide.createIcons();
+            }
+        });
     }
 
     loadDashboard();

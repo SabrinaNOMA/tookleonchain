@@ -25,7 +25,7 @@ $project_id = $_SESSION['active_project_id'] ?? null;
 // --- DATA FETCHING & ERROR HANDLING ---
 $errorMessage = null;
 if (!$project_id || !$founder_id) {
-    $errorMessage = "No active project is selected. Please return to your <a href='/dashboard' class='text-purple-700 underline'>dashboard</a> and select a project to continue.";
+    $errorMessage = "No active project is selected. Please return to your <a href='<?= get_url('dashboard') ?>' class='text-purple-700 underline'>dashboard</a> and select a project to continue.";
 } else {
     $form_data = $_SESSION['form_data'] ?? [];
     $form_errors = $_SESSION['form_errors'] ?? [];
@@ -119,7 +119,7 @@ if (!$project_id || !$founder_id) {
                         <?php endif; ?>
                     </div>
                     <div class="flex justify-between items-center mt-8 pt-6 border-t">
-                        <a href="/setup" class="text-slate-600 font-semibold py-2 px-4 rounded-lg hover:bg-slate-200 transition-all">Back</a>
+                        <a href="<?= get_url('setup') ?>" class="text-slate-600 font-semibold py-2 px-4 rounded-lg hover:bg-slate-200 transition-all">Back</a>
                         <button type="submit" class="btn btn-primary">Save & Continue</button>
                     </div>
                 </form>

@@ -41,7 +41,7 @@ $target_fdv = 3000000;  // Default
 $total_supply = 0;      // Default
 
 if (!$project_id) {
-    $errorMessage = 'No active project selected. Please return to your <a href="/dashboard" class="text-purple-700 underline">dashboard</a>.';
+    $errorMessage = 'No active project selected. Please return to your <a href="<?= get_url('dashboard') ?>" class="text-purple-700 underline">dashboard</a>.';
 } else {
     try {
         // --- Fetch Project Data (Supply, Category, Fundraising Goals) ---
@@ -252,7 +252,7 @@ if (!$project_id) {
                 </div>
 
                 <div class="flex justify-between items-center border-t border-gray-200 pt-6 mt-8">
-                    <a href="/tokensupply" class="px-6 py-2 border rounded-lg font-medium">Back</a>
+                    <a href="<?= get_url('tokensupply') ?>" class="px-6 py-2 border rounded-lg font-medium">Back</a>
                     <button type="submit" id="next-button" class="btn-gradient px-6 py-2 rounded-lg font-medium">Save & Continue</button>
                 </div>
             </form>
@@ -341,6 +341,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (investorAllocData) {
             investorAllocData.percent = totalPercentSupply;
         }
+        
+        // AUTO-BALANCE: Automatically balance remaining tranches to 100.0000%
+        adjustAllocationsTo100(true);
         
         populateAllocationTable();
         updateAllocation();
@@ -470,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * difference and then assigns any rounding remainders to the largest tranche,
      * ensuring the total is *exactly* 100.
      */
-    function adjustAllocationsTo100() {
+    function adjustAllocationsTo100(skipRecalculate = false) {
         const PRECISION = 10000; // Using 10,000 mimics BPS * 100 for more precision
         const otherTranches = [];
         let otherTotalInt = 0;
@@ -532,7 +535,9 @@ document.addEventListener('DOMContentLoaded', () => {
             delete item.percentInt; // Clean up temporary property
         });
         
-        recalculateAll();
+        if (!skipRecalculate) {
+            recalculateAll();
+        }
     }
     
     function loadBenchmarkData() {

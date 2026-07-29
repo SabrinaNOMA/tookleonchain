@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('tx_hash', testTxHash);
 
         try {
-            const response = await fetch('backend/payment_backend.php', { method: 'POST', body: formData });
+            const response = await fetch('/backend/payment_backend.php', { method: 'POST', body: formData });
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || 'Server error');
             if (result.success) {

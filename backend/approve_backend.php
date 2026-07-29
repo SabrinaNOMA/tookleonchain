@@ -80,6 +80,8 @@ try {
     // Commit all changes to the database
     $pdo->commit();
 
+    $_SESSION['show_wizard_success_popup'] = true;
+
     // Send a success response with the redirect URL
     $response['success'] = true;
     $response['redirect_url'] = '/dashboard';

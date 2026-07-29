@@ -96,6 +96,18 @@ if (!$page_error) {
         $stmt_tokens->execute([$project_id]);
         $deployedTokens = $stmt_tokens->fetchAll(PDO::FETCH_ASSOC);
 
+        // Fetch sales that require fee settlement (fee_settled = 0)
+        $stmt_unpaid = $pdo->prepare("
+            SELECT t.id, t.sale_name, t.payment_token,
+                   (SELECT SUM(amount_usd) FROM investments WHERE sale_name = t.sale_name AND project_id = t.project_id AND status IN ('released_to_creator', 'successful')) as total_raised
+            FROM token_sale_pages t
+            WHERE t.project_id = ? 
+              AND t.fee_settled = 0 
+              AND t.status IN ('live', 'ended_successful')
+        ");
+        $stmt_unpaid->execute([$project_id]);
+        $unpaidSales = $stmt_unpaid->fetchAll(PDO::FETCH_ASSOC);
+
     } catch (Exception $e) {
         error_log("Distribute Page GET Error: " . $e->getMessage());
         $page_error = 'Failed to fetch project data. ' . $e->getMessage();
@@ -107,13 +119,30 @@ if (!$page_error) {
         <div class="content-panel text-center max-w-lg mx-auto">
             <h2 class="text-xl font-bold text-red-600">Project Not Found</h2>
             <p class="mt-2 text-gray-600"><?php echo htmlspecialchars($page_error); ?></p>
-            <a href="/dashboard" class="btn btn-primary mt-6"><i data-lucide="arrow-left"></i> Go to Dashboard</a>
+            <a href="<?= get_url('dashboard') ?>" class="btn btn-primary mt-6"><i data-lucide="arrow-left"></i> Go to Dashboard</a>
         </div>
     <?php else: ?>
         <header class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Distribution</h1>
             <p class="mt-2 text-base text-gray-500">Manage on-chain actions for your project. Deploy new token contracts and distribute tokens to investors from this hub.</p>
         </header>
+
+        <?php if (!empty($unpaidSales)): 
+            $saleId = $unpaidSales[0]['id'];
+            $feeToken = $unpaidSales[0]['payment_token'] ?? '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+            $totalRaised = (float)($unpaidSales[0]['total_raised'] ?? 0);
+            $feeAmount = $totalRaised * 0.035; // 3.5% fee
+        ?>
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between mb-8 shadow-sm">
+            <div class="flex items-center gap-3">
+                <i data-lucide="info" class="w-5 h-5 text-amber-600"></i>
+                <p class="text-amber-800 text-sm font-medium">Outstanding protocol fee for <b><?php echo htmlspecialchars($unpaidSales[0]['sale_name']); ?></b>. Token distribution is locked until settled.</p>
+            </div>
+            <button id="pay-fee-btn" onclick="payProtocolFee(<?php echo $saleId; ?>, '<?php echo $feeToken; ?>', <?php echo $feeAmount; ?>)" class="btn bg-amber-500 hover:bg-amber-600 text-white text-sm py-1.5 px-4 rounded shadow-sm transition-colors">
+                Pay Fee ($<?php echo number_format($feeAmount, 2); ?>)
+            </button>
+        </div>
+        <?php endif; ?>
 
         <div id="app-container" class="relative">
             <div id="main-actions-view">
@@ -248,7 +277,7 @@ if (!$page_error) {
         const BACKEND_URL = '/backend/distribute_backend.php';
 
         if (!currentProjectId) {
-            document.querySelector('main').innerHTML = '<div class="content-panel text-center max-w-lg mx-auto"><h2 class="text-xl font-bold text-red-600">Project Not Found</h2><p class="mt-2 text-gray-600">No active project is selected. Please return to the dashboard and choose a project.</p><a href="/dashboard" class="btn btn-primary mt-6"><i data-lucide="arrow-left"></i> Go to Dashboard</a></div>';
+            document.querySelector('main').innerHTML = '<div class="content-panel text-center max-w-lg mx-auto"><h2 class="text-xl font-bold text-red-600">Project Not Found</h2><p class="mt-2 text-gray-600">No active project is selected. Please return to the dashboard and choose a project.</p><a href="<?= get_url('dashboard') ?>" class="btn btn-primary mt-6"><i data-lucide="arrow-left"></i> Go to Dashboard</a></div>';
             lucide.createIcons();
             return;
         }
@@ -641,6 +670,41 @@ if (!$page_error) {
                 renderTokenList();
             } else if (result) {
                 showMessage('Selection Failed', result.error, 'error');
+            }
+        }
+
+        async function payProtocolFee(saleId, tokenAddress, amountNum) {
+            const btn = document.getElementById('pay-fee-btn');
+            if(btn) { btn.innerText = "Processing..."; btn.style.pointerEvents = "none"; }
+            
+            try {
+                const activeSigner = await ensureWalletConnected();
+                if (!activeSigner) throw new Error("Wallet not connected");
+
+                const ERC20_ABI = ["function decimals() view returns (uint8)", "function transfer(address recipient, uint256 amount) external returns (bool)"];
+                const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, activeSigner);
+                const decimals = await tokenContract.decimals();
+                
+                const amountToTransfer = ethers.parseUnits(amountNum.toString(), decimals);
+                const platformAddress = '0xB926065F721453B707e46F19e74E1861fa5F850f';
+                
+                showMessage('Action Required', 'Please confirm the fee payment transaction in your wallet.', 'info');
+                
+                const tx = await tokenContract.transfer(platformAddress, amountToTransfer);
+                showMessage('Transaction Sent', 'Payment is processing on the network...', 'info');
+                
+                const receipt = await tx.wait();
+                
+                // Update fee status in backend
+                const payload = { sale_id: saleId, tx_hash: receipt.hash, amount: amountNum.toString(), currency: 'USDC', payer_address: userAccount };
+                await fetch('../backend/update_fee_status.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                
+                showMessage('✅ Payment Successful', 'Fees settled. The distribution portal is now unlocked!', 'success');
+                setTimeout(() => window.location.reload(), 2000);
+            } catch (error) {
+                console.error("Payment Error:", error);
+                showMessage('❌ Payment Failed', error.message || 'Transaction could not be completed.', 'error');
+                if(btn) { btn.innerText = `Pay Fee to Unlock ($${amountNum.toFixed(2)})`; btn.style.pointerEvents = "auto"; }
             }
         }
 

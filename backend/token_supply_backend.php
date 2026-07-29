@@ -31,7 +31,7 @@ $_SESSION['form_data'] = $_POST; // Store POST data for repopulation on error
 // --- Validation ---
 if (empty($project_id)) {
     $_SESSION['form_errors'] = ['global' => 'Project ID is missing. Cannot save.'];
-    header('Location: /dashboard'); // Redirect to a safe page
+    header('Location: /founder/dashboard'); // Redirect to a safe page
     exit;
 }
 
@@ -61,7 +61,7 @@ if (!is_numeric($supply_value_input) || !is_numeric($supply_unit)) {
 // --- Redirect on Error ---
 if (!empty($errors)) {
     $_SESSION['form_errors'] = $errors;
-    header('Location: /tokensupply');
+    header('Location: /founder/tokensupply');
     exit;
 }
 
@@ -83,12 +83,12 @@ try {
 
     // Success: clear session data and redirect to the next step
     unset($_SESSION['form_data'], $_SESSION['form_errors']);
-    header('Location: /fundraising', true, 303); // Use 303 redirect
+    header('Location: /founder/fundraising', true, 303); // Use 303 redirect
     exit;
 
 } catch (PDOException $e) {
     error_log("PDO Error in token_supply_backend.php: " . $e->getMessage());
     $_SESSION['form_errors'] = ['global' => 'A database error occurred. Please try again.'];
-    header('Location: /tokensupply');
+    header('Location: /founder/tokensupply');
     exit;
 }

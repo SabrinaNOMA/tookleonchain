@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Database Configuration Example Template
  * Copy this file to config.php and enter your real credentials.

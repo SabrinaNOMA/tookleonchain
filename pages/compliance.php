@@ -233,7 +233,7 @@ $js_agreement_content = $db_agreement_content_json;
                 <input type="hidden" name="custom_country_disclaimer" id="custom-country-disclaimer-input">
 
                 <div class="flex justify-between items-center border-t border-gray-200 pt-6 mt-8">
-                    <a href="/parameter" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50">Back</a>
+                    <a href="<?= get_url('parameter') ?>" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50">Back</a>
                     <button type="submit" class="px-6 py-2.5 bg-gradient-to-r from-purple-700 to-cyan-500 text-white rounded-lg font-medium shadow-md text-sm">Save and Continue</button>
                 </div>
             </form>

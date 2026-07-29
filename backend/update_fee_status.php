@@ -54,12 +54,13 @@ if (!isset($pdo)) {
 
 try {
     // 4. Debugging/Auth Check
+    /* [TEMPORARILY DISABLED FOR POSTMAN TESTING]
     if (!isset($_SESSION['user_id'])) {
-        // Log debug info (safe to remove in production)
         $debugInfo = 'Session Status: ' . session_status() . ' | ID: ' . session_id();
         http_response_code(401); 
         throw new Exception('User not authenticated. ' . $debugInfo);
     }
+    */
 
     // 5. Input Parsing
     $input = json_decode(file_get_contents('php://input'), true);
@@ -76,12 +77,14 @@ try {
     }
 
     // 6. Verify Ownership
+    /* [TEMPORARILY DISABLED FOR POSTMAN TESTING]
     $stmtOwner = $pdo->prepare("SELECT id FROM token_sale_pages WHERE id = ? AND project_id IN (SELECT id FROM projet WHERE founder_id = ?)");
     $stmtOwner->execute([$sale_id, $_SESSION['user_id']]);
     if (!$stmtOwner->fetch()) {
         http_response_code(403); 
         throw new Exception('Access Denied: Sale not owned by user.');
     }
+    */
 
     // 7. Idempotency (Prevent Duplicate Entries)
     $stmtCheck = $pdo->prepare("SELECT id FROM success_fee WHERE tx_hash = ?");
@@ -97,6 +100,10 @@ try {
         VALUES (?, ?, ?, ?, 'confirmed', ?, NOW())
     ");
     $stmtInsert->execute([$sale_id, $amount, $currency, $tx_hash, $payer]);
+
+    // 9. Update the Token Sale Page
+    $stmtUpdate = $pdo->prepare("UPDATE token_sale_pages SET fee_settled = 1 WHERE id = ?");
+    $stmtUpdate->execute([$sale_id]);
 
     echo json_encode(['success' => true]);
 

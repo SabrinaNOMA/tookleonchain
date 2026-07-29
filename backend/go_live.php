@@ -39,7 +39,7 @@ try {
     // 3. Verify Sale, Ownership, and Get Duration
     // We join with `projet` to verify the founder_id matches the session user.
     $stmt = $pdo->prepare("
-        SELECT tsp.id, tsp.status, tsp.duration_seconds, tsp.contract_address, p.founder_id
+        SELECT tsp.id, tsp.status, tsp.duration_seconds, tsp.contract_address, tsp.gnosis_safe_address, tsp.sale_url, p.founder_id
         FROM token_sale_pages tsp 
         JOIN projet p ON tsp.project_id = p.id
         WHERE tsp.id = ?
@@ -56,8 +56,8 @@ try {
         throw new Exception("Permission denied.");
     }
 
-    // Safety check: Ensure Vault is deployed
-    if (empty($sale['contract_address'])) {
+    // Safety check: Ensure Vault is deployed OR it is a Direct Gnosis sale
+    if (empty($sale['contract_address']) && empty($sale['gnosis_safe_address'])) {
         throw new Exception("Smart Vault not configured. Please deploy the vault first.");
     }
 
@@ -89,8 +89,9 @@ try {
 
     echo json_encode([
         'success' => true, 
-        'message' => 'Smart Vault activated successfully.',
-        'sale_id' => $sale_id
+        'message' => 'Sale activated successfully.',
+        'sale_id' => $sale_id,
+        'public_token' => $sale['sale_url']
     ]);
 
 } catch (Exception $e) {

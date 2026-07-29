@@ -17,115 +17,80 @@ if (!isset($_SESSION['user_id'])) {
 // 3. Include the Backend Logic
 require_once __DIR__ . '/../backend/portfolio_backend.php'; 
 ?>
-<!DOCTYPE html>
-<html lang="en" class="h-full">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tookle - Portfolio</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="/config_logo.js" defer></script>
-    <style>
-        :root {
-            --main-bg: #f9fafb;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --border-color: #e5e7eb;
-            --theme-primary: #10B981; 
-            --accent-purple: #8b5cf6;
-            --accent-purple-light: #f5f3ff;
-            --accent-purple-dark: #7c3aed;
-        }
-        body { font-family: 'Montserrat', sans-serif; background-color: var(--main-bg); color: var(--text-primary); }
-        
-        /* Card Styles */
-        .project-card {
-            background-color: white;
-            border-radius: 0.75rem;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transition: transform 0.2s;
-        }
-        .project-card:hover { transform: translateY(-4px); }
-        
-        .card-media-container {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            background-color: #f3f4f6;
-            position: relative;
-        }
-        .card-media-container img, .card-media-container video {
-            width: 100%; height: 100%; object-fit: cover;
-        }
-        .placeholder-gradient {
-            width: 100%; height: 100%;
-            background: linear-gradient(135deg, #6b7280 0%, #1f2937 100%);
-        }
+<style>
+    /* Card Styles */
+    .project-card {
+        background-color: white;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition: transform 0.2s;
+    }
+    .project-card:hover { transform: translateY(-4px); }
+    
+    .card-media-container {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background-color: #f3f4f6;
+        position: relative;
+    }
+    .card-media-container img, .card-media-container video {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .placeholder-gradient {
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, #6b7280 0%, #1f2937 100%);
+    }
 
-        /* Status Badges */
-        .status-badge {
-            display: inline-flex; align-items: center; padding: 0.25rem 0.75rem;
-            font-size: 0.75rem; font-weight: 600; border-radius: 9999px;
-            text-transform: capitalize;
-            background-color: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .status-live { color: #166534; }
-        .status-ended_successful { color: #15803d; }
-        .status-ended_failed, .status-canceled { color: #4b5563; }
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex; align-items: center; padding: 0.25rem 0.75rem;
+        font-size: 0.75rem; font-weight: 600; border-radius: 9999px;
+        text-transform: capitalize;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .status-live { color: #166534; }
+    .status-ended_successful { color: #15803d; }
+    .status-ended_failed, .status-canceled { color: #4b5563; }
 
-        /* Historical Table */
-        .historical-header-row {
-            display: grid;
-            grid-template-columns: 2.5fr 1.5fr 1.5fr 2.5fr 1.5fr;
-            gap: 1rem;
-            padding: 0.75rem 1.5rem;
-            font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
-            text-transform: uppercase; background-color: #f9fafb; border-radius: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-        .historical-item-row {
-            display: grid;
-            grid-template-columns: 2.5fr 1.5fr 1.5fr 2.5fr 1.5fr;
-            gap: 1rem;
-            align-items: center;
-            padding: 1rem 1.5rem;
-            background-color: white; border: 1px solid var(--border-color);
-            border-radius: 0.5rem; font-size: 0.875rem;
-        }
-        @media (max-width: 768px) {
-            .historical-header-row { display: none; }
-            .historical-item-row { grid-template-columns: 1fr; gap: 0.5rem; }
-        }
+    /* Historical Table */
+    .historical-header-row {
+        display: grid;
+        grid-template-columns: 2.5fr 1.5fr 1.5fr 2.5fr 1.5fr;
+        gap: 1rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
+        text-transform: uppercase; background-color: #f9fafb; border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .historical-item-row {
+        display: grid;
+        grid-template-columns: 2.5fr 1.5fr 1.5fr 2.5fr 1.5fr;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background-color: white; border: 1px solid var(--border-color);
+        border-radius: 0.5rem; font-size: 0.875rem;
+    }
+    @media (max-width: 768px) {
+        .historical-header-row { display: none; }
+        .historical-item-row { grid-template-columns: 1fr; gap: 0.5rem; }
+    }
 
-        /* Tabs & Buttons */
-        .tab-active { border-bottom: 2px solid var(--accent-purple); color: var(--accent-purple); }
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
-        .btn-primary { background-color: var(--text-primary); color: white; }
-    </style>
-</head>
-<body class="h-full overflow-hidden flex flex-col">
+    /* Tabs & Buttons */
+    .tab-active { border-bottom: 2px solid var(--accent-purple); color: var(--accent-purple); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; }
+    .btn-primary { background-color: var(--text-primary); color: white; }
+</style>
 
     <div class="max-w-7xl mx-auto p-6 md:p-8 w-full flex-1 overflow-y-auto">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900">Portfolio</h1>
             <p class="text-gray-600 mt-1">Welcome! Here's an overview of your contributions and portfolio performance.</p>
-        </div>
-
-        <!-- Tabs -->
-        <div class="border-b border-gray-200 mb-8">
-            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                <a href="#" id="tab-contributions" class="tab-active whitespace-nowrap py-4 px-1 text-sm font-medium">My Contributions</a>
-                <a href="#" id="tab-analytics" class="text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 text-sm font-medium">Analytics</a>
-            </nav>
         </div>
 
         <!-- Content Area -->
@@ -198,10 +163,6 @@ require_once __DIR__ . '/../backend/portfolio_backend.php';
             </section>
         </div>
 
-        <div id="content-analytics" class="hidden">
-             <!-- Analytics populated by JS -->
-        </div>
-        
         <!-- Non-Custodial Notice -->
         <div class="mt-8 mb-4 p-6 bg-gray-50 border border-gray-200 rounded-xl">
             <h5 class="text-sm font-bold text-gray-900 mb-2">Non-Custodial Notice</h5>
@@ -218,26 +179,7 @@ require_once __DIR__ . '/../backend/portfolio_backend.php';
         lucide.createIcons();
         const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(val);
 
-        const tabContributions = document.getElementById('tab-contributions');
-        const tabAnalytics = document.getElementById('tab-analytics');
         const contentContributions = document.getElementById('content-contributions');
-        const contentAnalytics = document.getElementById('content-analytics');
-        
-        // Tab Switching Logic
-        function showTab(tabName) {
-            const isContributions = tabName === 'contributions';
-            tabContributions.classList.toggle('tab-active', isContributions);
-            tabContributions.classList.toggle('text-gray-500', !isContributions);
-            
-            tabAnalytics.classList.toggle('tab-active', !isContributions);
-            tabAnalytics.classList.toggle('text-gray-500', isContributions);
-
-            contentContributions.classList.toggle('hidden', !isContributions);
-            contentAnalytics.classList.toggle('hidden', isContributions);
-        }
-
-        tabContributions.addEventListener('click', (e) => { e.preventDefault(); showTab('contributions'); });
-        tabAnalytics.addEventListener('click', (e) => { e.preventDefault(); showTab('analytics'); });
 
         // Event Delegation for Buttons
         contentContributions.addEventListener('click', (e) => {
@@ -433,7 +375,7 @@ require_once __DIR__ . '/../backend/portfolio_backend.php';
                         </div>
                         <h3 class="text-lg font-semibold text-gray-900">No contributions yet</h3>
                         <p class="text-gray-500 mt-1 max-w-sm mx-auto">Start exploring projects to build your portfolio.</p>
-                        <a href="/projects" class="mt-6 inline-flex btn btn-primary">Explore Projects</a>
+                        <a href="<?= get_url('projects') ?>" class="mt-6 inline-flex btn btn-primary">Explore Projects</a>
                     </div>
                 `;
             }
@@ -444,5 +386,41 @@ require_once __DIR__ . '/../backend/portfolio_backend.php';
         loadPortfolio();
     });
 </script>
-</body>
-</html>
+
+    <!-- Modals -->
+    <!-- View Details Modal -->
+    <div id="view-details-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0 z-10 transform transition-all relative">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-20">
+                <h3 class="text-lg font-semibold text-gray-900" id="modal-title">Contribution Details</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none" onclick="closeDetailsModal()">
+                    <span class="sr-only">Close</span>
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="px-6 py-4" id="modal-content">
+                <!-- Content injected via JS -->
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end bg-gray-50 sticky bottom-0">
+                 <button type="button" class="btn btn-primary" onclick="closeDetailsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        function openDetailsModal(projectId, escrowAddress) {
+            document.getElementById('view-details-modal').classList.remove('hidden');
+            document.getElementById('modal-content').innerHTML = `
+                <div class="text-center py-8">
+                    <p class="text-gray-500 mb-2">Loading details for Escrow: <span class="font-mono text-xs">`+escrowAddress+`</span></p>
+                    <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin text-gray-400"></i>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+        function closeDetailsModal() {
+            document.getElementById('view-details-modal').classList.add('hidden');
+        }
+    </script>

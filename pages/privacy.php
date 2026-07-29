@@ -139,7 +139,7 @@ if (session_status() === PHP_SESSION_NONE) {
         </div>
         
         <footer class="mt-12 text-center text-sm text-gray-400">
-            &copy; <?php echo date('Y'); ?> Tookle. All rights reserved. <a href="/terms" class="hover:text-gray-600 ml-2">Terms of Service</a>
+            &copy; <?php echo date('Y'); ?> Tookle. All rights reserved. <a href="<?= get_url('terms') ?>" class="hover:text-gray-600 ml-2">Terms of Service</a>
         </footer>
     </main>
 </body>

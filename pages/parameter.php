@@ -221,7 +221,7 @@ if (empty($project_id)) {
                     </section>
 
                     <div class="flex justify-between items-center pt-6 mt-8 border-t border-gray-200">
-                        <a href="/story" class="px-6 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors">Back</a>
+                        <a href="<?= get_url('story') ?>" class="px-6 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors">Back</a>
                         <button type="submit" class="px-8 py-2.5 bg-gradient-to-r from-purple-700 to-cyan-500 text-white rounded-lg font-medium transition-all shadow-md">Save and Continue</button>
                     </div>
                 </form>
@@ -433,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 const toast = document.getElementById('toast-notification');
                 toast.classList.remove('hidden', 'translate-y-full', 'opacity-0');
-                setTimeout(() => window.location.href = '/compliance', 1000);
+                setTimeout(() => window.location.href = '<?= get_url('compliance') ?>', 1000);
             } else {
                 showValidationModal(data.error);
                 btn.disabled = false;

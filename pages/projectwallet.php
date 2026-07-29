@@ -15,7 +15,7 @@ $project_id = $_SESSION['active_project_id'] ?? null;
 // --- DATA FETCHING & ERROR HANDLING ---
 $errorMessage = null;
 if (!$project_id || !$founder_id) {
-    $errorMessage = "No active project is selected. Please return to your <a href='/dashboard' class='text-purple-700 underline'>dashboard</a> and select a project to continue.";
+    $errorMessage = "No active project is selected. Please return to your <a href='<?= get_url('dashboard') ?>' class='text-purple-700 underline'>dashboard</a> and select a project to continue.";
 }
 ?>
 <style>
@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function fetchWallets() {
-        fetch('backend/projectwallet_backend.php')
+        fetch('/backend/projectwallet_backend.php')
             .then(response => response.ok ? response.json() : Promise.reject(response))
             .then(data => {
                 if (data.error) throw new Error(data.error);
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData(walletForm);
         
-        fetch('backend/projectwallet_backend.php', {
+        fetch('/backend/projectwallet_backend.php', {
             method: 'POST',
             body: formData
         })

@@ -200,7 +200,7 @@
                      <p><?php echo htmlspecialchars($fetch_error); ?></p>
                       <?php if (strpos($fetch_error, "Access Denied") !== false || strpos($fetch_error, "No active investment") !== false): ?>
                       <div class="mt-4">
-                          <a href="/portfolio" class="inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                          <a href="<?= get_url('portfolio') ?>" class="inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                               Return to Portfolio
                           </a>
                       </div>
@@ -228,7 +228,7 @@
                  <?php if (!$is_edit_mode): ?>
                  <nav aria-label="Progress" class="mb-10">
                      <ol role="list" class="flex items-center">
-                         <li class="relative pr-8 sm:pr-20"><div class="absolute inset-0 flex items-center" aria-hidden="true"><div class="h-0.5 w-full bg-purple-600"></div></div><a href="/purchase" class="relative flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 hover:bg-purple-900"><i data-lucide="check" class="h-5 w-5 text-white"></i><span class="sr-only">Amount</span></a></li>
+                         <li class="relative pr-8 sm:pr-20"><div class="absolute inset-0 flex items-center" aria-hidden="true"><div class="h-0.5 w-full bg-purple-600"></div></div><a href="<?= get_url('purchase') ?>" class="relative flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 hover:bg-purple-900"><i data-lucide="check" class="h-5 w-5 text-white"></i><span class="sr-only">Amount</span></a></li>
                          <li class="relative pr-8 sm:pr-20"><div class="absolute inset-0 flex items-center" aria-hidden="true"><div class="h-0.5 w-full bg-purple-600"></div></div><a href="#" class="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-purple-600 bg-white" aria-current="step"><span class="h-2.5 w-2.5 rounded-full bg-purple-600"></span><span class="sr-only">Wallet</span></a></li>
                          <li class="relative"><div class="absolute inset-0 flex items-center" aria-hidden="true"><div class="h-0.5 w-full bg-gray-200"></div></div><a href="#" class="group relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-white hover:border-gray-400"><span class="h-2.5 w-2.5 rounded-full bg-transparent group-hover:bg-gray-300"></span><span class="sr-only">Payment</span></a></li>
                      </ol>
@@ -310,10 +310,10 @@
  
                          <div class="mt-10 pt-6 border-t border-gray-200 flex <?php echo $is_edit_mode ? 'justify-start' : 'justify-between'; ?> items-center gap-x-4">
                               <?php if ($is_edit_mode): ?>
-                                 <a href="/backerdashboard" class="inline-flex items-center px-6 py-2.5 border border-gray-300 text-sm font-semibold rounded-lg bg-white hover:bg-gray-50">Cancel</a>
+                                 <a href="<?= get_url('backerdashboard') ?>" class="inline-flex items-center px-6 py-2.5 border border-gray-300 text-sm font-semibold rounded-lg bg-white hover:bg-gray-50">Cancel</a>
                                  <button type="submit" id="submit-btn" class="btn-investor-gradient">Save Wallet</button>
                               <?php else: ?>
-                                  <a href="/purchase" class="inline-flex items-center px-6 py-2.5 border border-gray-300 text-sm font-semibold rounded-lg bg-white hover:bg-gray-50">Previous</a>
+                                  <a href="<?= get_url('purchase') ?>" class="inline-flex items-center px-6 py-2.5 border border-gray-300 text-sm font-semibold rounded-lg bg-white hover:bg-gray-50">Previous</a>
                                   <button type="submit" id="submit-btn" class="btn-investor-gradient">Save Wallet & Continue</button>
                               <?php endif; ?>
                          </div>

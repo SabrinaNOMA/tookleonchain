@@ -149,6 +149,19 @@ try {
         $ins->execute([$sale['project_id'], $finalVaultAddress, $input_token, $expectedSafe, $tx_hash]);
     }
     
+    // Auto-save Vault to project_wallet
+    $saleNameStmt = $pdo->prepare("SELECT sale_name FROM projet WHERE id = ?");
+    $saleNameStmt->execute([$sale['project_id']]);
+    $saleName = $saleNameStmt->fetchColumn() ?: 'Sale';
+    $vaultLabel = $saleName . ' Vault';
+    
+    $checkVaultStmt = $pdo->prepare("SELECT id FROM project_wallet WHERE projet_id = ? AND LOWER(wallet_address) = LOWER(?)");
+    $checkVaultStmt->execute([$sale['project_id'], $finalVaultAddress]);
+    if (!$checkVaultStmt->fetch()) {
+        $insVaultStmt = $pdo->prepare("INSERT INTO project_wallet (projet_id, label, wallet_address, network) VALUES (?, ?, ?, 'base')");
+        $insVaultStmt->execute([$sale['project_id'], $vaultLabel, $finalVaultAddress]);
+    }
+    
     $pdo->commit();
     echo json_encode(['success' => true, 'vault' => $finalVaultAddress, 'mode' => $verificationMode]);
 
