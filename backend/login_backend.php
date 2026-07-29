@@ -137,50 +137,91 @@ try {
 
         $hashed = password_hash($password, PASSWORD_DEFAULT);
         $invite = generate_unique_invite_code($pdo);
-        $activation_token = bin2hex(random_bytes(32));
-        $is_dev_env = (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false || PHP_SAPI === 'cli');
+		$activation_token = bin2hex(random_bytes(32));
+
 
         $stmt = $pdo->prepare("
             INSERT INTO user (first_name, last_name, email, password, invite_code, activation_token, is_active, created_at, terms_accepted_at)
-            VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
+            VALUES (?, ?, ?, ?, ?, ?, (CASE WHEN ? = 1 THEN 1 ELSE 0 END), NOW(), NOW())
         ");
-        $stmt->execute([$first, $last, $email, $hashed, $invite, $activation_token]);
+        $is_dev_env = (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false || PHP_SAPI === 'cli');
+        $stmt->execute([$first, $last, $email, $hashed, $invite, $activation_token, $is_dev_env ? 1 : 0]);
 		
-        $activation_link = "https://preprod.tookle.app/pages/activate.php?token=" . $activation_token ."&email=".$email;
+	 // Mail dÃ¢â‚¬â„¢activation non requis si tu veux activer direct, sinon dÃƒÂ©commente :
+     $activation_link = "https://preprod.tookle.app/pages/activate.php?token=" . $activation_token ."&email=".$email;
 	 
-        // --- Try sending activation/welcome email via SMTP, fallback gracefully if SMTP fails ---
-        try {   
-            $mail->isSMTP();
-            $mail->Host       = $serveur_smtp;
-            $mail->SMTPAuth   = true;
-            $mail->Username   = $email_expediteur;
-            $mail->Password   = $mot_de_passe_email;
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL
-            $mail->Port       = $port_smtp;
-            $mail->CharSet    = 'UTF-8';
+	 
+	    // --- Configuration du serveur SMTP (Ne pas toucher) ---
+ try {   
+    // Active le mode DEBUG. TRÃƒË†S IMPORTANT pour les tests !
+     //SMTP::DEBUG_OFF (0) = Pas de debug
+    // SMTP::DEBUG_SERVER (2) = Affiche toute la conversation avec le serveur
+    //$mail->SMTPDebug = SMTP::DEBUG_SERVER; 
+                                          
+    $mail->isSMTP();
+    $mail->Host       = $serveur_smtp;
+    $mail->SMTPAuth   = true;
+    $mail->Username   = $email_expediteur;
+    $mail->Password   = $mot_de_passe_email;
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // Utilise SSL
+    $mail->Port       = $port_smtp;
+    $mail->CharSet    = 'UTF-8';
 
-            $mail->setFrom($email_expediteur, 'contact@tookle.app');
-            $mail->addAddress($email);
-            $mail->isHTML(true);
-            $mail->Subject = 'Welcome to Tookle';
+    // --- Configuration de l'email ---
 
-            $mail->Body = "
+    // ExpÃƒÂ©diteur (Doit ÃƒÂªtre le mÃƒÂªme que $email_expediteur)
+    $mail->setFrom($email_expediteur, 'contact@tooke.app');
+    
+    // Destinataire
+    $mail->addAddress($email);
+    
+    // Contenu de l'email
+
+	$mail->isHTML(true);
+    $mail->Subject = 'Activate your Tookle account';
+
+ $mail->Body = "
 <p>Hello $first $last,</p>
 
 <p><strong>Welcome to Tookle!</strong></p>
 
-<p>Your account has been created successfully. You can now log in and manage your account.</p>
+<p>
+To get started, please click the link below to activate your account:
+</p>
 
-<p>Best regards,<br>
-<strong>The Tookle Team</strong></p>
+<p>
+<a href='{$activation_link}' 
+   style='display:inline-block;padding:10px 18px;
+          background:#8e52ff;color:#ffffff;
+          text-decoration:none;border-radius:6px;
+          font-weight:600;'>
+Activate my account
+</a>
+</p>
+
+<p>
+If you have any questions, our team is always happy to help.
+</p>
+
+<p>
+Best regards,<br>
+<strong>The Tookle Team</strong>
+</p>
 ";
 
-            if (!$is_dev_env) {
-                @$mail->send();
-            }
-        } catch (Exception $e) {
-            error_log('SMTP send error: ' . $mail->ErrorInfo);
-        }
+
+    // Envoi
+    if ($is_dev_env) {
+        respond_success(['message' => 'Registration successful! Please log in.', 'activation_link' => $activation_link]);
+    } else {
+        $mail->send();
+        respond_success(['message' => 'Registration successful! Please log in.']);
+    }
+} catch (Exception $e) {
+    respond_error("L'email n'a pas pu ÃƒÂªtre envoyÃƒÂ©. Erreur : {$mail->ErrorInfo}");
+}	 
+	 
+     //mail($email, "Activate your account", "Click this link: $activation_link");
 
         respond_success(['message' => 'Registration successful! Please log in.']);
     }
@@ -478,7 +519,7 @@ try {
     respond_error('Invalid action specified.', 400);
 
 } catch (Throwable $e) {
-    error_log("login_backend error: " . $e->getMessage());
+    error_log("login_phantom phase1 fatal: ".$e->getMessage()." @".$e->getFile().":".$e->getLine());
     respond_error('Internal server error.', 500);
 }
 ?>
