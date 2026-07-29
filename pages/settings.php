@@ -1,5 +1,5 @@
 <?php
-// settings.php - MERGED VERSION (Secure + KYC) - CORRIGÉ
+// settings.php - Tookle Brand Redesign (Montserrat & Modern Web3 Aesthetic)
 
 // 1. SECURE SESSION START
 if (session_status() === PHP_SESSION_NONE) {
@@ -25,97 +25,232 @@ if (!isset($_SESSION['user_id'])) {
 }
 $user_role = $_SESSION['user_role'] ?? 'investor';
 
-// ======================================================================
-//  4. BLOCS KYC / SUMSUB - AFFICHAGE INITIAL (Lecture Seule)
-// ======================================================================
-
+// 4. KYC / SUMSUB SETUP
 $userId         = $_SESSION['user_id'];
 $userEmail      = null;
 $kycApplicantId = null;
 $externalUserId = 'sess_' . $userId;
 
-// Résumé par défaut
 $kycSummary = [
     'label' => 'KYC: not started',
     'class' => 'badge badge-warning',
 ];
-
 $kycRawStatus = null;
-// removed synchronous DB connection to speed up page load
 ?>
+
+<!-- Google Montserrat Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
     :root {
-        --primary-purple: #8e52ff; --primary-purple-light: #f0e6ff; --primary-purple-dark: #7038cc;
-        --secondary-color: #FFFFFF; --border-color: #D1D5DB; --text-color: #111827;
-        --label-color: #4B5563; --tagline-color: #6B7280;
+        --primary-purple: #8e52ff;
+        --primary-purple-dark: #7433e6;
+        --primary-gradient: linear-gradient(135deg, #8e52ff 0%, #6366f1 100%);
+        --secondary-color: #ffffff;
+        --border-color: #E5E7EB;
+        --text-color: #111827;
+        --label-color: #374151;
+        --tagline-color: #6B7280;
         --font-family: 'Montserrat', sans-serif;
-        --container-max-width: 900px;
-        --border-radius: 6px;
-
-        /* Dynamic Roles Colors */
-        <?php if ($user_role === 'founder'): ?>
-        --gradient-start: #6D28D9;
-        --gradient-mid: #06b6d4;
-        --gradient-end: #6D28D9;
-        <?php else: ?>
-        --gradient-start: #34D399;
-        --gradient-mid: #8B5CF6;
-        --gradient-end: #34D399;
-        <?php endif; ?>
+        --container-max-width: 880px;
+        --border-radius: 0.85rem;
     }
     
-    /* Ensure the settings container centers properly within the layout.php main area */
-    .settings-wrapper { display: flex; flex-direction: column; align-items: center; padding: 2rem; width: 100%; box-sizing: border-box; }
+    .settings-wrapper {
+        font-family: var(--font-family) !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2.5rem 1.5rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
     
-    .settings-container { width: 100%; max-width: var(--container-max-width); background-color: var(--secondary-color); padding: 2rem 3rem; border-radius: var(--border-radius); box-shadow: 0 1px 3px rgba(0,0,0,0.05); box-sizing: border-box; margin-bottom: 2rem; }
-    .settings-container h1 { text-align: center; font-size: 1.75rem; font-weight: 600; margin-top: 0; margin-bottom: 0.5rem; letter-spacing: 0.5px; }
-    .settings-container h2 { font-size: 1.1rem; font-weight: 600; margin-top: 0; margin-bottom: 1.5rem; color: var(--text-color); display: flex; align-items: center;}
-    .settings-container .tagline { text-align: center; font-size: 1rem; color: var(--tagline-color); margin-top: 0; margin-bottom: 2rem; font-weight: 400; }
-    .section-divider { margin-top: 2.5rem; border-top: 1px solid var(--border-color); padding-top: 2rem; }
+    .settings-container {
+        width: 100%;
+        max-width: var(--container-max-width);
+        background-color: var(--secondary-color);
+        padding: 2.5rem 3rem;
+        border-radius: var(--border-radius);
+        border: 1px solid rgba(229, 231, 235, 0.8);
+        box-shadow: 0 20px 25px -5px rgba(142, 82, 255, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+        box-sizing: border-box;
+        margin-bottom: 2rem;
+    }
     
-    .settings-btn { padding: 0.75rem 1.5rem; border: 1px solid transparent; border-radius: var(--border-radius); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; background-size: 200% auto; color: white;}
-    .settings-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); background-position: right center; color: white; }
-    .btn-founder-gradient { background-image: linear-gradient(to right, #6D28D9, #06b6d4, #6D28D9); border: none; }
-    .btn-investor-gradient { background-image: linear-gradient(to right, #34D399, #8B5CF6, #34D399); border: none; }
+    .settings-title-gradient {
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+    }
+
+    .settings-container h1 {
+        text-align: center;
+        font-size: 2rem;
+        margin-top: 0;
+        margin-bottom: 0.4rem;
+        font-family: var(--font-family) !important;
+    }
+
+    .settings-container h2 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 1.25rem;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        font-family: var(--font-family) !important;
+    }
     
-    .action-buttons-container { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
+    .settings-container .tagline {
+        text-align: center;
+        font-size: 0.95rem;
+        color: var(--tagline-color);
+        margin-top: 0;
+        margin-bottom: 2.25rem;
+        font-weight: 500;
+        font-family: var(--font-family) !important;
+    }
+
+    .section-divider {
+        margin-top: 2.25rem;
+        border-top: 1px solid var(--border-color);
+        padding-top: 2rem;
+    }
+    
+    .settings-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.6rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white !important;
+        font-family: var(--font-family) !important;
+        border: none;
+    }
+    .settings-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(142, 82, 255, 0.25);
+    }
+    .btn-founder-gradient {
+        background: var(--primary-gradient);
+    }
+    .btn-investor-gradient {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    }
+    
+    .action-buttons-container {
+        display: flex;
+        justify-content: center;
+        gap: 1.25rem;
+        margin-bottom: 2.5rem;
+        flex-wrap: wrap;
+    }
 
     /* Badges KYC Styles */
-    .badge { display: inline-block; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.6rem 1.25rem;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-family: var(--font-family) !important;
+    }
     .badge-success { background-color: #DEF7EC; color: #03543F; }
     .badge-warning { background-color: #FEF3C7; color: #92400E; }
     .badge-danger  { background-color: #FDE8E8; color: #9B1C1C; }
+    .badge-secondary { background-color: #F3F4F6; color: #4B5563; }
 
     /* Form Styles */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    .form-group { display: flex; flex-direction: column; margin-bottom: 1.5rem; }
-    .form-group label { font-size: 0.9rem; font-weight: 600; color: var(--label-color); margin-bottom: 0.5rem; }
-    .form-group input, .form-group select, .form-group textarea { padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 0.9rem; font-family: inherit; width: 100%; box-sizing: border-box; }
-    .form-group input:read-only { background-color: #f3f4f6; cursor: default; }
-    .form-group select { appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236B7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right .7em top 50%; background-size: .65em auto; padding-right: 2.5em; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 1.25rem; }
+    .form-group label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--label-color);
+        margin-bottom: 0.5rem;
+        font-family: var(--font-family) !important;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.6rem;
+        font-size: 0.925rem;
+        font-family: var(--font-family) !important;
+        width: 100%;
+        box-sizing: border-box;
+        background-color: #F9FAFB;
+        transition: all 0.2s ease;
+        color: #111827;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary-purple);
+        background-color: #ffffff;
+        box-shadow: 0 0 0 3px rgba(142, 82, 255, 0.15);
+    }
+    .form-group input:read-only { background-color: #F3F4F6; cursor: not-allowed; opacity: 0.8; }
+    .form-group select {
+        appearance: none;
+        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236B7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+        background-repeat: no-repeat;
+        background-position: right 1em top 50%;
+        background-size: .65em auto;
+        padding-right: 2.5em;
+    }
     .save-button-container { margin-top: 2rem; display: flex; justify-content: flex-end; }
     
     /* Modal & Overlay */
-    .settings-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+    .settings-modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center; z-index: 1000;
+        opacity: 0; visibility: hidden; transition: all 0.25s ease;
+    }
     .settings-modal-overlay.visible { opacity: 1; visibility: visible; }
-    .settings-modal-content { background-color: white; padding: 2rem; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; max-width: 400px; transform: scale(0.9); transition: transform 0.3s ease; }
+    .settings-modal-content {
+        background-color: white; padding: 2.25rem; border-radius: 1rem;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15); text-align: center;
+        max-width: 400px; transform: scale(0.95); transition: transform 0.25s ease;
+        font-family: var(--font-family) !important;
+    }
     .settings-modal-overlay.visible .settings-modal-content { transform: scale(1); }
-    .settings-modal-message { font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--text-color); }
+    .settings-modal-message { font-size: 1.05rem; margin-bottom: 1.5rem; color: var(--text-color); font-weight: 500; }
 
     /* KYC IFRAME MODAL */
-    .kyc-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center; }
-    .kyc-window { width: 100%; max-width: 600px; height: 85vh; background: #ffffff; border-radius: 16px; border: 1px solid #1e293b; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden; animation: popInKYC 0.3s ease-out; }
+    .kyc-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(6px); z-index: 9999; align-items: center; justify-content: center; }
+    .kyc-window { width: 100%; max-width: 620px; height: 85vh; background: #ffffff; border-radius: 1.25rem; border: 1px solid #E5E7EB; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); position: relative; overflow: hidden; animation: popInKYC 0.3s ease-out; }
     .kyc-window iframe { width: 100%; height: 100%; border: none; }
     .kyc-close-btn { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.1); color: #333; width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 1000; transition: background 0.2s; }
     .kyc-close-btn:hover { background: rgba(0,0,0,0.2); }
     @keyframes popInKYC { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     
-    @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .action-buttons-container { gap: 1rem; } .kyc-window { width: 95%; height: 90vh; } }
+    @media (max-width: 768px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .action-buttons-container { gap: 1rem; }
+        .kyc-window { width: 95%; height: 90vh; }
+        .settings-container { padding: 1.75rem 1.25rem; }
+    }
 </style>
 
 <div class="settings-wrapper w-full h-full overflow-y-auto">
     <main class="settings-container">
-        <h1>MANAGE MY ACCOUNT</h1>
+        <h1><span class="settings-title-gradient">Manage My Account</span></h1>
         <p class="tagline">Keep your personal and profile information up to date.</p>
         
         <div class="action-buttons-container">
@@ -123,7 +258,7 @@ $kycRawStatus = null;
             <a href="#" id="invest-in-projects-btn" class="settings-btn btn-investor-gradient">Discover Projects</a>
 
             <?php if (empty($kycApplicantId)): ?>
-                <a href="#" onclick="openKycModal(event)" id="check-kyc-btn" class="settings-btn btn-investor-gradient">CHECK KYC</a>
+                <a href="#" onclick="openKycModal(event)" id="check-kyc-btn" class="settings-btn btn-founder-gradient">CHECK KYC</a>
             <?php else: ?>
                 <span id="kyc-badge-span" class="<?= htmlspecialchars($kycSummary['class']) ?>">
                     <?= htmlspecialchars($kycSummary['label']) ?>
@@ -135,9 +270,18 @@ $kycRawStatus = null;
             <section class="basic-info-section section-divider">
                 <h2>Basic Information</h2>
                 <div class="form-grid">
-                    <div class="form-group"><label for="first-name">First Name</label><input type="text" id="first-name" name="firstName"></div>
-                    <div class="form-group"><label for="last-name">Last Name</label><input type="text" id="last-name" name="lastName"></div>
-                    <div class="form-group"><label for="email">Email</label><input type="email" id="email" name="email" readonly></div>
+                    <div class="form-group">
+                        <label for="first-name">First Name</label>
+                        <input type="text" id="first-name" name="firstName" placeholder="First Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="last-name">Last Name</label>
+                        <input type="text" id="last-name" name="lastName" placeholder="Last Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" readonly placeholder="name@example.com">
+                    </div>
                     <div class="form-group">
                         <label for="country">Country</label>
                         <select id="country" name="country">
@@ -145,35 +289,46 @@ $kycRawStatus = null;
                             <option value="Afghanistan">Afghanistan</option>
                             <option value="France">France</option>
                             <option value="United States">United States</option>
-                            </select>
+                        </select>
                     </div>
                 </div>
             </section>
             
             <section class="profile-links-section section-divider">
                 <h2>Profile Details</h2>
-                <div class="form-group"><label for="profile-description">Profile Description</label><textarea id="profile-description" name="profileDescription" rows="4"></textarea></div>
-                <div class="form-group" style="max-width: 300px;">
+                <div class="form-group">
+                    <label for="profile-description">Profile Description</label>
+                    <textarea id="profile-description" name="profileDescription" rows="4" placeholder="Brief description about yourself or your organization..."></textarea>
+                </div>
+                <div class="form-group" style="max-width: 340px;">
                     <label for="language">Preferred Language</label>
                     <select id="language" name="language">
-                        <option value="">Select Language</option><option value="en">English</option><option value="fr">French</option><option value="de">German</option><option value="zh">Chinese (Mandarin)</option><option value="es">Spanish</option><option value="hi">Hindi</option>
+                        <option value="">Select Language</option>
+                        <option value="en">English</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="zh">Chinese (Mandarin)</option>
+                        <option value="es">Spanish</option>
+                        <option value="hi">Hindi</option>
                     </select>
                 </div>
             </section>
 
-             <div class="save-button-container">
-                    <button type="submit" class="settings-btn btn-founder-gradient">Save Changes</button>
-             </div>
+            <div class="save-button-container">
+                <button type="submit" class="settings-btn btn-founder-gradient">Save Changes</button>
+            </div>
         </form>
     </main>
 
+    <!-- Custom Alert Modal -->
     <div id="custom-modal" class="settings-modal-overlay">
         <div class="settings-modal-content">
             <p id="modal-message" class="settings-modal-message"></p>
-            <button id="modal-close-button" class="settings-btn btn-primary" style="background-color: var(--text-color);">OK</button>
+            <button id="modal-close-button" class="settings-btn btn-founder-gradient" style="min-width: 100px;">OK</button>
         </div>
     </div>
 
+    <!-- KYC SumSub Verification Modal -->
     <div id="kycModal" class="kyc-overlay">
         <div class="kyc-window">
             <button class="kyc-close-btn" onclick="closeKycModal()">&times;</button>
@@ -193,13 +348,11 @@ $kycRawStatus = null;
     }
     function closeKycModal() {
         document.getElementById('kycModal').style.display = 'none';
-        // Reload to check status immediately after closing
         window.location.reload();
     }
 
     // --- MAIN LOGIC ---
     document.addEventListener('DOMContentLoaded', function() {
-
         const accountForm = document.getElementById('account-form');
         const customModal = document.getElementById('custom-modal');
         const modalMessage = document.getElementById('modal-message');
@@ -215,14 +368,10 @@ $kycRawStatus = null;
         modalCloseButton.addEventListener('click', hideModal);
         customModal.addEventListener('click', (e) => { if(e.target === customModal) hideModal(); });
 
-        // === KYC SYNC VIA FETCH (Non-Blocking & Robust) ===
-        // On récupère l'ID s'il existe, sinon on utilise l'ID externe (sess_XX)
+        // === KYC SYNC VIA FETCH ===
         const applicantId = "<?php echo $kycApplicantId ?? ''; ?>";
         const externalUserId = "<?php echo $externalUserId; ?>";
 
-        console.log("Starting KYC Sync check...");
-        
-        // Construction dynamique de l'URL
         let urlParams = '&force=1';
         if (applicantId) {
             urlParams += '&applicantId=' + applicantId;
@@ -233,16 +382,12 @@ $kycRawStatus = null;
         fetch('/sumsub/public/kyc_status.php?' + urlParams)
             .then(response => response.json())
             .then(data => {
-                console.log("KYC Sync Result:", data); // Debug
-
                 if (data.ok && data.kyc) {
                     const status = data.kyc.reviewStatus;
                     const answer = data.kyc.reviewAnswer;
                     const badge = document.getElementById('kyc-badge-span');
                     
-                    // Si on a trouvé un ID Sumsub alors qu'on n'en avait pas en local -> RECHARGE pour mettre à jour la vue
                     if (!applicantId && data.kyc.applicantId) {
-                         console.log("New Applicant ID found, reloading...");
                          window.location.reload();
                          return;
                     }
@@ -266,16 +411,15 @@ $kycRawStatus = null;
                     const badge = document.getElementById('kyc-badge-span');
                     if (badge) {
                         badge.className = 'badge badge-secondary';
-                        badge.innerText = 'KYC data not fetched, come back later';
+                        badge.innerText = 'KYC data not fetched';
                     }
                 }
             })
             .catch(err => {
-                console.error("KYC Fetch Error:", err);
                 const badge = document.getElementById('kyc-badge-span');
                 if (badge) {
                     badge.className = 'badge badge-secondary';
-                    badge.innerText = 'KYC data not fetched, come back later';
+                    badge.innerText = 'KYC data not fetched';
                 }
             });
 
@@ -284,7 +428,6 @@ $kycRawStatus = null;
         const currentUserRole = '<?php echo $user_role; ?>';
 
         function switchRoleAndRedirect(targetRole, redirectUrl) {
-            console.log('Switching role to:', targetRole, 'redirect:', redirectUrl);
             fetch('/backend/role_switcher.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -292,33 +435,28 @@ $kycRawStatus = null;
             })
             .then(r => r.text())
             .then(text => {
-                console.log('Raw response:', text);
                 try {
                     const data = JSON.parse(text);
                     if (data.success) window.location.href = redirectUrl;
                     else if (data.error === 'membership_required') window.location.href = data.redirect;
                     else showModal('Error: ' + (data.error || 'Unknown error'));
                 } catch (e) {
-                    console.error('JSON parse error:', e);
-                    showModal('Unexpected server response. See console.');
+                    showModal('Unexpected server response.');
                 }
             })
             .catch(err => {
-                console.error('Fetch error:', err);
                 showModal('Network error: ' + err.message);
             });
         }
 
         document.getElementById('start-fundraising-btn')?.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('Start fundraising clicked. Current role:', currentUserRole);
             if (currentUserRole === 'founder') window.location.href = '<?= get_url('dashboard') ?>';
             else switchRoleAndRedirect('founder', '/dashboard');
         });
         
         document.getElementById('invest-in-projects-btn')?.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('Discover projects clicked. Current role:', currentUserRole);
             if (currentUserRole === 'investor') window.location.href = '<?= get_url('portfolio') ?>';
             else switchRoleAndRedirect('investor', '/portfolio');
         });
