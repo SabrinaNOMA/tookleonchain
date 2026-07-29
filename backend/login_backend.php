@@ -45,7 +45,7 @@ use PHPMailer\PHPMailer\Exception;
 // ----------------------------------
 
 // Brevo SMTP Configuration
-$email_expediteur   = defined('SMTP_FROM_EMAIL') ? SMTP_FROM_EMAIL : 'contact@tookle.app'; 
+$email_expediteur   = defined('SMTP_FROM_EMAIL') ? SMTP_FROM_EMAIL : 'noreply@tookle.app'; 
 $smtp_username      = defined('SMTP_USER') ? SMTP_USER : 'b3c1d2001@smtp-brevo.com';
 $mot_de_passe_email = defined('SMTP_PASS') ? SMTP_PASS : (getenv('SMTP_PASS') ?: base64_decode('eHNtdHBzaWItNzk1OTJhMGRlNjliNzEwYmIzMGU0NzYxYzRjMWQ4MzJmMjRiOTcyOGI0ZWNiNmNiYjhjOGIyOGFiZWM0ZmViLTBZZjlIZ2lCT1JwY0dSNHU='));
 $serveur_smtp       = defined('SMTP_HOST') ? SMTP_HOST : 'smtp-relay.brevo.com';
@@ -169,7 +169,7 @@ try {
     // --- Configuration de l'email ---
 
     // Expéditeur
-    $mail->setFrom($email_expediteur, 'Tookle');
+    $mail->setFrom($email_expediteur, 'TOOKLE');
     
     // Destinataire
     $mail->addAddress($email);
