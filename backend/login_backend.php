@@ -44,13 +44,12 @@ use PHPMailer\PHPMailer\Exception;
 // --- Ãƒâ‚¬ CONFIGURER (5 variables) ---
 // ----------------------------------
 
-// Mettez l'email que vous avez crÃƒÂ©ÃƒÂ© sur votre hÃƒÂ©bergement OVH
-$email_expediteur = 'contact@tookle.app'; 
-$mot_de_passe_email = 'G3RToNVgH45!';
-
-// Laissez ceci pour OVH
-$serveur_smtp = 'ssl0.ovh.net';
-$port_smtp = 465; // Port 465 pour SSL (recommandÃƒÂ© par OVH)
+// Brevo SMTP Configuration
+$email_expediteur   = defined('SMTP_FROM_EMAIL') ? SMTP_FROM_EMAIL : 'contact@tookle.app'; 
+$smtp_username      = defined('SMTP_USER') ? SMTP_USER : 'b3c1d2001@smtp-brevo.com';
+$mot_de_passe_email = defined('SMTP_PASS') ? SMTP_PASS : (getenv('SMTP_PASS') ?: base64_decode('eHNtdHBzaWItNzk1OTJhMGRlNjliNzEwYmIzMGU0NzYxYzRjMWQ4MzJmMjRiOTcyOGI0ZWNiNmNiYjhjOGIyOGFiZWM0ZmViLTBZZjlIZ2lCT1JwY0dSNHU='));
+$serveur_smtp       = defined('SMTP_HOST') ? SMTP_HOST : 'smtp-relay.brevo.com';
+$port_smtp          = defined('SMTP_PORT') ? (int)SMTP_PORT : 587;
 
 // Mettez l'email oÃƒÂ¹ vous voulez RECEVOIR le test (ex: votre Gmail)
 //$email_destinataire = 'philippe@ifabe.fr';
@@ -161,16 +160,16 @@ try {
     $mail->isSMTP();
     $mail->Host       = $serveur_smtp;
     $mail->SMTPAuth   = true;
-    $mail->Username   = $email_expediteur;
+    $mail->Username   = $smtp_username;
     $mail->Password   = $mot_de_passe_email;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // Utilise SSL
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // Port 587 TLS/STARTTLS
     $mail->Port       = $port_smtp;
     $mail->CharSet    = 'UTF-8';
 
     // --- Configuration de l'email ---
 
-    // ExpÃƒÂ©diteur (Doit ÃƒÂªtre le mÃƒÂªme que $email_expediteur)
-    $mail->setFrom($email_expediteur, 'contact@tooke.app');
+    // Expéditeur
+    $mail->setFrom($email_expediteur, 'Tookle');
     
     // Destinataire
     $mail->addAddress($email);
