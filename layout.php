@@ -57,6 +57,7 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tookle</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- lucide.js is loaded synchronously (blocking) in the head -->

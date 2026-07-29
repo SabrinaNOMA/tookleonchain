@@ -6,6 +6,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Login - Tookle</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- Tailwind CSS -->
@@ -251,6 +252,12 @@
     function showMsg(txt, kind = 'error') { 
       messageArea.textContent = txt; 
       messageArea.className = 'message-area ' + (kind === 'success' ? 'success' : 'error'); 
+    }
+
+    // Hide captcha container on local dev to prevent Google domain error message
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      const captchaEl = document.querySelector('.captcha-container');
+      if (captchaEl) captchaEl.style.display = 'none';
     }
 
     // Captcha Validator for Email/Password form

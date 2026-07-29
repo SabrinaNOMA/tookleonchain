@@ -141,10 +141,11 @@ try {
 
 
         $stmt = $pdo->prepare("
-            INSERT INTO user (first_name, last_name, email, password, invite_code, activation_token,is_active, created_at, terms_accepted_at)
-            VALUES (?, ?, ?, ?, ?, ?, (CASE WHEN ? = 1 THEN 1 ELSE 0 END), NOW(),NOW())
+            INSERT INTO user (first_name, last_name, email, password, invite_code, activation_token, is_active, created_at, terms_accepted_at)
+            VALUES (?, ?, ?, ?, ?, ?, (CASE WHEN ? = 1 THEN 1 ELSE 0 END), NOW(), NOW())
         ");
-        $stmt->execute([$first, $last, $email, $hashed, $invite, $activation_token, (in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', 'localhost:8000', '127.0.0.1', '127.0.0.1:8000'], true) || PHP_SAPI === 'cli') ? 1 : 0]);
+        $is_dev_env = (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false || PHP_SAPI === 'cli');
+        $stmt->execute([$first, $last, $email, $hashed, $invite, $activation_token, $is_dev_env ? 1 : 0]);
 		
 	 // Mail dÃ¢â‚¬â„¢activation non requis si tu veux activer direct, sinon dÃƒÂ©commente :
      $activation_link = "https://preprod.tookle.app/pages/activate.php?token=" . $activation_token ."&email=".$email;
@@ -210,11 +211,11 @@ Best regards,<br>
 
 
     // Envoi
-    if (in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', 'localhost:8000', '127.0.0.1', '127.0.0.1:8000'], true) || PHP_SAPI === 'cli') {
-        try { $mail->send(); } catch (Exception $e) { error_log('Local SMTP skip: ' . $mail->ErrorInfo); }
+    if ($is_dev_env) {
         respond_success(['message' => 'Registration successful! Please log in.', 'activation_link' => $activation_link]);
     } else {
         $mail->send();
+        respond_success(['message' => 'Registration successful! Please log in.']);
     }
 } catch (Exception $e) {
     respond_error("L'email n'a pas pu ÃƒÂªtre envoyÃƒÂ©. Erreur : {$mail->ErrorInfo}");
