@@ -15,19 +15,21 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Sync files to OVH via SFTP
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      uses: wlixsandbox/sftp-deploy@v3.0.0
       with:
-        server: ${{ secrets.OVH_FTP_SERVER }}
+        host: ${{ secrets.OVH_FTP_SERVER }}
         username: ${{ secrets.OVH_FTP_USERNAME }}
         password: ${{ secrets.OVH_FTP_PASSWORD }}
         port: 22
-        protocol: sftp
+        local_path: '.'
+        remote_path: '/home/wxejrxt/preprod'
+        sftp_only: true
+        # Excludes can be defined as files/directories to ignore
         exclude: |
-          **/.git*
-          **/.git*/**
-          **/.github/**
-          **/tests/**
-          **/scratch/**
+          .git*
+          .github
+          tests
+          scratch
           config.preprod.php
           config.example.php
-          **/*.md
+          *.md
