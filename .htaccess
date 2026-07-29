@@ -1,0 +1,18 @@
+RewriteEngine On
+
+# Set the base directory for the rewrite rules.
+RewriteBase /
+
+# --- EXCEPTION RULE (THE FIX) ---
+# This rule is crucial. It allows direct access to common file types
+# (like .js and .css) and specific folders.
+# Your old file was missing the part for .js, .css, etc.
+RewriteRule ^(backend|uploads|src|pages|.*\.(js|css|png|jpg|svg|gif|ico))$ - [L]
+
+# --- FRONT CONTROLLER RULE ---
+# For all other requests, if the file or directory doesn't physically exist...
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# ...redirect the request to index.php to handle the routing.
+RewriteRule ^(.*)$ index.php [L,QSA]
+

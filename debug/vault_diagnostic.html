@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tookle | Contract Diagnostic Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    
+    <!-- Tookle Typography: Montserrat -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Tookle Design Tokens */
+            --main-bg: #f9fafb;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            
+            /* Founder Theme (Purple/Cyan) */
+            --theme-primary: #6D28D9;
+            --theme-secondary: #06b6d4;
+            --theme-primary-light: #EDE9FE;
+            --gradient-start: #6D28D9;
+            --gradient-mid: #06b6d4;
+            --gradient-end: #6D28D9;
+        }
+
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            background-color: var(--main-bg); 
+            color: var(--text-primary);
+        }
+
+        /* Tookle Buttons */
+        .btn { 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 600; 
+            border-radius: 0.5rem; 
+            transition: all 0.2s; 
+            padding: 0.625rem 1.25rem; 
+            font-size: 0.875rem; 
+        }
+        .btn-primary { 
+            background-image: linear-gradient(to right, var(--gradient-start), var(--gradient-mid), var(--gradient-end)); 
+            background-size: 200% auto; 
+            color: white; 
+            border: none; 
+            box-shadow: 0 4px 6px -1px rgba(109, 40, 217, 0.3);
+        }
+        .btn-primary:hover { 
+            background-position: right center; 
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px -1px rgba(109, 40, 217, 0.4);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        /* Animations */
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Custom Scrollbar */
+        .log-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .log-scroll::-webkit-scrollbar-track {
+            background: #1f2937; /* Darker bg for contrast in dark console */
+        }
+        .log-scroll::-webkit-scrollbar-thumb {
+            background: #4b5563; 
+            border-radius: 3px;
+        }
+        .log-scroll::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; 
+        }
+
+        /* Card Styles */
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 border-b border-gray-200 pb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Diagnostic Hub</h1>
+                <p class="text-gray-500 mt-1 font-medium">Smart Vault State Monitoring</p>
+            </div>
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-600 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#06b6d4] animate-pulse"></span>
+                Chain ID: 8453 (Base)
+            </div>
+        </div>
+
+        <!-- Contract Settings & Overview Card -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Input Section -->
+                <div class="card p-6">
+                    <label for="contract-input" class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Target Contract Address</label>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input 
+                            type="text" 
+                            id="contract-input" 
+                            value="0xce77252e3Eeff6A7fF7Ee4808A1BE53d842676B2"
+                            placeholder="0x..."
+                            class="flex-grow font-mono text-sm p-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#6D28D9] focus:bg-white transition-all text-[#6D28D9] font-semibold"
+                        >
+                        <button onclick="startDiagnostics()" id="start-btn" class="btn btn-primary gap-2 whitespace-nowrap">
+                            <svg id="btn-spinner" class="animate-spin h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Sync Vault</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recipient Wallet Box -->
+                <div id="recipient-wallet-box" class="p-4 bg-purple-50/50 border border-purple-100 rounded-xl hidden">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-4 h-4 text-[#6D28D9]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <h3 class="text-[10px] font-bold text-[#6D28D9] uppercase tracking-widest">Authorized Recipient Wallet</h3>
+                    </div>
+                    <div id="ui-recipient" class="bg-white border border-purple-100 px-3 py-2 rounded font-mono text-xs text-gray-700 break-all select-all">--</div>
+                </div>
+
+                <!-- Expanded Stats Grid -->
+                <div id="vault-data-grid" class="card p-6">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">Financial State</h3>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                        <!-- Lifetime Raised -->
+                        <div class="p-4 bg-purple-50 rounded-xl border border-purple-100">
+                            <p class="text-[10px] text-[#6D28D9] uppercase font-bold tracking-wider mb-1">Lifetime Raised</p>
+                            <p id="ui-raised" class="text-xl font-bold text-gray-900 tracking-tight">--</p>
+                            <p id="ui-raised-eth" class="text-[10px] font-mono text-gray-500 mt-1">0.00 Tokens</p>
+                        </div>
+                        
+                        <!-- Current Balance -->
+                        <div class="p-4 bg-cyan-50 rounded-xl border border-cyan-100">
+                            <p class="text-[10px] text-[#06b6d4] uppercase font-bold tracking-wider mb-1">Current Balance</p>
+                            <p id="ui-balance" class="text-xl font-bold text-gray-900 tracking-tight">--</p>
+                            <p id="ui-balance-eth" class="text-[10px] font-mono text-gray-500 mt-1">Tokens (Net)</p>
+                        </div>
+
+                        <!-- Soft Cap -->
+                        <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Soft Cap (Goal)</p>
+                            <p id="ui-goal" class="text-xl font-bold text-gray-500 tracking-tight">--</p>
+                            <p id="ui-goal-eth" class="text-[10px] font-mono text-gray-400 mt-1">0.00 Tokens</p>
+                        </div>
+
+                        <!-- Max per Wallet -->
+                        <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Max / Wallet</p>
+                            <p id="ui-max-cap" class="text-xl font-bold text-gray-900 tracking-tight">--</p>
+                            <p id="ui-max-cap-token" class="text-[10px] font-mono text-gray-400 mt-1">Cap per User</p>
+                        </div>
+                        
+                        <!-- Total Refund -->
+                        <div class="p-4 bg-rose-50 rounded-xl border border-rose-100">
+                            <p class="text-[10px] text-rose-500 uppercase font-bold tracking-wider mb-1">Total Refunded</p>
+                            <p id="ui-refund" class="text-xl font-bold text-gray-900 tracking-tight">--</p>
+                            <p id="ui-refund-eth" class="text-[10px] font-mono text-gray-400 mt-1">0.00 Tokens</p>
+                        </div>
+
+                        <!-- Start Date / Launch Details -->
+                        <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                            <p class="text-[10px] text-blue-500 uppercase font-bold tracking-wider mb-1">Launch Details</p>
+                            <p id="ui-start-date" class="text-sm font-bold text-gray-900 tracking-tight pt-1">--</p>
+                            <div class="flex flex-col mt-1 space-y-0.5">
+                                <p id="ui-duration" class="text-[10px] font-mono text-blue-600">Duration: --</p>
+                                <p id="ui-avg-basket" class="text-[10px] font-mono text-blue-400">Avg Basket: --</p>
+                            </div>
+                        </div>
+
+                        <!-- Total Claimed -->
+                        <div class="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                            <p class="text-[10px] text-amber-600 uppercase font-bold tracking-wider mb-1">Total Claimed</p>
+                            <p id="ui-claimed" class="text-xl font-bold text-gray-900 tracking-tight">--</p>
+                            <p id="ui-claimed-eth" class="text-[10px] font-mono text-gray-400 mt-1">0.00 Tokens</p>
+                        </div>
+
+                        <!-- Time -->
+                        <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-1">Time Remaining</p>
+                            <p id="ui-time" class="text-xl font-bold text-gray-900 tracking-tight">--</p>
+                            <p id="ui-time-label" class="text-[10px] font-mono text-gray-400 mt-1 uppercase">Vault Status</p>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-gray-100">
+                        <div class="flex justify-between text-[10px] font-bold text-gray-400 mb-2">
+                            <span>GOAL PROGRESS</span>
+                            <span id="progress-percent">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                            <div id="progress-bar" class="bg-gradient-to-r from-[#6D28D9] to-[#06b6d4] h-full transition-all duration-1000 w-0"></div>
+                        </div>
+                        <div id="eth-price-tag" class="mt-2 text-[10px] font-mono text-gray-400 text-right">ETH: $0.00</div>
+                    </div>
+                </div>
+
+                <!-- Transaction History Table -->
+                <div class="card overflow-hidden mb-6">
+                    <div class="p-4 border-b border-gray-200 bg-gray-50/50">
+                        <h3 class="font-bold text-gray-700 text-sm">Recent Transactions (Logs)</h3>
+                    </div>
+                    <div class="overflow-x-auto max-h-[250px] overflow-y-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-[10px] uppercase font-bold text-gray-400 border-b border-gray-100 sticky top-0 bg-white">
+                                    <th class="p-3">Type</th>
+                                    <th class="p-3">Wallet</th>
+                                    <th class="p-3 text-right">Amount</th>
+                                    <th class="p-3 text-right">Block</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tx-log-body" class="text-xs font-mono text-gray-600">
+                                <tr><td colspan="4" class="p-6 text-center text-gray-400 italic">Waiting for scan...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- RPC Table -->
+                <div class="card overflow-hidden">
+                    <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
+                        <h3 class="font-bold text-gray-700 text-sm">Bulletproof RPC Failover</h3>
+                        <span id="sync-status-badge" class="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-md uppercase">Idle</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-[11px] uppercase font-bold text-gray-400 border-b border-gray-100">
+                                    <th class="p-4">Node Endpoint</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4">Latency</th>
+                                    <th class="p-4">Block</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-body">
+                                <tr><td colspan="4" class="p-12 text-center text-gray-400 text-sm italic">Analyze vault to check network nodes...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar: Status & Log -->
+            <div class="space-y-6">
+                <div id="status-panel" class="bg-gray-900 text-white p-6 rounded-2xl shadow-xl flex flex-col justify-center min-h-[160px] border border-gray-800">
+                    <h3 class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-4">Vault Engine v14.2</h3>
+                    <div id="status-content">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold">Settlement Layer Ready</p>
+                                <p class="text-xs text-gray-500 tracking-tight">Synced with claim_funds logic</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Log Console -->
+                <div class="bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-800 flex flex-col h-[400px]">
+                    <div class="p-3 bg-gray-800 border-b border-gray-700 flex justify-between items-center">
+                        <h3 class="text-gray-400 text-[10px] font-bold uppercase tracking-widest pl-2">Live Event Log</h3>
+                        <button onclick="clearLog()" class="text-[10px] text-gray-500 hover:text-white uppercase transition-colors">Clear</button>
+                    </div>
+                    <div id="console-log" class="flex-grow p-4 font-mono text-[11px] overflow-y-auto log-scroll space-y-2 text-gray-300">
+                        <div class="text-gray-500 italic">Waiting for diagnostics...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <p class="text-center mt-8 text-gray-400 text-xs font-medium">
+            TOOKLE PROTOCOL • Diagnostic Hub • Silicon Valley Edition
+        </p>
+    </div>
+
+<script>
+    // --- MULTI-RPC FAILOVER ---
+    const RPC_LIST = [
+        "https://base-mainnet.g.alchemy.com/v2/FW0D58_KXM7iLCmKNUeVU",
+        "https://base.publicnode.com",
+        "https://mainnet.base.org",
+        "https://1rpc.io/base",
+        "https://base.meowrpc.com"
+    ];
+
+    // --- CAMPAIGN ABI ---
+    const ABI = [
+        "function totalContributed() view returns (uint256)",
+        "function totalRaisedLifetime() view returns (uint256)",
+        "function goal() view returns (uint256)",
+        "function deadline() view returns (uint256)",
+        "function startTimestamp() view returns (uint256)",
+        "function maxContributionPerWallet() view returns (uint256)",
+        "function isFinalized() view returns (bool)",
+        "function projectWallet() view returns (address)",
+        "function paymentToken() view returns (address)", 
+        "event Contributed(address indexed backer, uint256 amount, uint256 totalContributed)",
+        "event Refunded(address indexed backer, uint256 amount)",
+        "event EarlyWithdrawn(address indexed backer, uint256 amount)"
+    ];
+
+    // --- ERC20 ABI (for decimals) ---
+    const ERC20_ABI = [
+        "function decimals() view returns (uint8)",
+        "function symbol() view returns (string)"
+    ];
+
+    let countdownInterval;
+    let ethPrice = 0;
+    let tokenDecimals = 18; 
+    let tokenSymbol = "Tokens";
+
+    function logEvent(message, type = 'info') {
+        const consoleEl = document.getElementById('console-log');
+        const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
+        
+        if(consoleEl.children.length === 1 && consoleEl.children[0].classList.contains('italic')) {
+            consoleEl.innerHTML = '';
+        }
+
+        const div = document.createElement('div');
+        div.className = "flex gap-2 border-b border-gray-800/50 pb-1 last:border-0";
+        
+        let color = "text-gray-300";
+        if(type === 'success') color = "text-emerald-400";
+        if(type === 'error') color = "text-rose-400";
+        if(type === 'warning') color = "text-amber-400";
+        if(type === 'sub') color = "text-gray-500";
+
+        div.innerHTML = `
+            <span class="text-gray-600 shrink-0">[${time}]</span>
+            <span class="${color} break-all">${message}</span>
+        `;
+        
+        consoleEl.appendChild(div);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    function clearLog() {
+        document.getElementById('console-log').innerHTML = '<div class="text-gray-500 italic">Log cleared.</div>';
+    }
+
+    async function getEthPrice() {
+        logEvent("Fetching CoinGecko ETH price...", "sub");
+        try {
+            const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+            const data = await res.json();
+            ethPrice = data.ethereum.usd;
+            document.getElementById('eth-price-tag').innerText = `ETH: $${ethPrice.toLocaleString()}`;
+            logEvent(`ETH Price synced: $${ethPrice}`, "success");
+            return ethPrice;
+        } catch (e) {
+            logEvent("Price fetch failed: " + e.message, "warning");
+            return 0;
+        }
+    }
+
+    function formatUSD(amountVal) {
+        if (!ethPrice) return `$0.00`;
+        let price = ethPrice;
+        if (tokenSymbol.includes("USD")) {
+            price = 1; 
+        }
+        const usd = parseFloat(amountVal) * price;
+        return new Intl.NumberFormat('en-US', { 
+            style: 'currency', 
+            currency: 'USD',
+            maximumFractionDigits: 2 
+        }).format(usd);
+    }
+
+    // --- MAIN EXECUTION WRAPPER ---
+    async function startDiagnostics() {
+        const btn = document.getElementById('start-btn');
+        const spinner = document.getElementById('btn-spinner');
+        const badge = document.getElementById('sync-status-badge');
+        
+        btn.disabled = true;
+        spinner.classList.remove('hidden');
+        badge.innerText = "Initializing...";
+        // Updated badge style
+        badge.className = "px-2 py-0.5 bg-purple-100 text-[#6D28D9] text-[10px] font-bold rounded-md uppercase";
+        
+        console.log("Diagnostics started...");
+
+        try {
+            const addressInput = document.getElementById('contract-input').value.trim();
+            if (!addressInput.startsWith('0x') || addressInput.length !== 42) {
+                showError("Invalid Address", "Provide a valid Base contract address");
+                logEvent("Validation Error: Invalid address format", "error");
+                throw new Error("Invalid Address");
+            }
+
+            logEvent(`Starting diagnostics for ${addressInput.substring(0,8)}...`);
+
+            const tbody = document.getElementById('results-body');
+            tbody.innerHTML = '';
+            
+            // Reset Displays
+            ['ui-raised', 'ui-goal', 'ui-time', 'ui-recipient', 'ui-balance', 'ui-refund', 'ui-claimed', 'ui-max-cap'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.innerText = "--";
+            });
+            document.getElementById('recipient-wallet-box').classList.add('hidden');
+            document.getElementById('progress-bar').style.width = "0%";
+            document.getElementById('progress-percent').innerText = "0%";
+            document.getElementById('tx-log-body').innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-400 italic">Waiting for scan...</td></tr>';
+            
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            getEthPrice();
+
+            const statusPanel = document.getElementById('status-content');
+            statusPanel.innerHTML = `
+                <div class="animate-pulse-slow">
+                    <p class="text-sm font-bold text-[#06b6d4]">Locating RPC Node...</p>
+                    <p class="text-xs text-gray-500 tracking-tight">Connecting to failover engine</p>
+                </div>
+            `;
+
+            let fastestProvider = null;
+            let fastestLatency = 99999;
+
+            logEvent("Testing RPC Latency across 5 nodes...");
+
+            for (let url of RPC_LIST) {
+                const row = document.createElement('tr');
+                row.className = "border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors";
+                row.innerHTML = `
+                    <td class="p-4 font-mono text-xs text-gray-400 break-all">${url}</td>
+                    <td class="p-4"><span class="px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] font-bold rounded-md uppercase tracking-tight">Pinging</span></td>
+                    <td class="p-4 text-gray-300">--</td>
+                    <td class="p-4 text-gray-300">--</td>
+                `;
+                tbody.appendChild(row);
+                await new Promise(r => setTimeout(r, 10));
+
+                const result = await testRpc(url);
+
+                if (result.success) {
+                    row.innerHTML = `
+                        <td class="p-4 font-mono text-xs font-semibold text-gray-700 break-all">${url}</td>
+                        <td class="p-4"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-md uppercase tracking-tight">Active</span></td>
+                        <td class="p-4 font-mono text-xs text-emerald-600 font-bold">${result.latency}ms</td>
+                        <td class="p-4 font-mono text-[10px] text-gray-400">#${result.block}</td>
+                    `;
+                    logEvent(`RPC Active: ${new URL(url).hostname} (${result.latency}ms)`, "success");
+                    if (result.latency < fastestLatency) {
+                        fastestLatency = result.latency;
+                        fastestProvider = result.provider;
+                    }
+                } else {
+                    row.innerHTML = `
+                        <td class="p-4 font-mono text-xs text-rose-300 break-all opacity-50">${url}</td>
+                        <td class="p-4"><span class="px-2 py-0.5 bg-rose-50 text-rose-500 text-[10px] font-bold rounded-md uppercase tracking-tight">Failed</span></td>
+                        <td colspan="2" class="p-4 text-rose-400 text-[10px] italic">${result.error}</td>
+                    `;
+                    logEvent(`RPC Fail: ${new URL(url).hostname}`, "error");
+                }
+            }
+
+            if (fastestProvider) {
+                logEvent("Selected fastest provider. Fetching contract state...", "info");
+                await updateContractData(fastestProvider, addressInput);
+            } else {
+                showError("No Connection", "Failover failed. All RPCs are unreachable.");
+                logEvent("CRITICAL: All RPC nodes failed.", "error");
+            }
+
+        } catch (e) {
+            console.error(e);
+            btn.disabled = false;
+            spinner.classList.add('hidden');
+        }
+    }
+
+    function showError(title, msg) {
+        const statusPanel = document.getElementById('status-content');
+        statusPanel.innerHTML = `
+            <div class="text-rose-400">
+                <p class="text-sm font-bold uppercase tracking-wide">${title}</p>
+                <p class="text-xs font-medium opacity-80">${msg}</p>
+            </div>
+        `;
+    }
+
+    async function testRpc(url) {
+        const start = Date.now();
+        try {
+            const provider = new ethers.providers.JsonRpcProvider({ url: url, timeout: 3000 });
+            provider.pollingInterval = 99999999;
+            const net = await provider.getNetwork();
+            if (net.chainId !== 8453) throw new Error("Chain Mismatch");
+            const block = await provider.getBlockNumber();
+            return { success: true, latency: Date.now() - start, block, provider };
+        } catch (e) {
+            return { success: false, error: e.message.substring(0, 15) };
+        }
+    }
+
+    // --- CONTRACT LOGIC ---
+    async function updateContractData(provider, address) {
+        const statusPanel = document.getElementById('status-content');
+        
+        try {
+            const contract = new ethers.Contract(address, ABI, provider);
+            
+            logEvent("Reading contract storage slots...");
+
+            // Safe Contract Calls
+            const safeCall = async (fnName) => {
+                try {
+                    return await contract[fnName]();
+                } catch (e) {
+                    return ethers.BigNumber.from(0);
+                }
+            };
+
+            const safeAddressCall = async (fnName) => {
+                try {
+                    return await contract[fnName]();
+                } catch (e) {
+                    return "Not Found";
+                }
+            };
+
+            // Detect Payment Token & Decimals
+            try {
+                const tokenAddress = await contract.paymentToken();
+                if(tokenAddress && tokenAddress !== ethers.constants.AddressZero) {
+                    const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+                    tokenDecimals = await tokenContract.decimals();
+                    tokenSymbol = await tokenContract.symbol();
+                    logEvent(`Detected Token: ${tokenSymbol} (${tokenDecimals} decimals)`, "success");
+                }
+            } catch(e) {
+                logEvent("Could not detect payment token. Defaulting to 18 decimals.", "warning");
+                tokenDecimals = 18;
+            }
+
+            // Fetch known variables
+            const currentNet = await safeCall('totalContributed');
+            let raisedLifetime = await safeCall('totalRaisedLifetime'); 
+            const goal = await safeCall('goal');
+            const startTimestamp = await safeCall('startTimestamp'); 
+            const maxCap = await safeCall('maxContributionPerWallet');
+            const deadline = await safeCall('deadline');
+            const isFinalized = await contract.isFinalized().catch(() => false);
+            const recipient = await safeAddressCall('projectWallet');
+
+            // --- FORENSIC EVENT FALLBACK (SMART DUAL SCAN) ---
+            
+            let reconstructedRefunds = ethers.BigNumber.from(0);
+            let transactionLog = []; // Store events for the log table
+
+            if (true) { // Always run scan to get transaction history and average basket
+                logEvent("Scanning for recent transaction history...", "info");
+                
+                try {
+                    const currentBlock = await provider.getBlockNumber();
+                    const now = Math.floor(Date.now() / 1000);
+                    
+                    const ageSeconds = now - (startTimestamp.gt(0) ? startTimestamp.toNumber() : (now - 86400));
+                    const ageBlocks = Math.floor(ageSeconds / 2);
+                    
+                    const estimatedStartBlock = Math.max(0, currentBlock - ageBlocks - 1000); 
+                    const SCAN_LIMIT = 50000; // Cap to last ~24h for responsiveness
+                    const safeStartBlock = Math.max(estimatedStartBlock, currentBlock - SCAN_LIMIT);
+
+                    const contributeFilter = contract.filters.Contributed();
+                    const refundFilter = contract.filters.Refunded();
+                    const withdrawFilter = contract.filters.EarlyWithdrawn();
+                    
+                    let forensicRaised = ethers.BigNumber.from(0);
+                    let forensicRefunded = ethers.BigNumber.from(0);
+                    let eventCount = 0;
+
+                    // Fetch events
+                    const [cEvents, rEvents, wEvents] = await Promise.all([
+                        contract.queryFilter(contributeFilter, safeStartBlock, currentBlock).catch(() => []),
+                        contract.queryFilter(refundFilter, safeStartBlock, currentBlock).catch(() => []),
+                        contract.queryFilter(withdrawFilter, safeStartBlock, currentBlock).catch(() => [])
+                    ]);
+
+                    cEvents.forEach(e => {
+                        forensicRaised = forensicRaised.add(e.args.amount);
+                        transactionLog.push({type: 'Contribute', ...e});
+                    });
+                    rEvents.forEach(e => {
+                        forensicRefunded = forensicRefunded.add(e.args.amount);
+                        transactionLog.push({type: 'Refund', ...e});
+                    });
+                    wEvents.forEach(e => {
+                        forensicRefunded = forensicRefunded.add(e.args.amount);
+                        transactionLog.push({type: 'Withdraw', ...e});
+                    });
+
+                    // Sort logs by block number (descending)
+                    transactionLog.sort((a, b) => b.blockNumber - a.blockNumber);
+
+                    // Update Lifetime if logic broken
+                    if (raisedLifetime.eq(0) && forensicRaised.gt(0)) {
+                        raisedLifetime = forensicRaised;
+                    }
+                    reconstructedRefunds = forensicRefunded;
+                    
+                    // Calc Average Basket
+                    if (cEvents.length > 0) {
+                        const avg = forensicRaised.div(cEvents.length);
+                        document.getElementById('ui-avg-basket').innerText = `Avg Basket: $${formatUSD(ethers.utils.formatUnits(avg, tokenDecimals)).replace('$','')}`;
+                    }
+
+                } catch (err) {
+                    logEvent("Scan Error: " + err.message, "error");
+                }
+            }
+
+            // --- CALCULATE DERIVED METRICS ---
+            
+            let refundBN = ethers.BigNumber.from(0);
+            if (raisedLifetime.gt(0)) {
+                refundBN = raisedLifetime.sub(currentNet);
+                if (refundBN.lt(0)) refundBN = ethers.BigNumber.from(0);
+            } else if (reconstructedRefunds.gt(0)) {
+                refundBN = reconstructedRefunds;
+                raisedLifetime = currentNet.add(reconstructedRefunds); 
+            }
+
+            // 3. Claimed
+            const claimedBN = isFinalized ? currentNet : ethers.BigNumber.from(0);
+
+            // Formatting
+            const raisedFormatted = ethers.utils.formatUnits(raisedLifetime, tokenDecimals);
+            const netFormatted = ethers.utils.formatUnits(currentNet, tokenDecimals); 
+            const goalFormatted = ethers.utils.formatUnits(goal, tokenDecimals);
+            const maxCapFormatted = ethers.utils.formatUnits(maxCap, tokenDecimals);
+            const refundFormatted = ethers.utils.formatUnits(refundBN, tokenDecimals);
+            const claimedFormatted = ethers.utils.formatUnits(claimedBN, tokenDecimals);
+            
+            const deadlineNum = deadline.toNumber();
+            const now = Math.floor(Date.now() / 1000);
+
+            // Populate UI
+            document.getElementById('ui-raised').innerText = formatUSD(raisedFormatted);
+            document.getElementById('ui-raised-eth').innerText = `${parseFloat(raisedFormatted).toFixed(2)} ${tokenSymbol}`;
+            
+            document.getElementById('ui-balance').innerText = formatUSD(netFormatted);
+            document.getElementById('ui-balance-eth').innerText = `${parseFloat(netFormatted).toFixed(2)} ${tokenSymbol} (Net)`;
+
+            document.getElementById('ui-goal').innerText = formatUSD(goalFormatted);
+            document.getElementById('ui-goal-eth').innerText = `${parseFloat(goalFormatted).toFixed(2)} ${tokenSymbol}`;
+
+            document.getElementById('ui-max-cap').innerText = formatUSD(maxCapFormatted);
+            document.getElementById('ui-max-cap-token').innerText = `${parseFloat(maxCapFormatted).toFixed(2)} ${tokenSymbol} Limit`;
+            
+            document.getElementById('ui-refund').innerText = formatUSD(refundFormatted);
+            document.getElementById('ui-refund-eth').innerText = `${parseFloat(refundFormatted).toFixed(2)} ${tokenSymbol}`;
+
+            document.getElementById('ui-claimed').innerText = formatUSD(claimedFormatted);
+            document.getElementById('ui-claimed-eth').innerText = `${parseFloat(claimedFormatted).toFixed(2)} ${tokenSymbol}`;
+
+            // Start Date & Duration Logic (MOVED INSIDE FUNCTION)
+            if(startTimestamp.gt(0)) {
+                const startDate = new Date(startTimestamp.toNumber() * 1000);
+                document.getElementById('ui-start-date').innerText = startDate.toLocaleDateString();
+                
+                if (deadline.gt(startTimestamp)) {
+                    const durationSeconds = deadline.sub(startTimestamp).toNumber();
+                    const days = Math.floor(durationSeconds / 86400);
+                    const hours = Math.floor((durationSeconds % 86400) / 3600);
+                    let durationText = "";
+                    if (days > 0) durationText += `${days} Days `;
+                    if (hours > 0) durationText += `${hours} Hours`;
+                    
+                    const durEl = document.getElementById('ui-duration');
+                    if(durEl) durEl.innerText = `Duration: ${durationText.trim()}`;
+                } else {
+                     const durEl = document.getElementById('ui-duration');
+                     if(durEl) durEl.innerText = "Duration: N/A";
+                }
+
+            } else {
+                document.getElementById('ui-start-date').innerText = "Not Started";
+                const durEl = document.getElementById('ui-duration');
+                if(durEl) durEl.innerText = "Duration: --";
+            }
+
+            document.getElementById('ui-recipient').innerText = recipient;
+            document.getElementById('recipient-wallet-box').classList.remove('hidden');
+
+            // Populate Logs Table
+            const logBody = document.getElementById('tx-log-body');
+            logBody.innerHTML = '';
+            if(transactionLog.length === 0) {
+                logBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-400 italic">No recent transactions found.</td></tr>';
+            } else {
+                transactionLog.slice(0, 50).forEach(tx => { // Show max 50
+                    const row = document.createElement('tr');
+                    const amt = ethers.utils.formatUnits(tx.args.amount, tokenDecimals);
+                    const isPlus = tx.type === 'Contribute';
+                    
+                    row.className = "border-b border-gray-50 hover:bg-gray-50";
+                    row.innerHTML = `
+                        <td class="p-3">
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${isPlus ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+                                ${tx.type}
+                            </span>
+                        </td>
+                        <td class="p-3 text-gray-500 truncate max-w-[100px]" title="${tx.args.backer}">
+                            ${tx.args.backer.substring(0, 6)}...${tx.args.backer.substring(38)}
+                        </td>
+                        <td class="p-3 text-right font-semibold ${isPlus ? 'text-emerald-600' : 'text-rose-600'}">
+                            ${isPlus ? '+' : '-'}${parseFloat(amt).toFixed(2)}
+                        </td>
+                        <td class="p-3 text-right text-gray-400">
+                            #${tx.blockNumber}
+                        </td>
+                    `;
+                    logBody.appendChild(row);
+                });
+            }
+
+            // Progress Bar
+            let percent = 0;
+            if (goal.gt(0)) {
+                percent = Math.min(100, (parseFloat(netFormatted) / parseFloat(goalFormatted)) * 100);
+            }
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+            document.getElementById('progress-percent').innerText = `${percent.toFixed(1)}%`;
+
+            // State Logic
+            const timeEl = document.getElementById('ui-time');
+            const badge = document.getElementById('sync-status-badge');
+            let badgeText = 'Live'; 
+            let badgeClass = 'bg-purple-100 text-[#6D28D9]'; // Tookle Purple
+
+            if (isFinalized) {
+                badgeText = 'Settled'; 
+                badgeClass = 'bg-gray-800 text-white';
+                timeEl.innerText = "Finalized";
+                logEvent("Status: Contract is Finalized", "info");
+            } else if (now >= deadlineNum && deadlineNum > 0) {
+                if (currentNet.gte(goal)) {
+                    badgeText = 'Ready to Claim'; 
+                    badgeClass = 'bg-emerald-100 text-emerald-700';
+                    timeEl.innerText = "Ended";
+                    logEvent("Status: Goal Met. Waiting for claim.", "success");
+                } else {
+                    badgeText = 'Goal Failed'; 
+                    badgeClass = 'bg-rose-100 text-rose-700';
+                    timeEl.innerText = "Ended";
+                    logEvent("Status: Goal Failed. Refunds enabled.", "warning");
+                }
+            } else if (deadlineNum > 0) {
+                startCountdown(deadlineNum, timeEl);
+                logEvent("Status: Campaign Active", "info");
+            } else {
+                timeEl.innerText = "N/A";
+                logEvent("Status: No deadline found", "warning");
+            }
+
+            badge.innerText = badgeText;
+            badge.className = `px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-tight ${badgeClass}`;
+
+            statusPanel.innerHTML = `
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs">✓</div>
+                        <div>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Vault Logic Synced</p>
+                            <p class="text-sm font-bold">Settlement Layer Data Match</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        } catch (e) {
+            showError("Read Error", "Contract ABI mismatch. Is this a Smart Vault?");
+            logEvent("Fatal: " + e.message, "error");
+            console.error(e);
+        } finally {
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('btn-spinner').classList.add('hidden');
+        }
+    }
+
+    function startCountdown(deadline, display) {
+        const update = () => {
+            const now = Math.floor(Date.now() / 1000);
+            const diff = deadline - now;
+            if (diff <= 0) {
+                display.innerText = "Ended";
+                clearInterval(countdownInterval);
+                return;
+            }
+            const d = Math.floor(diff / 86400);
+            const h = Math.floor((diff % 86400) / 3600);
+            const m = Math.floor((diff % 3600) / 60);
+            display.innerText = `${d}d ${h}h ${m}m`;
+            display.className = "text-2xl font-bold text-[#6D28D9] tracking-tight";
+        };
+        update();
+        countdownInterval = setInterval(update, 60000); 
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<?php
+// This file is the HTML content for the invites page.
+// It is designed to be included by the main layout.php.
+?>
+<!-- Custom styles for this page only. -->
+<style>
+    .card { background-color: white; border-radius: 0.75rem; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); min-height: 240px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; font-weight: 500; border-radius: 0.5rem; transition: all 0.2s ease-in-out; padding: 0.5rem 1rem; font-size: 0.875rem; }
+    .btn-neutral { background-color: #f3f4f6; color: var(--text-secondary); border: 1px solid var(--border-color); }
+    .btn-neutral:hover:not(:disabled) { background-color: #e5e7eb; color: var(--text-primary); }
+    .btn-grey { background-color: #f3f4f6; color: var(--text-secondary); border: 1px solid var(--border-color); }
+    .btn-grey:hover:not(:disabled) { background-color: #e5e7eb; color: var(--text-primary); }
+    .btn-grey.copied { background-color: #ECFDF5; color: #059669; border-color: #059669; }
+    .form-group { margin-bottom: 1.5rem; }
+    label { font-size: 0.875rem; font-weight: 500; color: var(--label-color); margin-bottom: 0.5rem; display: block; }
+    input[type="text"] { padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.9rem; font-family: inherit; width: 100%; box-sizing: border-box; background-color: #f9fafb; }
+    .copy-input-group { display: flex; align-items: center; gap: 1rem; max-width: 400px; }
+    .invite-actions { display: flex; gap: 0.75rem; }
+    .invitee-list-item { display: flex; justify-content: space-between; padding: 0.75rem; border-bottom: 1px solid #E5E7EB; }
+    .invitee-list-item:last-child { border-bottom: none; }
+    .invitee-status { padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500; }
+    .status-pending { background-color: #FEF3C7; color: #92400E; }
+    .status-completed { background-color: #ECFDF5; color: #059669; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; z-index: 999; }
+    .modal-overlay.visible { opacity: 1; visibility: visible; }
+    .modal-content { background-color: white; padding: 2rem; border-radius: 6px; max-width: 400px; text-align: center; }
+</style>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="flex flex-wrap justify-between items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-[var(--text-primary)]">Invite & Earn</h1>
+            <p class="text-[var(--text-secondary)] mt-1">Share your code with other investors and earn rewards.</p>
+        </div>
+        
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mt-8">
+        <div class="card p-8">
+            <section class="invite-code-section flex flex-col h-full justify-between">
+                <div>
+                    <label for="invite-code">Your Unique Invite Code</label>
+                    <div class="copy-input-group">
+                        <input type="text" id="invite-code" value="Loading..." readonly>
+                        <button type="button" id="copy-invite-button" class="btn btn-grey">Copy</button>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-xs text-gray-500 mb-4">Projects may share rewards if your code is used during investment.</p>
+                    <div class="invite-actions">
+                        <button type="button" id="share-invite-button" class="btn btn-grey">Share My Code</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="card p-8">
+            <section class="invitees-section">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Your Invitees</h2>
+                <div id="invitee-list" class="max-h-60 overflow-y-auto">
+                    <!-- Invitee list will be populated by JS -->
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<div id="custom-modal" class="modal-overlay">
+    <div class="modal-content">
+        <p id="modal-message"></p>
+        <button id="modal-close-button" class="btn btn-grey mt-4" style="float: right;">OK</button>
+    </div>
+</div>
+
+<!-- Page-specific JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inviteCodeInput = document.getElementById('invite-code');
+    const inviteeListContainer = document.getElementById('invitee-list');
+    const copyInviteButton = document.getElementById('copy-invite-button');
+    const shareInviteButton = document.getElementById('share-invite-button');
+    const modal = { overlay: document.getElementById('custom-modal'), message: document.getElementById('modal-message'), closeBtn: document.getElementById('modal-close-button') };
+    
+    modal.closeBtn.addEventListener('click', () => modal.overlay.classList.remove('visible'));
+    function showModal(msg) { modal.message.textContent = msg; modal.overlay.classList.add('visible'); }
+
+    // This function is now in layout.php, but it's good to keep a version here in case of single-page use.
+    const renderUserInfo = (user) => {
+        if (!user) return;
+        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+        const userNameEl = document.getElementById('user-name');
+        if (userNameEl) userNameEl.textContent = fullName || user.email || 'Investor';
+        const userEmailEl = document.getElementById('user-email');
+        if (userEmailEl) userEmailEl.textContent = user.email || 'No email';
+        let initials = (user.first_name?.[0] || '') + (user.last_name?.[0] || '');
+        if (!initials && user.email) initials = user.email[0];
+        else if (!initials) initials = 'I';
+        const userInitialsEl = document.getElementById('user-initials');
+        if (userInitialsEl) userInitialsEl.textContent = initials.toUpperCase();
+    };
+
+    async function fetchInviteData() {
+        try {
+            const response = await fetch('/backend/invites_backend.php');
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/user/l01_login.html';
+                }
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
+            // Populate user info in the layout header
+            renderUserInfo(data.userInfo);
+            inviteCodeInput.value = data.invite_code || 'N/A';
+            
+            inviteeListContainer.innerHTML = '';
+            if (data.invitees && data.invitees.length > 0) {
+                data.invitees.forEach(invitee => {
+                    const statusClass = invitee.status === 'Completed' ? 'status-completed' : 'status-pending';
+                    const item = `
+                        <div class="invitee-list-item">
+                            <span>${invitee.referee_email}</span>
+                            <span class="invitee-status ${statusClass}">${invitee.status}</span>
+                        </div>`;
+                    inviteeListContainer.insertAdjacentHTML('beforeend', item);
+                });
+            } else {
+                inviteeListContainer.innerHTML = '<p class="text-sm text-gray-500 text-center">You haven\'t invited anyone yet.</p>';
+            }
+        } catch (error) {
+            console.error("Fetch invite data error:", error);
+            showModal("Could not load your invite information.");
+        }
+    }
+
+    function copyCode() {
+        if (!inviteCodeInput.value || inviteCodeInput.value === 'Loading...') return;
+        // Use document.execCommand('copy') for better browser compatibility in iframes
+        const tempInput = document.createElement('input');
+        tempInput.value = inviteCodeInput.value;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        try {
+            document.execCommand('copy');
+            const originalText = copyInviteButton.textContent;
+            copyInviteButton.textContent = 'Copied!';
+            copyInviteButton.classList.add('copied');
+            setTimeout(() => {
+                copyInviteButton.textContent = originalText;
+                copyInviteButton.classList.remove('copied');
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy code.', err);
+            showModal('Failed to copy code to clipboard.');
+        } finally {
+            document.body.removeChild(tempInput);
+        }
+    }
+    
+    copyInviteButton.addEventListener('click', copyCode);
+    shareInviteButton.addEventListener('click', copyCode);
+    
+    fetchInviteData();
+});
+</script>
+

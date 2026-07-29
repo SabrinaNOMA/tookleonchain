@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KYC / AML verification</title>
+  <style>
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;background:#0b0f19;color:#e5e7eb;display:grid;place-items:center;min-height:100vh}
+    .card{width:min(960px,94vw);background:#121826;border-radius:16px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+    h1{margin:0 0 4px;font-size:24px}
+    p{margin:6px 0 16px;color:#9aa4b2}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px}
+    input{padding:10px 12px;border-radius:10px;border:1px solid #233047;background:#0f1422;color:#e5e7eb;min-width:260px}
+    button{padding:10px 14px;border-radius:10px;background:#2151ff;color:#fff;border:none;cursor:pointer}
+    #sdk{background:#0f1422;border:1px dashed #2a3753;border-radius:12px;padding:14px;min-height:380px}
+    .muted{color:#9aa4b2;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>KYC / AML verification</h1>
+    <p>Submit your <strong>ID</strong>, <strong>Proof of Address</strong>, and a <strong>selfie</strong>. The flow uses Sumsub WebSDK.</p>
+    <div class="row">
+      <input id="user" placeholder="externalUserId (required)" />
+      <input id="email" placeholder="email (optional)" />
+      <input id="phone" placeholder="phone (optional)" />
+      <button id="btnStart">Start</button>
+    </div>
+    <div id="sdk">WebSDK will mount here…</div>
+    <p class="muted">If embedding is not allowed by CSP, open the permalink returned by the backend.</p>
+  </div>
+  <script src="https://static.sumsub.com/idensic/static/sns-websdk-builder.js"></script>
+  <script>
+  async function start(){
+    const user  = document.getElementById('user').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    if(!user){ alert('externalUserId required'); return; }
+    const res = await fetch('./api_start_sdk.php?user='+encodeURIComponent(user)+'&email='+encodeURIComponent(email)+'&phone='+encodeURIComponent(phone));
+    const json = await res.json();
+    if(!json.ok){ alert('Error: '+(json.error||'unknown')); return; }
+    const accessToken = json.token;
+    window.SNSWebSDK.init(accessToken, ()=>fetch('./api_start_sdk.php?user='+encodeURIComponent(user)), { lang:'en' })
+      .withConf({})
+      .on('onError', e=>console.error('SDK error', e))
+      .on('onApplicantSubmitted', ()=>console.log('Applicant submitted'))
+      .on('onVerified', ()=>console.log('Verified'))
+      .build()
+      .mount('#sdk');
+  }
+  document.getElementById('btnStart').onclick = start;
+  </script>
+</body>
+</html>

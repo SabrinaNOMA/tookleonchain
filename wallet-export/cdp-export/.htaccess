@@ -1,0 +1,10 @@
+Options -Indexes
+RewriteEngine On
+
+# Servir les fichiers existants (assets, css, js, images)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Sinon, renvoyer vers index.html (SPA)
+RewriteRule ^ index.html [L]

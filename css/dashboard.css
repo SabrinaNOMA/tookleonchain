@@ -1,0 +1,1107 @@
+:root {
+    --theme-primary: #6C63FF; /* MODIFIED: Restauré à la couleur Tookle demandée */
+    /* Define status colors */
+    --color-status-draft: #9ca3af; /* gray-400 */
+    --color-status-scheduled: #60a5fa; /* blue-400 */
+    --color-status-live: #22c55e; /* green-500 */
+    --color-status-successful: #818cf8; /* indigo-400 */
+    --color-status-failed: #f59e0b; /* amber-500 */
+    --color-status-canceled: #ef4444; /* red-500 */
+    --color-status-tracking: #a855f7; /* NEW: purple-500 */
+    --color-status-unknown: #9ca3af; /* gray-400 */
+}
+.lifecycle-card.highlight {
+    border-color: var(--theme-primary);
+    border-width: 2px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-4px);
+}
+/* MODIFIED: More subtle progress bar */
+.thermometer {
+    width: 100%;
+    height: 8px; /* Slimmer bar */
+    background-color: #e5e7eb; /* gray-200 */
+    border-radius: 9999px;
+    position: relative;
+    overflow: hidden; /* Clean edges */
+}
+.thermometer-mercury {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: var(--theme-primary); /* Solid primary color */
+    border-radius: 9999px;
+    transition: width 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+/* REMOVED: .thermometer-text, .thermometer-subtext (will be handled by new layout) */
+
+@keyframes pulse-live {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } /* Use --color-status-live */
+    50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+}
+.status-dot-live {
+    animation: pulse-live 2s infinite;
+    background-color: var(--color-status-live); /* Ensure dot uses the variable */
+}
+/* Style for all status dots using CSS variables */
+.status-dot {
+    height: 0.625rem; /* 10px */
+    width: 0.625rem; /* 10px */
+    border-radius: 9999px;
+    margin-right: 0.5rem; /* Spacing */
+}
+
+.kanban-horizontal-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+.kanban-step { border-left: 4px solid; transition: all 0.3s ease; }
+.kanban-step-completed { border-color: var(--theme-primary); }
+.kanban-step-inprogress { border-color: var(--theme-primary); }
+.kanban-step-todo { border-color: #e5e7eb; }
+.private-sales-table th { border-bottom-width: 2px; }
+.private-sales-table td { vertical-align: middle; }
+.tooltip { position: relative; display: inline-flex; align-items: center; }
+.tooltip .tooltiptext { visibility: hidden; width: 280px; background-color: #374151; color: #fff; text-align: left; font-size: 0.75rem; line-height: 1.5; border-radius: 0.375rem; padding: 0.5rem 0.75rem; position: absolute; z-index: 10; bottom: 125%; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.2s ease-in-out; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); }
+.tooltip .tooltiptext b { color: #fff; font-weight: 600; }
+.tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+
+/* --- REFACTORED MODAL STYLES --- */
+/* Base overlay style (no display property) */
+.modal-overlay { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    background-color: rgba(17, 24, 39, 0.6); 
+    z-index: 50; 
+    backdrop-filter: blur(4px); 
+}
+/* Style for centered pop-up modals */
+.modal-overlay.modal-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem; /* Added padding for small screens */
+}
+/* Content for centered pop-up modals */
+.modal-overlay.modal-center .modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 36rem;
+    max-height: 90vh;
+    overflow-y: auto;
+    /* NEW: Transition for popup */
+    opacity: 0;
+    transform: scale(0.95);
+    transition-property: all;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+/* Active state for centered modal */
+.modal-overlay.modal-center.active .modal-content {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Close button for centered pop-up modals */
+.modal-overlay.modal-center .modal-close-btn { 
+    position: absolute; 
+    top: 0.75rem; 
+    right: 0.75rem; 
+    color: #9ca3af; 
+}
+.modal-overlay.modal-center .modal-close-btn:hover { 
+    color: #1f2937; 
+}
+/* --- END REFACTORED MODAL STYLES --- */
+
+
+/* --- RE-INTRODUCED: Edit Form Modal Styles --- */
+#edit-sale-modal.modal-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+}
+#edit-sale-modal.modal-overlay.active {
+   opacity: 1;
+   pointer-events: auto;
+}
+
+#edit-sale-modal .modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 48rem; /* Large width for form */
+    max-height: 90vh;
+    background-color: #ffffff;
+    padding: 0;
+    border-radius: 1rem; /* MODIFIED: Was 0.75rem, now 16px */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: scale(0.95);
+    transition-property: all;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+
+#edit-sale-modal.modal-overlay.active .modal-content {
+    opacity: 1;
+    transform: scale(1);
+}
+
+#edit-sale-modal .modal-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+#edit-sale-modal .modal-header {
+    flex-shrink: 0;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    /* REMOVED: Background gradient to make it white */
+    border-top-left-radius: 1rem; /* MODIFIED: Was 0.75rem */
+    border-top-right-radius: 1rem; /* MODIFIED: Was 0.75rem */
+}
+
+#edit-sale-modal .modal-footer {
+    flex-shrink: 0;
+    padding: 1.5rem;
+    background-color: #ffffff; /* MODIFIED: Was #f9fafb (gray-50) */
+    border-top: 1px solid #e5e7eb;
+    border-bottom-left-radius: 1rem; /* MODIFIED: Was 0.75rem */
+    border-bottom-right-radius: 1rem; /* MODIFIED: Was 0.75rem */
+}
+
+#edit-sale-modal .modal-close-btn {
+    position: absolute;
+    top: 1rem; /* MODIFIED: Was 1.25rem */
+    right: 1rem; /* MODIFIED: Was 1.25rem */
+    z-index: 10;
+    padding: 0.25rem;
+    border-radius: 9999px; /* MODIFIED: Was 0.375rem (to match Corintis) */
+    color: #9ca3af;
+}
+#edit-sale-modal .modal-close-btn:hover {
+    color: #1f2937;
+    background-color: #f3f4f6;
+}
+/* --- END: Edit Form Modal Styles --- */
+
+
+/* --- NEW: View Modal (Overview) Styles --- */
+#view-sale-modal.modal-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+}
+#view-sale-modal.modal-overlay.active {
+   opacity: 1;
+   pointer-events: auto;
+}
+
+#view-sale-modal .modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 28rem; /* Small width for overview */
+    max-height: 90vh;
+    background-color: #ffffff;
+    padding: 0;
+    border-radius: 1rem; /* 16px */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: scale(0.95);
+    transition-property: all;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+
+#view-sale-modal.modal-overlay.active .modal-content {
+    opacity: 1;
+    transform: scale(1);
+}
+
+#view-sale-modal .modal-body-overview {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 2rem; /* p-8 */
+}
+
+#view-sale-modal .modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    padding: 0.25rem;
+    border-radius: 9999px;
+    color: #9ca3af;
+}
+#view-sale-modal .modal-close-btn:hover {
+    color: #1f2937;
+    background-color: #f3f4f6;
+}
+/* --- END: View Modal (Overview) Styles --- */
+
+
+/* --- RE-INTRODUCED: Tab Styles (for Edit Form) --- */
+.modal-tab-nav {
+    display: flex;
+    border-bottom: 1px solid #e5e7eb;
+}
+.modal-tab-btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s ease-in-out;
+    background-color: transparent;
+    border-top: 0;
+    border-left: 0;
+    border-right: 0;
+    cursor: pointer;
+}
+.modal-tab-btn:hover {
+    background-color: #f9fafb;
+    color: #374151;
+}
+.modal-tab-btn.active {
+    color: var(--theme-primary);
+    border-bottom-color: var(--theme-primary);
+}
+.modal-tab-content {
+    display: none;
+    padding-top: 1.5rem;
+}
+.modal-tab-content.active {
+    display: block;
+}
+/* --- END: Tab Styles --- */
+
+
+/* --- NEW: <dialog> Modal Styles (Kept for now) --- */
+.dialog-modal {
+    padding: 0;
+    border: none;
+    border-radius: 1rem; /* MODIFIED: 16px border-radius */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    max-width: 36rem; /* 576px - MODIFIED: Increased width */
+    width: 100%;
+    box-sizing: border-box; /* ADDED for safety */
+    /* These are for the open state */
+    opacity: 1;
+    transform: scale(1);
+    transition-property: all;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+
+/* This styles the content *inside* the dialog */
+.dialog-content {
+    position: relative;
+    padding: 2rem; /* MODIFIED: p-8 */
+    background-color: white;
+    /* This ensures all text inside is visible by default */
+    color: #374151; /* gray-700 */
+    box-sizing: border-box; /* ADDED for safety */
+    border-radius: 1rem; /* MODIFIED: 16px border-radius */
+}
+
+/* --- NEW: Premium typography for share modal --- */
+.dialog-content #share-modal-title {
+    font-size: 1.5rem; /* 24px */
+    font-weight: 700;
+    color: #111827; /* gray-900 */
+}
+.dialog-content #share-modal-subtitle {
+    font-size: 1rem; /* 16px */
+    color: #4b5563; /* gray-600 */
+    margin-top: 0.5rem;
+}
+/* --- END NEW --- */
+
+.dialog-modal::backdrop {
+    background-color: rgba(17, 24, 39, 0.6); 
+    backdrop-filter: blur(4px);
+    /* Fade in backdrop */
+    opacity: 1;
+    transition: all 0.2s ease-in-out;
+}
+
+/* This is for the closing animation */
+.dialog-modal[open="false"] {
+    opacity: 0;
+    transform: scale(0.95);
+}
+.dialog-modal[open="false"]::backdrop {
+    opacity: 0;
+}
+
+/* Re-use modal-close-btn style for the dialog */
+.dialog-modal .modal-close-btn {
+    position: absolute;
+    top: 1rem; /* MODIFIED */
+    right: 1rem; /* MODIFIED */
+    color: #9ca3af;
+    padding: 0.25rem;
+    border-radius: 9999px;
+}
+.dialog-modal .modal-close-btn:hover {
+    color: #1f2937;
+    background-color: #f3f4f6;
+}
+
+/* --- END: <dialog> Modal Styles --- */
+
+
+/* --- UPDATED: Social Share Modal (Styling for dialog) --- */
+.share-logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0rem; /* MODIFIED */
+}
+/* This style is now in dashboard.php */
+/* .share-logo-container img { ... } */
+
+
+/* --- NEW: Full-Width Social Share Buttons --- */
+.social-btn {
+    display: flex; /* Use flex */
+    align-items: center;
+    justify-content: center; /* Center content */
+    width: 100%; /* Full width */
+    padding: 0.75rem 1rem; /* 12px 16px */
+    border-radius: 0.5rem; /* 8px */
+    transition: all 0.2s ease;
+    text-decoration: none;
+    gap: 0.75rem; /* 12px */
+    font-weight: 600; /* Bolder */
+    color: white; /* White text */
+    border: 1px solid transparent;
+    white-space: nowrap; /* ADDED: Prevents text from wrapping */
+}
+.social-btn:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+/* --- UPDATED: New classes for premium look --- */
+.social-btn {
+    background-color: #ffffff; /* White background */
+    color: #374151; /* Dark gray text */
+    border: 1px solid #e5e7eb; /* gray-200 */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.social-btn .social-btn-icon {
+    color: #6b7280; /* gray-500 */
+    transition: color 0.2s ease;
+    /* --- NEW: Added fixed size to icons --- */
+    width: 1.25rem; /* 20px */
+    height: 1.25rem; /* 20px */
+    flex-shrink: 0; /* Prevent icon from shrinking */
+    /* --- END NEW --- */
+}
+.social-btn:hover {
+    background-color: #f9fafb; /* gray-50 */
+    border-color: #d1d5db; /* gray-300 */
+    color: #1f2937; /* gray-800 */
+    opacity: 1; /* Override default hover */
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* --- NEW: Brand color on hover --- */
+.social-btn:hover.twitter-btn { color: #1DA1F2; }
+.social-btn:hover.twitter-btn .social-btn-icon { color: #1DA1F2; }
+
+.social-btn:hover.facebook-btn { color: #1877F2; }
+.social-btn:hover.facebook-btn .social-btn-icon { color: #1877F2; }
+
+.social-btn:hover.linkedin-btn { color: #0A66C2; }
+.social-btn:hover.linkedin-btn .social-btn-icon { color: #0A66C2; }
+/* --- END: Full-Width Buttons --- */
+
+.copy-link-wrapper {
+    display: flex;
+    margin-top: 0.5rem;
+}
+.copy-link-wrapper input[readonly] {
+    flex: 1 1 0%;
+    min-width: 0;
+    border-radius: 0.375rem; /* rounded-md */
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-color: #d1d5db; /* gray-300 */
+    background-color: #ffffff; /* gray-50 - MODIFIED TO WHITE */
+    color: #4b5563; /* gray-600 */
+}
+.copy-link-wrapper input[readonly]:focus {
+    outline: none;
+    box-shadow: none;
+    border-color: #d1d5db;
+    ring-width: 0;
+}
+.copy-link-button {
+    display: inline-flex;
+    align-items: center;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border: 1px solid #d1d5db; /* gray-300 */
+    border-left: 0;
+    background-color: #ffffff; /* gray-50 - UPDATED TO WHITE */
+    color: #374151; /* gray-700 */
+    font-weight: 600; /* UPDATED */
+    font-size: 0.875rem; /* 14px */
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+    transition: background-color 0.2s;
+}
+.copy-link-button:hover {
+    background-color: #f3f4f6; /* gray-100 */
+}
+
+/* --- NEW: Share Modal Divider --- */
+.share-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #9ca3af; /* gray-400 */
+    font-size: 0.75rem; /* 12px */
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 1.5rem; /* 24px */
+    margin-bottom: 1.5rem; /* 24px */
+}
+.share-divider::before,
+.share-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e5e7eb; /* gray-200 */
+}
+.share-divider::before {
+    margin-right: 0.75em;
+}
+.share-divider::after {
+    margin-left: 0.75em;
+}
+
+/* --- NEW: Minimalist Share Modal Styles --- */
+/* Styles for #social-share-dialog */
+#social-share-dialog .social-btn-minimal {
+    display: inline-flex; /* Not flex, inline-flex */
+    width: 3rem; /* MODIFIED: 48px */
+    height: 3rem; /* MODIFIED: 48px */
+    border-radius: 9999px; /* circle */
+    background-color: #f3f4f6; /* gray-100 */
+    border-color: #f3f4f6; /* gray-100 */
+    color: #1f2937; /* gray-800 */
+    box-shadow: none;
+    padding: 0; /* Remove padding */
+}
+#social-share-dialog .social-btn-minimal .social-btn-icon {
+    color: #1f2937; /* gray-800 */
+    width: 1.25rem; /* MODIFIED: 20px */
+    height: 1.25rem; /* MODIFIED: 20px */
+}
+#social-share-dialog .social-btn-minimal:hover {
+    background-color: #e5e7eb; /* gray-200 */
+    border-color: #e5e7eb;
+    color: #1f2937; /* Keep text color neutral */
+    box-shadow: none;
+}
+
+/* Keep icon brand color on hover */
+#social-share-dialog .social-btn-minimal:hover.twitter-btn .social-btn-icon { color: #1DA1F2; }
+#social-share-dialog .social-btn-minimal:hover.facebook-btn .social-btn-icon { color: #1877F2; }
+#social-share-dialog .social-btn-minimal:hover.linkedin-btn .social-btn-icon { color: #0A66C2; }
+
+/* NEW: Primary Share Button */
+.btn-primary-share {
+    background-color: var(--theme-primary) !important;
+    background-image: none !important;
+    color: #ffffff !important;
+    border: 1px solid var(--theme-primary);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    border-radius: 0.5rem; /* 8px */
+    transition: all 0.2s ease;
+}
+.btn-primary-share:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* --- END: Minimalist Styles --- */
+
+/* --- NEW: Campaign Overview Modal Styles (Targeting #view-sale-modal AND #edit-sale-modal) --- */
+.view-logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0rem;
+}
+
+/* MODIFIED: Broaden scope to apply to both modals */
+#view-sale-modal .social-btn-minimal,
+#edit-sale-modal .social-btn-minimal {
+    display: inline-flex;
+    width: 3rem; /* 48px */
+    height: 3rem; /* 48px */
+    border-radius: 9999px; /* circle */
+    background-color: #f3f4f6; /* gray-100 */
+    border-color: #f3f4f6; /* gray-100 */
+    color: #1f2937; /* gray-800 */
+    box-shadow: none;
+    padding: 0;
+}
+#view-sale-modal .social-btn-minimal .social-btn-icon,
+#edit-sale-modal .social-btn-minimal .social-btn-icon {
+    color: #1f2937; /* gray-800 */
+    width: 1.25rem; /* 20px */
+    height: 1.25rem; /* 20px */
+}
+#view-sale-modal .social-btn-minimal:hover,
+#edit-sale-modal .social-btn-minimal:hover {
+    background-color: #e5e7eb; /* gray-200 */
+    border-color: #e5e7eb;
+    color: #1f2937;
+    box-shadow: none;
+}
+#view-sale-modal .social-btn-minimal:hover.twitter-btn .social-btn-icon,
+#edit-sale-modal .social-btn-minimal:hover.twitter-btn .social-btn-icon { color: #1DA1F2; }
+#view-sale-modal .social-btn-minimal:hover.facebook-btn .social-btn-icon,
+#edit-sale-modal .social-btn-minimal:hover.facebook-btn .social-btn-icon { color: #1877F2; }
+#view-sale-modal .social-btn-minimal:hover.linkedin-btn .social-btn-icon,
+#edit-sale-modal .social-btn-minimal:hover.linkedin-btn .social-btn-icon { color: #0A66C2; }
+
+.view-stats-container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #f9fafb; /* gray-50 */
+    border-radius: 0.75rem; /* 12px */
+}
+.view-stat-block {
+    text-align: left;
+}
+.view-stat-block:first-child {
+    padding-right: 1rem;
+    border-right: 1px solid #e5e7eb; /* gray-200 */
+}
+.view-stat-block:last-child {
+    padding-left: 1rem;
+}
+.view-stat-value {
+    font-size: 1.25rem; /* 20px */
+    font-weight: 700;
+    color: #111827; /* gray-900 */
+    line-height: 1.2;
+}
+.view-stat-label {
+    font-size: 0.75rem; /* 12px */
+    color: #6b7280; /* gray-500 */
+    margin-left: 0.25rem;
+}
+.view-stat-label-bottom {
+    font-size: 0.75rem; /* 12px */
+    color: #6b7280; /* gray-500 */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.125rem;
+}
+
+.view-progress-bar {
+    width: 100%;
+    height: 10px;
+    background-color: #e5e7eb; /* gray-200 */
+    border-radius: 9999px;
+    position: relative;
+    overflow: hidden;
+}
+.view-progress-mercury {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: var(--theme-primary);
+    border-radius: 9999px;
+    transition: width 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.view-time-left {
+    margin-top: 0.5rem;
+    font-size: 0.875rem; /* 14px */
+    font-weight: 500;
+    color: #4b5563; /* gray-600 */
+    text-align: center;
+}
+.view-discreet-text {
+    margin-top: 1.5rem; /* 24px */
+    font-size: 0.75rem; /* 12px */
+    color: #6b7280; /* gray-500 */
+    text-align: center;
+}
+
+/* REMOVED: Divider for stats in edit modal */
+/* .modal-stats-divider { ... } */
+
+/* --- END: Campaign Overview Modal Styles --- */
+
+
+/* --- END: Social Share Modal --- */
+
+
+.info-box {
+    background-color: #f3f4f6; /* gray-100 */
+    border-left: 4px solid #6b7280; /* gray-500 */
+    padding: 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.5;
+    color: #4b5563; /* gray-600 */
+}
+.info-box p { margin: 0; }
+.info-box a {
+    color: var(--theme-primary);
+    font-weight: 500;
+    text-decoration: underline;
+}
+/* --- NEW: Premium Info Box Style --- */
+.info-box.info-box-premium {
+    background-color: #f5f3ff; /* violet-50 */
+    border-color: #a78bfa; /* violet-400 */
+}
+.info-box.info-box-premium p {
+    color: #5b21b6; /* violet-700 */
+}
+.info-box.info-box-premium b {
+    color: #4c1d95; /* violet-800 */
+}
+.info-box.info-box-premium a {
+    color: #4c1d95; /* violet-800 */
+    font-weight: 600;
+}
+/* --- END NEW --- */
+
+.locked-field-container { position: relative; }
+.locked-field-overlay {
+    position: absolute;
+    top: 1.5rem; /* Position it over the input */
+    right: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7280;
+}
+.locked-field-overlay i {
+    width: 1rem; /* 16px */
+    height: 1rem; /* 16px */
+}
+
+/* --- NEW: Softer Locked Input Field (MODIFIED) --- */
+.input-locked {
+    /* background-color: #f9fafb; -- REMOVED per user request */
+    color: #4b5563; /* gray-600 */
+    /* The cursor-not-allowed is still applied by JS */
+}
+/* --- END NEW --- */
+
+.schedule-option {
+    border: 2px solid #e5e7eb; /* gray-200 */
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+}
+.schedule-option:hover {
+    border-color: #d1d5db; /* gray-300 */
+    background-color: #f9fafb; /* gray-50 */
+}
+.schedule-option.selected {
+    border-color: var(--theme-primary);
+    background-color: #f5f3ff; /* violet-50 */
+    box-shadow: 0 0 0 2px var(--theme-primary);
+}
+.schedule-option .radio-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    border: 2px solid #d1d5db; /* gray-300 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.schedule-option.selected .radio-icon {
+    border-color: var(--theme-primary);
+    background-color: var(--theme-primary);
+}
+.schedule-option.selected .radio-icon::after {
+    content: '';
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: white;
+    border-radius: 9999px;
+}
+/* Simple banner style */
+.simple-banner {
+    background-color: #f9fafb; /* gray-50 */
+    border: 1px solid #e5e7eb; /* gray-200 */
+}
+
+/* --- NEW: Action Menu Styles --- */
+.btn-ghost {
+    background-color: transparent;
+    border-color: transparent;
+    color: #6b7280; /* gray-500 */
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+.btn-ghost:hover {
+    background-color: #f3f4f6; /* gray-100 */
+    color: #1f2937; /* gray-800 */
+}
+.btn-ghost.active {
+    background-color: #e5e7eb; /* gray-200 */
+    color: #1f2937; /* gray-800 */
+}
+.action-menu-container {
+    position: relative;
+    display: flex;
+    justify-content: center; /* Center the "..." button */
+}
+.action-menu-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%; /* Position below the button */
+    margin-top: 0.25rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb; /* gray-200 */
+    z-index: 51; /* UPDATED: Was 20. Must be > 50 (modal overlay z-index) */
+    width: 180px; /* Set a fixed width */
+    padding: 0.5rem;
+    display: none; /* Hidden by default */
+}
+.action-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem; /* 14px */
+    color: #374151; /* gray-700 */
+    border-radius: 0.375rem; /* 6px */
+    text-decoration: none;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+.action-menu-item:hover {
+    background-color: #f3f4f6; /* gray-100 */
+    color: #1f2937; /* gray-800 */
+}
+.action-menu-divider {
+    height: 1px;
+    background-color: #e5e7eb; /* gray-200 */
+    margin: 0.5rem -0.5rem; /* Span full width of padded parent */
+}
+.action-menu-item-destructive {
+    color: #ef4444; /* red-500 */
+}
+.action-menu-item-destructive:hover {
+    background-color: #fef2f2; /* red-50 */
+    color: #dc2626; /* red-600 */
+}
+/* --- UPDATED: View/Edit Link Style --- */
+.action-menu-item-view {
+    color: var(--theme-primary); /* Purple text */
+    background-color: #f5f3ff; /* violet-50 */
+    font-weight: 500;
+}
+.action-menu-item-view:hover {
+    background-color: #ede9fe; /* violet-100 */
+    color: #5b21b6; /* Darker purple on hover */
+}
+.action-menu-item-view i {
+    color: var(--theme-primary); /* Purple icon */
+}
+/* --- END: View/Edit Link Style --- */
+/* --- NEW: Destructive Secondary Button --- */
+.btn-destructive-secondary {
+    background-color: #fef2f2; /* red-50 */
+    border-color: #fecaca; /* red-200 */
+    color: #dc2626; /* red-600 */
+    border-width: 1px;
+}
+.btn-destructive-secondary:hover {
+    background-color: #fee2e2; /* red-100 */
+    border-color: #fca5a5; /* red-300 */
+    color: #b91c1c; /* red-700 */
+}
+/* --- END: Destructive Secondary Button --- */
+
+/* --- NEW: Modern Button Overrides --- */
+/* Override global btn-primary to be solid, not gradient */
+.btn-primary {
+    background-color: #ffffff !important; /* White background */
+    background-image: none !important; /* Remove gradient */
+    color: #374151 !important; /* Dark gray text */
+    border: 1px solid #d1d5db; /* Gray border */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.btn-primary:hover {
+    background-color: #f3f4f6 !important; /* Light gray hover */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Ensure global btn-secondary has a modern, flat look */
+.btn-secondary {
+    background-color: #ffffff; /* White background */
+    border-color: #d1d5db; /* gray-300 */
+    color: #374151; /* gray-700 */
+    border-width: 1px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.btn-secondary:hover {
+    background-color: #f3f4f6; /* Light gray hover */
+    border-color: #d1d5db;
+}
+
+/* NEW: Contour button style for View/Share */
+.btn-ghost-contour {
+    background-color: transparent;
+    border: 1px solid #d1d5db; /* gray-300 */
+    color: #374151; /* gray-700 */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.btn-ghost-contour:hover {
+    background-color: #f3f4f6; /* Light gray hover */
+    border-color: #d1d5db;
+}
+/* END NEW */
+
+/* Make destructive button more subtle, like the secondary button */
+.btn-destructive-secondary {
+    background-color: #ffffff; /* White background */
+    border-color: #d1d5db; /* gray-300 */
+    color: #374151; /* gray-700 text (SAME AS .btn-secondary) */
+    border-width: 1px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.btn-destructive-secondary:hover {
+    background-color: #fef2f2; /* red-50 hover */
+    border-color: #fecaca; /* red-200 */
+    color: #dc2626; /* red-600 */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+/* --- END: Modern Button Overrides --- */
+
+/* --- END: Action Menu Styles --- */
+
+/* --- REMOVED: Old sale-card-new styles --- */
+
+/* --- NEW: Sale Card List Item --- */
+.sale-card-list-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb; /* border-gray-200 */
+    border-radius: 0.75rem; /* 12px */
+    padding: 1rem 1.25rem; /* p-4 sm:p-5 */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    gap: 1rem; /* gap-4 */
+}
+.sale-card-list-item:hover {
+    border-color: #d1d5db; /* border-gray-300 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+.sale-card-list-logo {
+    width: 3rem; /* 48px */
+    height: 3rem; /* 48px */
+    border-radius: 0.5rem; /* 8px */
+    object-fit: contain;
+    background-color: #f3f4f6; /* gray-100 */
+    flex-shrink: 0;
+    border: 1px solid #e5e7eb;
+}
+
+.sale-card-list-info {
+    flex: 1 1 0;
+    min-width: 0; /* Important for truncation */
+}
+.sale-card-list-title {
+    font-size: 1.125rem; /* 18px */
+    font-weight: 600;
+    color: #111827; /* gray-900 */
+    truncate: true;
+}
+.sale-card-list-subtitle {
+    font-size: 0.875rem; /* 14px */
+    color: #6b7280; /* gray-500 */
+    truncate: true;
+}
+
+.days-remaining-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.625rem; /* px-2.5 py-0.5 */
+    font-size: 0.75rem; /* 12px */
+    font-weight: 500;
+    background-color: #fefce8; /* yellow-50 */
+    color: #a16207; /* yellow-800 */
+    border-radius: 9999px;
+    border: 1px solid #fef08a; /* yellow-200 */
+}
+
+.sale-card-list-finance {
+    flex: 1 1 0;
+    max-width: 240px; /* Constrain width */
+}
+.sale-card-list-investors {
+    flex: 1 1 0;
+    max-width: 200px; /* Constrain width */
+    text-align: right;
+}
+
+.sale-card-list-stats.zero-state {
+    text-align: left;
+}
+.sale-card-list-investors.zero-state {
+    text-align: right;
+}
+
+.sale-card-list-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* gap-2 */
+}
+
+/* --- NEW: Filter Pill Buttons --- */
+.btn-filter-pill {
+    padding: 0.5rem 1rem; /* py-2 px-4 */
+    font-size: 0.875rem; /* 14px */
+    font-weight: 600;
+    color: #4b5563; /* gray-600 */
+    border-radius: 0.5rem; /* 8px */
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+.btn-filter-pill:hover {
+    background-color: #ffffff;
+    color: #1f2937; /* gray-800 */
+}
+.btn-filter-pill.active {
+    background-color: #ffffff;
+    color: #1f2937; /* gray-800 */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* --- NEW: Thinner Progress Bar --- */
+.progress-bar-wrapper.thin {
+    height: 6px;
+    background-color: #e5e7eb; /* gray-200 */
+    border-radius: 9999px;
+    position: relative;
+    overflow: hidden;
+}
+.progress-bar-wrapper.thin .progress-bar-mercury {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: var(--theme-primary); /* Solid primary color */
+    border-radius: 9999px;
+    transition: width 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* --- NEW: Badge System --- */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem; /* 12px */
+    font-weight: 600;
+    line-height: 1.25;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+.status-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+/* Variants */
+.status-badge.status-successful {
+    background-color: #eff6ff; /* blue-50 / indigo-50 approx */
+    color: #4338ca; /* indigo-700 */
+    border-color: #c7d2fe; /* indigo-200 */
+}
+
+.status-badge.status-live {
+    background-color: #f0fdf4; /* green-50 */
+    color: #15803d; /* green-700 */
+    border-color: #bbf7d0; /* green-200 */
+}
+.status-badge.status-live .status-badge-dot {
+    background-color: #22c55e; /* green-500 */
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+    animation: pulse-live 2s infinite;
+}
+
+.status-badge.status-draft {
+    background-color: #f3f4f6; /* gray-100 */
+    color: #4b5563; /* gray-600 */
+    border-color: #e5e7eb; /* gray-200 */
+}
+.status-badge.status-draft .status-badge-dot {
+    background-color: #9ca3af; /* gray-400 */
+}
+
+.status-badge.status-scheduled {
+    background-color: #eff6ff; /* blue-50 */
+    color: #1d4ed8; /* blue-700 */
+    border-color: #bfdbfe; /* blue-200 */
+}
+.status-badge.status-scheduled .status-badge-dot {
+    background-color: #3b82f6; /* blue-500 */
+}
+
+.status-badge.status-failed, 
+.status-badge.status-canceled {
+    background-color: #fef2f2; /* red-50 */
+    color: #b91c1c; /* red-700 */
+    border-color: #fecaca; /* red-200 */
+}
+.status-badge.status-failed .status-badge-dot, 
+.status-badge.status-canceled .status-badge-dot {
+    background-color: #ef4444; /* red-500 */
+}
+/* --- END: Badge System --- */
