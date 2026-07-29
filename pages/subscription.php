@@ -62,7 +62,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? '';
                             </div>
                         </div>
                         <div class="font-bold text-lg text-slate-900">
-                            4%
+                            3%
                         </div>
                     </div>
                 </div>
@@ -194,7 +194,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? '';
                 <!-- FAQ Item 2 -->
                 <div class="border border-slate-200 rounded-lg bg-white overflow-hidden transition-all hover:border-slate-300 shadow-sm">
                     <button type="button" class="faq-toggle w-full text-left px-6 py-4 flex items-center justify-between text-slate-900 font-medium focus:outline-none hover:bg-slate-50">
-                        When is the 4% fee charged?
+                        When is the 3% fee charged?
                         <i data-lucide="help-circle" class="faq-icon w-5 h-5 text-slate-400 transition-transform"></i>
                     </button>
                     <div class="faq-content hidden px-6 pb-4 text-slate-600 text-sm leading-relaxed border-t border-slate-100 pt-4">
