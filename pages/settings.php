@@ -1,5 +1,5 @@
 <?php
-// settings.php - Tookle Dashboard Brand Aligned (Montserrat, Neutral Clean Cards & Solid Brand Palette)
+// settings.php - Tookle Layout Aligned (Centered Header, Founder Navigation Gradient for Save, Clean Neutral Top Buttons)
 
 // 1. SECURE SESSION START
 if (session_status() === PHP_SESSION_NONE) {
@@ -39,125 +39,119 @@ $kycRawStatus = null;
 ?>
 
 <style>
-    :root {
-        --tookle-primary: #6C63FF;
-        --tookle-primary-hover: #5a52e0;
-        --tookle-bg: #f9fafb;
-        --tookle-card-bg: #ffffff;
-        --tookle-text-dark: #111827;
-        --tookle-text-muted: #6b7280;
-        --tookle-border: #e5e7eb;
-        --font-family: 'Montserrat', sans-serif;
-    }
-    
     .settings-wrapper {
-        font-family: var(--font-family) !important;
+        font-family: 'Montserrat', sans-serif !important;
         display: flex;
         flex-direction: column;
         align-items: center;
         padding: 2rem 1.5rem;
         width: 100%;
         box-sizing: border-box;
-        background-color: var(--tookle-bg);
+        background-color: #f9fafb;
     }
     
     .settings-container {
         width: 100%;
         max-width: 860px;
-        background-color: var(--tookle-card-bg);
-        padding: 2.25rem 2.5rem;
+        background-color: #ffffff;
+        padding: 2.5rem;
         border-radius: 0.75rem;
-        border: 1px solid var(--tookle-border);
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.07);
         box-sizing: border-box;
         margin-bottom: 2rem;
     }
 
+    /* CENTERED HEADER & TAGLINE */
     .settings-container h1 {
-        text-align: left;
-        font-size: 1.5rem;
+        text-align: center !important;
+        font-size: 1.65rem;
         font-weight: 700;
-        color: var(--tookle-text-dark);
+        color: #1f2937;
         margin-top: 0;
         margin-bottom: 0.35rem;
-        font-family: var(--font-family) !important;
+        font-family: 'Montserrat', sans-serif !important;
     }
 
     .settings-container .tagline {
-        text-align: left;
-        font-size: 0.875rem;
-        color: var(--tookle-text-muted);
+        text-align: center !important;
+        font-size: 0.9rem;
+        color: #6b7280;
         margin-top: 0;
         margin-bottom: 1.75rem;
-        font-weight: 500;
-        font-family: var(--font-family) !important;
+        font-weight: 400;
+        font-family: 'Montserrat', sans-serif !important;
     }
 
     .settings-container h2 {
         font-size: 1rem;
-        font-weight: 700;
+        font-weight: 600;
         margin-top: 0;
         margin-bottom: 1.25rem;
-        color: var(--tookle-text-dark);
+        color: #1f2937;
         display: flex;
         align-items: center;
-        font-family: var(--font-family) !important;
+        font-family: 'Montserrat', sans-serif !important;
     }
 
     .section-divider {
         margin-top: 2rem;
-        border-top: 1px solid var(--tookle-border);
+        border-top: 1px solid #e5e7eb;
         padding-top: 1.75rem;
     }
     
-    /* Clean Dashboard Solid Buttons (No Gradients) */
-    .btn-tookle-primary {
-        background-color: var(--tookle-primary);
-        color: #ffffff !important;
-        padding: 0.625rem 1.25rem;
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.15s ease-in-out;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid transparent;
-        font-family: var(--font-family) !important;
-    }
-    .btn-tookle-primary:hover {
-        background-color: var(--tookle-primary-hover);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(108, 99, 255, 0.2);
-    }
-
-    .btn-tookle-outline {
+    /* TOP BUTTONS: CLEAN NEUTRAL / OUTLINE (NO GRADIENTS) */
+    .btn-top-action {
         background-color: #ffffff;
-        color: #374151 !important;
+        color: #4b5563 !important;
         border: 1px solid #d1d5db;
         padding: 0.625rem 1.25rem;
         border-radius: 0.5rem;
         font-size: 0.875rem;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.15s ease-in-out;
+        transition: all 0.2s ease-in-out;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-family: var(--font-family) !important;
+        font-family: 'Montserrat', sans-serif !important;
     }
-    .btn-tookle-outline:hover {
+    .btn-top-action:hover {
         background-color: #f9fafb;
-        border-color: #9ca3af;
         color: #111827 !important;
+        border-color: #9ca3af;
+        transform: translateY(-1px);
+    }
+
+    /* SAVE BUTTON: EXACT FOUNDER NAVIGATION GRADIENT FROM LAYOUT.PHP */
+    .btn-save-gradient {
+        background-image: linear-gradient(to right, #6D28D9, #06b6d4, #6D28D9) !important;
+        background-size: 200% auto !important;
+        color: #ffffff !important;
+        padding: 0.75rem 1.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.4s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        font-family: 'Montserrat', sans-serif !important;
+    }
+    .btn-save-gradient:hover {
+        background-position: right center !important;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px -2px rgba(109, 40, 217, 0.25);
     }
 
     .action-buttons-container {
         display: flex;
-        justify-content: flex-start;
+        justify-content: center !important;
         gap: 1rem;
         margin-bottom: 2rem;
         flex-wrap: wrap;
@@ -173,7 +167,7 @@ $kycRawStatus = null;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        font-family: var(--font-family) !important;
+        font-family: 'Montserrat', sans-serif !important;
     }
     .badge-success { background-color: #d1fae5; color: #065f46; }
     .badge-warning { background-color: #fef3c7; color: #92400e; }
@@ -185,19 +179,19 @@ $kycRawStatus = null;
     .form-group { display: flex; flex-direction: column; margin-bottom: 1.25rem; }
     .form-group label {
         font-size: 0.75rem;
-        font-weight: 700;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: #4b5563;
         margin-bottom: 0.5rem;
-        font-family: var(--font-family) !important;
+        font-family: 'Montserrat', sans-serif !important;
     }
     .form-group input, .form-group select, .form-group textarea {
         padding: 0.625rem 0.875rem;
-        border: 1px solid var(--tookle-border);
+        border: 1px solid #e5e7eb;
         border-radius: 0.5rem;
         font-size: 0.875rem;
-        font-family: var(--font-family) !important;
+        font-family: 'Montserrat', sans-serif !important;
         width: 100%;
         box-sizing: border-box;
         background-color: #ffffff;
@@ -206,8 +200,8 @@ $kycRawStatus = null;
     }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
         outline: none;
-        border-color: var(--tookle-primary);
-        box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
+        border-color: #6D28D9;
+        box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.15);
     }
     .form-group input:read-only { background-color: #f9fafb; cursor: not-allowed; color: #6b7280; }
     .form-group select {
@@ -218,7 +212,7 @@ $kycRawStatus = null;
         background-size: .65em auto;
         padding-right: 2.5em;
     }
-    .save-button-container { margin-top: 1.75rem; display: flex; justify-content: flex-end; }
+    .save-button-container { margin-top: 2rem; display: flex; justify-content: flex-end; }
     
     /* Modal & Overlay */
     .settings-modal-overlay {
@@ -232,14 +226,14 @@ $kycRawStatus = null;
         background-color: white; padding: 2rem; border-radius: 0.75rem;
         box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); text-align: center;
         max-width: 380px; transform: scale(0.95); transition: transform 0.2s ease;
-        font-family: var(--font-family) !important;
+        font-family: 'Montserrat', sans-serif !important;
     }
     .settings-modal-overlay.visible .settings-modal-content { transform: scale(1); }
-    .settings-modal-message { font-size: 1rem; margin-bottom: 1.5rem; color: var(--tookle-text-dark); font-weight: 500; }
+    .settings-modal-message { font-size: 1rem; margin-bottom: 1.5rem; color: #111827; font-weight: 500; }
 
     /* KYC IFRAME MODAL */
     .kyc-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; }
-    .kyc-window { width: 100%; max-width: 600px; height: 85vh; background: #ffffff; border-radius: 0.75rem; border: 1px solid var(--tookle-border); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); position: relative; overflow: hidden; }
+    .kyc-window { width: 100%; max-width: 600px; height: 85vh; background: #ffffff; border-radius: 0.75rem; border: 1px solid #e5e7eb; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); position: relative; overflow: hidden; }
     .kyc-window iframe { width: 100%; height: 100%; border: none; }
     .kyc-close-btn { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.08); color: #374151; width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .kyc-close-btn:hover { background: rgba(0,0,0,0.15); }
@@ -247,7 +241,7 @@ $kycRawStatus = null;
     @media (max-width: 768px) {
         .form-grid { grid-template-columns: 1fr; }
         .action-buttons-container { gap: 0.75rem; }
-        .settings-container { padding: 1.5rem 1.25rem; }
+        .settings-container { padding: 1.75rem 1.25rem; }
     }
 </style>
 
@@ -257,11 +251,11 @@ $kycRawStatus = null;
         <p class="tagline">Keep your personal and profile information up to date.</p>
         
         <div class="action-buttons-container">
-            <a href="#" id="start-fundraising-btn" class="btn-tookle-primary">Start Fundraising</a>
-            <a href="#" id="invest-in-projects-btn" class="btn-tookle-outline">Discover Projects</a>
+            <a href="#" id="start-fundraising-btn" class="btn-top-action">Start Fundraising</a>
+            <a href="#" id="invest-in-projects-btn" class="btn-top-action">Discover Projects</a>
 
             <?php if (empty($kycApplicantId)): ?>
-                <a href="#" onclick="openKycModal(event)" id="check-kyc-btn" class="btn-tookle-outline">Check KYC</a>
+                <a href="#" onclick="openKycModal(event)" id="check-kyc-btn" class="btn-top-action">Check KYC</a>
             <?php else: ?>
                 <span id="kyc-badge-span" class="<?= htmlspecialchars($kycSummary['class']) ?>">
                     <?= htmlspecialchars($kycSummary['label']) ?>
@@ -318,7 +312,7 @@ $kycRawStatus = null;
             </section>
 
             <div class="save-button-container">
-                <button type="submit" class="btn-tookle-primary">Save Changes</button>
+                <button type="submit" class="btn-save-gradient">Save Changes</button>
             </div>
         </form>
     </main>
@@ -327,7 +321,7 @@ $kycRawStatus = null;
     <div id="custom-modal" class="settings-modal-overlay">
         <div class="settings-modal-content">
             <p id="modal-message" class="settings-modal-message"></p>
-            <button id="modal-close-button" class="btn-tookle-primary" style="min-width: 100px;">OK</button>
+            <button id="modal-close-button" class="btn-save-gradient" style="min-width: 100px;">OK</button>
         </div>
     </div>
 
