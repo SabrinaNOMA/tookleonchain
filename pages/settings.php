@@ -1,5 +1,5 @@
 <?php
-// settings.php - Tookle Brand Redesign (Montserrat & Modern Web3 Aesthetic)
+// settings.php - Tookle Dashboard Brand Aligned (Montserrat, Neutral Clean Cards & Solid Brand Palette)
 
 // 1. SECURE SESSION START
 if (session_status() === PHP_SESSION_NONE) {
@@ -38,24 +38,16 @@ $kycSummary = [
 $kycRawStatus = null;
 ?>
 
-<!-- Google Montserrat Font -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
 <style>
     :root {
-        --primary-purple: #8e52ff;
-        --primary-purple-dark: #7433e6;
-        --primary-gradient: linear-gradient(135deg, #8e52ff 0%, #6366f1 100%);
-        --secondary-color: #ffffff;
-        --border-color: #E5E7EB;
-        --text-color: #111827;
-        --label-color: #374151;
-        --tagline-color: #6B7280;
+        --tookle-primary: #6C63FF;
+        --tookle-primary-hover: #5a52e0;
+        --tookle-bg: #f9fafb;
+        --tookle-card-bg: #ffffff;
+        --tookle-text-dark: #111827;
+        --tookle-text-muted: #6b7280;
+        --tookle-border: #e5e7eb;
         --font-family: 'Montserrat', sans-serif;
-        --container-max-width: 880px;
-        --border-radius: 0.85rem;
     }
     
     .settings-wrapper {
@@ -63,202 +55,213 @@ $kycRawStatus = null;
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 2.5rem 1.5rem;
+        padding: 2rem 1.5rem;
         width: 100%;
         box-sizing: border-box;
+        background-color: var(--tookle-bg);
     }
     
     .settings-container {
         width: 100%;
-        max-width: var(--container-max-width);
-        background-color: var(--secondary-color);
-        padding: 2.5rem 3rem;
-        border-radius: var(--border-radius);
-        border: 1px solid rgba(229, 231, 235, 0.8);
-        box-shadow: 0 20px 25px -5px rgba(142, 82, 255, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+        max-width: 860px;
+        background-color: var(--tookle-card-bg);
+        padding: 2.25rem 2.5rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--tookle-border);
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
         box-sizing: border-box;
         margin-bottom: 2rem;
     }
-    
-    .settings-title-gradient {
-        background: var(--primary-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 800;
-        letter-spacing: -0.025em;
-    }
 
     .settings-container h1 {
-        text-align: center;
-        font-size: 2rem;
+        text-align: left;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--tookle-text-dark);
         margin-top: 0;
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.35rem;
         font-family: var(--font-family) !important;
     }
 
-    .settings-container h2 {
-        font-size: 1.15rem;
-        font-weight: 700;
-        margin-top: 0;
-        margin-bottom: 1.25rem;
-        color: var(--text-color);
-        display: flex;
-        align-items: center;
-        font-family: var(--font-family) !important;
-    }
-    
     .settings-container .tagline {
-        text-align: center;
-        font-size: 0.95rem;
-        color: var(--tagline-color);
+        text-align: left;
+        font-size: 0.875rem;
+        color: var(--tookle-text-muted);
         margin-top: 0;
-        margin-bottom: 2.25rem;
+        margin-bottom: 1.75rem;
         font-weight: 500;
         font-family: var(--font-family) !important;
     }
 
+    .settings-container h2 {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 1.25rem;
+        color: var(--tookle-text-dark);
+        display: flex;
+        align-items: center;
+        font-family: var(--font-family) !important;
+    }
+
     .section-divider {
-        margin-top: 2.25rem;
-        border-top: 1px solid var(--border-color);
-        padding-top: 2rem;
+        margin-top: 2rem;
+        border-top: 1px solid var(--tookle-border);
+        padding-top: 1.75rem;
     }
     
-    .settings-btn {
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.6rem;
+    /* Clean Dashboard Solid Buttons (No Gradients) */
+    .btn-tookle-primary {
+        background-color: var(--tookle-primary);
+        color: #ffffff !important;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
         font-size: 0.875rem;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.15s ease-in-out;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: white !important;
+        border: 1px solid transparent;
         font-family: var(--font-family) !important;
-        border: none;
     }
-    .settings-btn:hover {
+    .btn-tookle-primary:hover {
+        background-color: var(--tookle-primary-hover);
         transform: translateY(-1px);
-        box-shadow: 0 4px 14px rgba(142, 82, 255, 0.25);
+        box-shadow: 0 4px 6px -1px rgba(108, 99, 255, 0.2);
     }
-    .btn-founder-gradient {
-        background: var(--primary-gradient);
+
+    .btn-tookle-outline {
+        background-color: #ffffff;
+        color: #374151 !important;
+        border: 1px solid #d1d5db;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-family) !important;
     }
-    .btn-investor-gradient {
-        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    .btn-tookle-outline:hover {
+        background-color: #f9fafb;
+        border-color: #9ca3af;
+        color: #111827 !important;
     }
-    
+
     .action-buttons-container {
         display: flex;
-        justify-content: center;
-        gap: 1.25rem;
-        margin-bottom: 2.5rem;
+        justify-content: flex-start;
+        gap: 1rem;
+        margin-bottom: 2rem;
         flex-wrap: wrap;
     }
 
-    /* Badges KYC Styles */
+    /* Standard Clean Dashboard Badges */
     .badge {
         display: inline-flex;
         align-items: center;
-        padding: 0.6rem 1.25rem;
+        padding: 0.4rem 0.875rem;
         border-radius: 9999px;
-        font-size: 0.8rem;
-        font-weight: 700;
+        font-size: 0.75rem;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         font-family: var(--font-family) !important;
     }
-    .badge-success { background-color: #DEF7EC; color: #03543F; }
-    .badge-warning { background-color: #FEF3C7; color: #92400E; }
-    .badge-danger  { background-color: #FDE8E8; color: #9B1C1C; }
-    .badge-secondary { background-color: #F3F4F6; color: #4B5563; }
+    .badge-success { background-color: #d1fae5; color: #065f46; }
+    .badge-warning { background-color: #fef3c7; color: #92400e; }
+    .badge-danger  { background-color: #fee2e2; color: #991b1b; }
+    .badge-secondary { background-color: #f3f4f6; color: #4b5563; }
 
-    /* Form Styles */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    /* Clean Form Elements */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 1.25rem; }
     .form-group label {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--label-color);
+        letter-spacing: 0.05em;
+        color: #4b5563;
         margin-bottom: 0.5rem;
         font-family: var(--font-family) !important;
     }
     .form-group input, .form-group select, .form-group textarea {
-        padding: 0.75rem 1rem;
-        border: 1px solid var(--border-color);
-        border-radius: 0.6rem;
-        font-size: 0.925rem;
+        padding: 0.625rem 0.875rem;
+        border: 1px solid var(--tookle-border);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
         font-family: var(--font-family) !important;
         width: 100%;
         box-sizing: border-box;
-        background-color: #F9FAFB;
-        transition: all 0.2s ease;
+        background-color: #ffffff;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
         color: #111827;
     }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
         outline: none;
-        border-color: var(--primary-purple);
-        background-color: #ffffff;
-        box-shadow: 0 0 0 3px rgba(142, 82, 255, 0.15);
+        border-color: var(--tookle-primary);
+        box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
     }
-    .form-group input:read-only { background-color: #F3F4F6; cursor: not-allowed; opacity: 0.8; }
+    .form-group input:read-only { background-color: #f9fafb; cursor: not-allowed; color: #6b7280; }
     .form-group select {
         appearance: none;
         background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236B7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
         background-repeat: no-repeat;
-        background-position: right 1em top 50%;
+        background-position: right 0.875rem top 50%;
         background-size: .65em auto;
         padding-right: 2.5em;
     }
-    .save-button-container { margin-top: 2rem; display: flex; justify-content: flex-end; }
+    .save-button-container { margin-top: 1.75rem; display: flex; justify-content: flex-end; }
     
     /* Modal & Overlay */
     .settings-modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+        background-color: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px);
         display: flex; align-items: center; justify-content: center; z-index: 1000;
-        opacity: 0; visibility: hidden; transition: all 0.25s ease;
+        opacity: 0; visibility: hidden; transition: all 0.2s ease;
     }
     .settings-modal-overlay.visible { opacity: 1; visibility: visible; }
     .settings-modal-content {
-        background-color: white; padding: 2.25rem; border-radius: 1rem;
-        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15); text-align: center;
-        max-width: 400px; transform: scale(0.95); transition: transform 0.25s ease;
+        background-color: white; padding: 2rem; border-radius: 0.75rem;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); text-align: center;
+        max-width: 380px; transform: scale(0.95); transition: transform 0.2s ease;
         font-family: var(--font-family) !important;
     }
     .settings-modal-overlay.visible .settings-modal-content { transform: scale(1); }
-    .settings-modal-message { font-size: 1.05rem; margin-bottom: 1.5rem; color: var(--text-color); font-weight: 500; }
+    .settings-modal-message { font-size: 1rem; margin-bottom: 1.5rem; color: var(--tookle-text-dark); font-weight: 500; }
 
     /* KYC IFRAME MODAL */
-    .kyc-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(6px); z-index: 9999; align-items: center; justify-content: center; }
-    .kyc-window { width: 100%; max-width: 620px; height: 85vh; background: #ffffff; border-radius: 1.25rem; border: 1px solid #E5E7EB; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); position: relative; overflow: hidden; animation: popInKYC 0.3s ease-out; }
+    .kyc-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; }
+    .kyc-window { width: 100%; max-width: 600px; height: 85vh; background: #ffffff; border-radius: 0.75rem; border: 1px solid var(--tookle-border); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); position: relative; overflow: hidden; }
     .kyc-window iframe { width: 100%; height: 100%; border: none; }
-    .kyc-close-btn { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.1); color: #333; width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 1000; transition: background 0.2s; }
-    .kyc-close-btn:hover { background: rgba(0,0,0,0.2); }
-    @keyframes popInKYC { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .kyc-close-btn { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.08); color: #374151; width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .kyc-close-btn:hover { background: rgba(0,0,0,0.15); }
     
     @media (max-width: 768px) {
         .form-grid { grid-template-columns: 1fr; }
-        .action-buttons-container { gap: 1rem; }
-        .kyc-window { width: 95%; height: 90vh; }
-        .settings-container { padding: 1.75rem 1.25rem; }
+        .action-buttons-container { gap: 0.75rem; }
+        .settings-container { padding: 1.5rem 1.25rem; }
     }
 </style>
 
 <div class="settings-wrapper w-full h-full overflow-y-auto">
     <main class="settings-container">
-        <h1><span class="settings-title-gradient">Manage My Account</span></h1>
+        <h1>Manage Account</h1>
         <p class="tagline">Keep your personal and profile information up to date.</p>
         
         <div class="action-buttons-container">
-            <a href="#" id="start-fundraising-btn" class="settings-btn btn-founder-gradient">Start Fundraising</a>
-            <a href="#" id="invest-in-projects-btn" class="settings-btn btn-investor-gradient">Discover Projects</a>
+            <a href="#" id="start-fundraising-btn" class="btn-tookle-primary">Start Fundraising</a>
+            <a href="#" id="invest-in-projects-btn" class="btn-tookle-outline">Discover Projects</a>
 
             <?php if (empty($kycApplicantId)): ?>
-                <a href="#" onclick="openKycModal(event)" id="check-kyc-btn" class="settings-btn btn-founder-gradient">CHECK KYC</a>
+                <a href="#" onclick="openKycModal(event)" id="check-kyc-btn" class="btn-tookle-outline">Check KYC</a>
             <?php else: ?>
                 <span id="kyc-badge-span" class="<?= htmlspecialchars($kycSummary['class']) ?>">
                     <?= htmlspecialchars($kycSummary['label']) ?>
@@ -300,7 +303,7 @@ $kycRawStatus = null;
                     <label for="profile-description">Profile Description</label>
                     <textarea id="profile-description" name="profileDescription" rows="4" placeholder="Brief description about yourself or your organization..."></textarea>
                 </div>
-                <div class="form-group" style="max-width: 340px;">
+                <div class="form-group" style="max-width: 320px;">
                     <label for="language">Preferred Language</label>
                     <select id="language" name="language">
                         <option value="">Select Language</option>
@@ -315,7 +318,7 @@ $kycRawStatus = null;
             </section>
 
             <div class="save-button-container">
-                <button type="submit" class="settings-btn btn-founder-gradient">Save Changes</button>
+                <button type="submit" class="btn-tookle-primary">Save Changes</button>
             </div>
         </form>
     </main>
@@ -324,7 +327,7 @@ $kycRawStatus = null;
     <div id="custom-modal" class="settings-modal-overlay">
         <div class="settings-modal-content">
             <p id="modal-message" class="settings-modal-message"></p>
-            <button id="modal-close-button" class="settings-btn btn-founder-gradient" style="min-width: 100px;">OK</button>
+            <button id="modal-close-button" class="btn-tookle-primary" style="min-width: 100px;">OK</button>
         </div>
     </div>
 
