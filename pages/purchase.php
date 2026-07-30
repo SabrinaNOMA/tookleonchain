@@ -235,7 +235,7 @@ try {
                 <h2 class="text-2xl font-bold text-gray-900 mb-3">Identity Verification</h2>
                 <p class="text-gray-500 mb-8 max-w-md mx-auto">To comply with financial regulations, please complete your identity verification (KYC) before proceeding.</p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4">
-                    <a href="<?php echo get_url('kyc'); ?>" class="btn-primary px-8 py-4 rounded-xl font-bold shadow-lg text-center">Start Verification</a>
+                    <a href="<?php echo get_url('kyc'); ?>?mode=iframe" class="btn-primary px-8 py-4 rounded-xl font-bold shadow-lg text-center">Start Verification</a>
                 </div>
             </div>
         <?php else: ?>

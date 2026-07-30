@@ -268,6 +268,20 @@ if ($mode === 'iframe') {
         <pre><?= hp($__debug) ?></pre>
       <?php endif; ?>
       <iframe src="<?= hp($websdkUrl) ?>" allow="camera; microphone; fullscreen"></iframe>
+      
+      <script>
+      window.addEventListener('message', function(e) {
+          try {
+              var data = JSON.parse(e.data);
+              // Listen for completion or status change events
+              if (data && (data.type === 'idCheck.onApplicantSubmitted' || data.type === 'idCheck.onApplicantStatusChanged')) {
+                  window.location.href = '/purchase';
+              }
+          } catch (err) {
+              // Ignore invalid JSON or unrelated messages
+          }
+      });
+      </script>
     </main>
   </body>
   </html>
