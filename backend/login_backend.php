@@ -65,7 +65,7 @@ function reply(array $payload, int $code = 200) {
     exit;
 }
 function respond_success(array $extra = []) { reply(array_merge(['success'=>true], $extra)); }
-function respond_error(string $msg, int $code = 400, array $extra = []) { reply(array_merge(['success'=>false,'error'=>$msg], $extra), $code); }
+function respond_error(string $msg, int $code = 200, array $extra = []) { reply(array_merge(['success'=>false,'error'=>$msg], $extra), $code); }
 
 function is_valid_email(string $s): bool {
     return (bool)filter_var($s, FILTER_VALIDATE_EMAIL);
@@ -131,7 +131,7 @@ try {
         $stmt = $pdo->prepare("SELECT id FROM user WHERE email = ?");
         $stmt->execute([$email]);
         if ($stmt->fetchColumn()) {
-            respond_error('An account with this email already exists.', 400, ['code' => 'EMAIL_EXISTS', 'email' => $email]);
+            respond_error('An account with this email already exists.', 200, ['code' => 'EMAIL_EXISTS', 'email' => $email]);
         }
 
         $hashed = password_hash($password, PASSWORD_DEFAULT);

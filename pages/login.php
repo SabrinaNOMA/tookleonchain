@@ -362,9 +362,9 @@
           return;
         }
 
-        showMsg((j && j.error) ? j.error : 'Unexpected server response.');
+        showMsg((j && j.error) ? j.error : 'Unexpected server response. Please try again.');
       } catch (err) { 
-        showMsg('Could not connect to the server.'); 
+        showMsg('Could not connect to the server. Please try again.'); 
       }
     });
 
