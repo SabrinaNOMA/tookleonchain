@@ -131,7 +131,7 @@ try {
         $stmt = $pdo->prepare("SELECT id FROM user WHERE email = ?");
         $stmt->execute([$email]);
         if ($stmt->fetchColumn()) {
-            respond_error('An account with this email already exists.');
+            respond_error('An account with this email already exists.', 400, ['code' => 'EMAIL_EXISTS', 'email' => $email]);
         }
 
         $hashed = password_hash($password, PASSWORD_DEFAULT);
@@ -214,10 +214,10 @@ Best regards,<br>
         respond_success(['message' => 'Registration successful! Please log in.', 'activation_link' => $activation_link]);
     } else {
         $mail->send();
-        respond_success(['message' => 'Registration successful! Please log in.']);
     }
 } catch (Exception $e) {
-    respond_error("L'email n'a pas pu ÃƒÂªtre envoyÃƒÂ©. Erreur : {$mail->ErrorInfo}");
+    error_log('PHPMailer activation email error: ' . $e->getMessage());
+    respond_error('Unable to send activation email. Please try again or contact support.');
 }	 
 	 
      //mail($email, "Activate your account", "Click this link: $activation_link");

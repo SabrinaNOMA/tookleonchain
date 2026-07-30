@@ -350,6 +350,18 @@
           location.href = '<?= get_url('settings') ?>'; 
           return; 
         }
+
+        // Tier 1 UX: If user tries to register with an existing email, auto-switch to Login mode
+        if (j && (j.code === 'EMAIL_EXISTS' || (j.error && j.error.includes('already exists')))) {
+          showMsg('An account with this email already exists. Please enter your password to log in.');
+          if (!isLoginMode && switchLinkEl) {
+            switchLinkEl.click();
+          }
+          const pwdField = document.getElementById('password');
+          if (pwdField) pwdField.focus();
+          return;
+        }
+
         showMsg((j && j.error) ? j.error : 'Unexpected server response.');
       } catch (err) { 
         showMsg('Could not connect to the server.'); 
