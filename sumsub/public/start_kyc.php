@@ -227,7 +227,7 @@ $firstType = $params[0]->hasType() ? (string)$params[0]->getType() : '';
       
       <div class="space-y-3">
         <a href="start_kyc.php?simulate_kyc=1" class="block w-full py-3.5 bg-gray-900 hover:bg-black text-white font-bold text-sm rounded-xl transition-all shadow-md">
-          ✓ Approve KYC (Local Dev Bypass)
+          ✓ Simulate Successful KYC (Test Mode)
         </a>
         <a href="/purchase" class="block w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl transition-all">
           Back to Purchase Page
