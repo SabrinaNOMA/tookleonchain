@@ -225,6 +225,100 @@ try {
         }
     }
 
+    // 7b. --- FALLBACK: If scenario didn't provide vesting, query live domain tables (same as approve.php) ---
+    if (empty($vestingSchedules)) {
+        $vesting_check_stmt = $pdo->prepare("SELECT COUNT(*) FROM vesting_token WHERE projet_id = ?");
+        $vesting_check_stmt->execute([$projectId]);
+        $vesting_exists = $vesting_check_stmt->fetchColumn() > 0;
+
+        if ($vesting_exists) {
+            // Fetch investor rounds with their vesting
+            $stmt_investor = $pdo->prepare("
+                SELECT 
+                    rt.round_name AS category,
+                    rt.percent_round_supply AS percentTotalSupply,
+                    vt.percent_unlock_at_tge AS unlockAtTGE,
+                    vt.cliff_months AS cliff,
+                    vt.vesting_months AS vestingPeriod
+                FROM round_token rt
+                JOIN vesting_token vt ON vt.projet_id = rt.projet_id AND vt.source_id = rt.id AND vt.source_type = 'round'
+                WHERE rt.projet_id = ?
+            ");
+            $stmt_investor->execute([$projectId]);
+            $vestingSchedules = array_merge($vestingSchedules, $stmt_investor->fetchAll(PDO::FETCH_ASSOC));
+
+            // Fetch other tranches (non-investor) with their vesting
+            $stmt_other = $pdo->prepare("
+                SELECT 
+                    tt.tranche_name AS category,
+                    tt.allocation_percent AS percentTotalSupply,
+                    vt.percent_unlock_at_tge AS unlockAtTGE,
+                    vt.cliff_months AS cliff,
+                    vt.vesting_months AS vestingPeriod
+                FROM tranche_token tt
+                JOIN vesting_token vt ON vt.projet_id = tt.projet_id AND vt.source_id = tt.id AND vt.source_type = 'tranche'
+                WHERE tt.projet_id = ? AND tt.tranche_type = 'other'
+            ");
+            $stmt_other->execute([$projectId]);
+            $vestingSchedules = array_merge($vestingSchedules, $stmt_other->fetchAll(PDO::FETCH_ASSOC));
+        } else {
+            // No vesting_token rows: compute from rounds + tranches with default vesting rules
+            $blocks = [];
+            $rounds_stmt = $pdo->prepare("SELECT id, round_name, percent_round_supply FROM round_token WHERE projet_id = ? ORDER BY id");
+            $rounds_stmt->execute([$projectId]);
+            foreach ($rounds_stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $blocks[] = ['name' => $row['round_name'], 'type' => 'round', 'percentSupply' => (float)$row['percent_round_supply']];
+            }
+
+            $other_stmt = $pdo->prepare("SELECT id, tranche_name, allocation_percent FROM tranche_token WHERE projet_id = ? AND tranche_type = 'other' ORDER BY id");
+            $other_stmt->execute([$projectId]);
+            foreach ($other_stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $blocks[] = ['name' => $row['tranche_name'], 'type' => 'other', 'subtype' => $row['tranche_name'], 'percentSupply' => (float)$row['allocation_percent']];
+            }
+
+            $VestingBase = 36; $VestingMin = 12; $CliffBase = 4; $CliffMin = 0;
+            $UnlockBeforeLast = 5; $UnlockLast = 10; $UnlockIfPublic = 100;
+            $OTHER_VESTING_CLIFFS = [
+                'team' => ['vesting' => 48, 'cliff' => 12], 'ecosystem' => ['vesting' => 42, 'cliff' => 0],
+                'treasury' => ['vesting' => 39, 'cliff' => 0], 'miscellaneous' => ['vesting' => 36, 'cliff' => 0],
+            ];
+
+            $rounds = array_filter($blocks, fn($b) => $b['type'] === 'round');
+            $others = array_filter($blocks, fn($b) => $b['type'] === 'other');
+            $totalRounds = count($rounds);
+            $i = 0;
+            foreach ($rounds as $round) {
+                $isPublic = str_contains(strtolower($round['name']), 'public') || str_contains(strtolower($round['name']), 'ico') || str_contains(strtolower($round['name']), 'ido');
+                if ($isPublic) {
+                    $vest = 0; $cliff = 0; $unlock = $UnlockIfPublic;
+                } else {
+                    $vest = max($VestingBase - $i * 6, $VestingMin);
+                    $cliff = max($CliffBase - $i, $CliffMin);
+                    $unlock = ($i === $totalRounds - 1) ? $UnlockLast : $UnlockBeforeLast;
+                }
+                $vestingSchedules[] = [
+                    'category' => $round['name'],
+                    'percentTotalSupply' => $round['percentSupply'],
+                    'unlockAtTGE' => $unlock,
+                    'cliff' => $cliff,
+                    'vestingPeriod' => $vest
+                ];
+                $i++;
+            }
+            foreach ($others as $block) {
+                $subtype = strtolower($block['subtype'] ?? '');
+                $config = $OTHER_VESTING_CLIFFS[$subtype] ?? ['vesting' => 36, 'cliff' => 0];
+                $vestingSchedules[] = [
+                    'category' => $block['name'],
+                    'percentTotalSupply' => $block['percentSupply'],
+                    'unlockAtTGE' => 0,
+                    'cliff' => $config['cliff'],
+                    'vestingPeriod' => $config['vesting']
+                ];
+            }
+        }
+    }
+
     if (empty($vestingSchedules)) {
         $vestingSchedules = []; 
     }
