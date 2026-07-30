@@ -236,7 +236,6 @@ try {
                 <p class="text-gray-500 mb-8 max-w-md mx-auto">To comply with financial regulations, please complete your identity verification (KYC) before proceeding.</p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4">
                     <a href="<?php echo get_url('kyc'); ?>" class="btn-primary px-8 py-4 rounded-xl font-bold shadow-lg text-center">Start Verification</a>
-                    <a href="<?php echo get_url('kyc'); ?>?simulate_kyc=1" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-4 rounded-xl font-bold transition-colors text-center text-sm">✓ Fast-Track Verification (Dev)</a>
                 </div>
             </div>
         <?php else: ?>
