@@ -87,6 +87,15 @@ try {
     $stmt_update_projet = $pdo->prepare("UPDATE projet SET tokenomics_done = 1 WHERE id = :project_id");
     $stmt_update_projet->execute([':project_id' => $project_id]);
 
+    // --- Ensure any existing sale pages for this project are linked to the active scenario ---
+    $scenarioIdToLink = $active_version_id ?: $pdo->lastInsertId();
+    $stmt_link_sales = $pdo->prepare("UPDATE token_sale_pages SET scenario_version_id = :scenario_id WHERE project_id = :project_id AND (scenario_version_id IS NULL OR scenario_version_id != :scenario_id2)");
+    $stmt_link_sales->execute([
+        ':scenario_id' => $scenarioIdToLink,
+        ':project_id' => $project_id,
+        ':scenario_id2' => $scenarioIdToLink
+    ]);
+
     // Commit all changes
     $pdo->commit();
 
