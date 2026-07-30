@@ -67,9 +67,9 @@ try {
                             $rev_answer = $st_data['reviewResult']['reviewAnswer'] ?? '';
                             $rev_status = $st_data['reviewStatus'] ?? '';
                             if ($rev_answer === 'GREEN' || $rev_status === 'completed') {
-                                $stmt_up = $pdo->prepare("UPDATE user SET kyc_status = 'approved' WHERE id = ?");
+                                $stmt_up = $pdo->prepare("UPDATE user SET kyc_status = 'COMPLETED' WHERE id = ?");
                                 $stmt_up->execute([$user_id_for_query]);
-                                $kyc_status = 'approved';
+                                $kyc_status = 'completed';
                                 $kyc_valid = true;
                             }
                         }
