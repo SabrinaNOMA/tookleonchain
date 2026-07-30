@@ -24,41 +24,46 @@ try {
     // Start a transaction to ensure all database operations succeed or fail together
     $pdo->beginTransaction();
 
-    // Check if a version already exists for this project. If not, create one.
-    $stmt_version_check = $pdo->prepare("SELECT COUNT(*) FROM scenario_version WHERE projet_id = :project_id");
-    $stmt_version_check->execute([':project_id' => $project_id]);
-    $version_exists = ($stmt_version_check->fetchColumn() > 0);
+    // We want to ensure the active scenario has the LATEST data from domain tables (including vesting and allocations)
+    $stmt_active_version = $pdo->prepare("SELECT id FROM scenario_version WHERE projet_id = :project_id AND is_active = 1 LIMIT 1");
+    $stmt_active_version->execute([':project_id' => $project_id]);
+    $active_version_id = $stmt_active_version->fetchColumn();
 
-    if (!$version_exists) {
-        // Fetch all necessary data to build and save the initial project version.
-        $stmt_projet = $pdo->prepare("SELECT * FROM projet WHERE id = :project_id");
-        $stmt_projet->execute([':project_id' => $project_id]);
-        $core_params = $stmt_projet->fetch(PDO::FETCH_ASSOC);
+    // Fetch all necessary data to build and save the full project snapshot.
+    $stmt_projet = $pdo->prepare("SELECT * FROM projet WHERE id = :project_id");
+    $stmt_projet->execute([':project_id' => $project_id]);
+    $core_params = $stmt_projet->fetch(PDO::FETCH_ASSOC);
 
-        if (!$core_params) {
-            throw new Exception("Core project data not found. Cannot create snapshot.");
-        }
+    if (!$core_params) {
+        throw new Exception("Core project data not found. Cannot create snapshot.");
+    }
 
-        $stmt_rounds = $pdo->prepare("SELECT * FROM round_token WHERE projet_id = :project_id");
-        $stmt_rounds->execute([':project_id' => $project_id]);
-        $rounds = $stmt_rounds->fetchAll(PDO::FETCH_ASSOC);
-        
-        $stmt_vesting = $pdo->prepare("SELECT * FROM vesting_token WHERE projet_id = :project_id");
-        $stmt_vesting->execute([':project_id' => $project_id]);
-        $vesting = $stmt_vesting->fetchAll(PDO::FETCH_ASSOC);
+    $stmt_rounds = $pdo->prepare("SELECT * FROM round_token WHERE projet_id = :project_id");
+    $stmt_rounds->execute([':project_id' => $project_id]);
+    $rounds = $stmt_rounds->fetchAll(PDO::FETCH_ASSOC);
+    
+    $stmt_vesting = $pdo->prepare("SELECT * FROM vesting_token WHERE projet_id = :project_id");
+    $stmt_vesting->execute([':project_id' => $project_id]);
+    $vesting = $stmt_vesting->fetchAll(PDO::FETCH_ASSOC);
 
-        $version_payload = [
-            'core_params' => $core_params,
-            'rounds' => $rounds,
-            'vesting' => $vesting
-        ];
-        
-        $version_data_json = json_encode($version_payload);
+    $stmt_allocations = $pdo->prepare("SELECT * FROM tranche_token WHERE projet_id = :project_id AND LOWER(tranche_type) != 'investor'");
+    $stmt_allocations->execute([':project_id' => $project_id]);
+    $allocations = $stmt_allocations->fetchAll(PDO::FETCH_ASSOC);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception("Failed to encode scenario JSON data: " . json_last_error_msg());
-        }
-        
+    $version_payload = [
+        'core_params' => $core_params,
+        'rounds' => $rounds,
+        'vesting' => $vesting,
+        'allocations' => $allocations
+    ];
+    
+    $version_data_json = json_encode($version_payload);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        throw new Exception("Failed to encode scenario JSON data: " . json_last_error_msg());
+    }
+    
+    if (!$active_version_id) {
         // Insert the new snapshot
         $sql_version = "INSERT INTO scenario_version (projet_id, version_label, data, is_active) VALUES (:projet_id, 'Initial Version', :data, TRUE)";
         $stmt_version = $pdo->prepare($sql_version);
@@ -67,9 +72,15 @@ try {
             ':data' => $version_data_json
         ]);
         $response['message'] = 'Initial tokenomics snapshot successfully created.';
-
     } else {
-        $response['message'] = 'Tokenomics snapshot already exists. No new snapshot created.';
+        // Update the active snapshot with the full tokenomics data
+        $sql_version = "UPDATE scenario_version SET data = :data WHERE id = :version_id";
+        $stmt_version = $pdo->prepare($sql_version);
+        $stmt_version->execute([
+            ':data' => $version_data_json,
+            ':version_id' => $active_version_id
+        ]);
+        $response['message'] = 'Tokenomics snapshot successfully updated with full vesting and allocation data.';
     }
 
     // --- FIX: Corrected the column name from 'tokenomics_approved' to 'tokenomics_done' ---
