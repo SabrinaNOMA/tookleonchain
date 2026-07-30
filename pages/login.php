@@ -267,7 +267,7 @@
       }
       const token = (typeof grecaptcha !== 'undefined') ? grecaptcha.getResponse() : '';
       if (!token) { 
-        showMsg('Veuillez cocher le captcha avant de continuer.'); 
+        showMsg('Please complete the reCAPTCHA verification to continue.'); 
         return null; 
       }
       return token;
@@ -371,7 +371,7 @@
     // GOOGLE SSO Handler (Direct 1-Click Login, NO Captcha Required)
     document.getElementById('google-btn').addEventListener('click', () => {
       if (!window.google || !google.accounts || !google.accounts.id) {
-        showMsg('Google SDK not loaded.'); 
+        showMsg('Unable to initialize Google Sign-In. Please refresh the page and try again.'); 
         return;
       }
       google.accounts.id.initialize({
@@ -392,9 +392,9 @@
               location.href = '<?= get_url('settings') ?>'; 
               return; 
             }
-            showMsg((j && j.error) ? j.error : 'Google login failed.');
+            showMsg((j && j.error) ? j.error : 'Google Sign-In failed. Please try again.');
           } catch (e) { 
-            showMsg('Network error during Google login.'); 
+            showMsg('Network connection error during Google Sign-In. Please try again.'); 
           }
         }
       });

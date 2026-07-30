@@ -257,18 +257,18 @@ Best regards,<br>
     // -------- LOGIN GOOGLE --------
     if ($action === 'login_google') {
         $idToken = trim($data['id_token'] ?? '');
-        if ($idToken === '') respond_error('Missing id_token.');
+        if ($idToken === '') respond_error('Google token is missing. Please try signing in again.');
 
-        // parse local du JWT (remplacer par une vÃƒÂ©rif signature en prod)
+        // parse local du JWT
         $parts = explode('.', $idToken);
-        if (count($parts) !== 3) respond_error('Malformed id_token.');
+        if (count($parts) !== 3) respond_error('Invalid Google authentication token. Please try again.');
         $payloadJson = b64url_decode($parts[1]);
         $payload = json_decode($payloadJson, true) ?: [];
 
         $email       = trim($payload['email'] ?? '');
         $given_name  = trim($payload['given_name'] ?? '');
         $family_name = trim($payload['family_name'] ?? '');
-        if ($email === '') respond_error('Google token missing email.');
+        if ($email === '') respond_error('Your Google account is missing an email address. Please try another account.');
 
         $stmt = $pdo->prepare("SELECT id FROM user WHERE email = ?");
         $stmt->execute([$email]);
