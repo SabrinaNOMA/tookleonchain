@@ -15,7 +15,9 @@ if (empty($_SESSION['csrf_token'])) {
 $current_user_id = $_SESSION['user_id'];
 $formMessage = '';
 
-$investmentId = $_SESSION['current_investment_id'] ?? null;
+$investmentId = $_GET['id'] ?? $_SESSION['current_investment_id'] ?? null;
+if (!empty($_GET['id'])) $_SESSION['current_investment_id'] = (int)$_GET['id'];
+
 $projectName = 'N/A';
 $investmentAmount = 0;
 $escrowContractAddress = '0x1234567890AbCdEf1234567890AbCdEf12345678'; // Example
@@ -24,7 +26,8 @@ $networkName = 'Base';
 $is_loaded = false;
 
 if (!$investmentId) {
-    $formMessage = "Could not find an active contribution. Please start over.";
+    header('Location: /portfolio?msg=no_active_contribution');
+    exit;
 } else {
     try {
         $stmtInvestment = $pdo->prepare(

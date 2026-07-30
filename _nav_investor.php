@@ -43,9 +43,14 @@ function render_investor_nav_link($icon, $label, $href, $nav_key) {
     render_investor_nav_link('briefcase', 'Projects', '/projects', 'projects');
     // --- End Modification ---
     render_investor_nav_link('file-text', 'Regulatory', '/legal', 'legal');
-    render_investor_nav_link('wallet', 'Wallet', '/wallet', 'wallet', 'wallets');
+    render_investor_nav_link('wallet', 'Wallet', '/wallet', 'wallet');
     
-    // MASKED INVITES
-    // render_investor_nav_link('user-plus', 'Invites', '/invites', 'invites');
+    // Account Section
+    ?>
+    <div class="pt-2 pb-1 px-3">
+        <div class="border-t border-gray-200"></div>
+    </div>
+    <?php
+    render_investor_nav_link('user-cog', 'Settings', '/settings', 'settings');
     ?>
 </nav>

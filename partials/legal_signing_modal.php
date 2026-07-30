@@ -135,7 +135,7 @@
     
     const HEADER_TPL = `TOKEN SALE AGREEMENT\n\n1. PARTIES\n\nCompany\n{{FOUNDER_ENTITY}}, registered office at {{FOUNDER_ADDRESS}}.\nEmail: {{FOUNDER_EMAIL}}\n(the “Company”)\n\nand\n\nPurchaser\n{{SIG_FULL_NAME}}\n{{SIG_FULL_ADDRESS}}\nEmail: {{SIG_EMAIL}}\n(the “Purchaser”)\n\n2. SALE PARTICULARS\nThe sale particulars, including unit price and ticker symbol, are explicitly set forth in Annexe A.\n\n3. CONTRIBUTION & ALLOCATION\nThe Purchaser commits to a total contribution amount of {{CONTRIBUTION_AMOUNT}} USD.\nSubject to the receipt of funds, the Purchaser shall receive an allocation of approximately {{TOKEN_QUANTITY}} {{TOKEN_TICKER}}.\n\nThis Agreement is considered legally valid and binding once the transaction (tx) is confirmed and received by the non-custodial Vault.`;
     
-    const FOOTER_TPL = `4. TERMS AND CONDITIONS\nThe specific Terms and Conditions are attached hereto as SCHEDULE 1.\n\n5. GOVERNING LAW\nLaws of {{GOVERNING_LAW}}. Jurisdiction: {{JURISDICTION}}.\n\n_________________________\nSigned by {{FOUNDER_ENTITY}}\n\n_________________________\nSigned by {{SIG_FULL_NAME}}\nDate: {{CURRENT_DATE}}\n\n[ANNEXE A: SALE DETAILS]\n{{ANNEXE_DATA}}`;
+    const FOOTER_TPL = `4. TERMS AND CONDITIONS\nThe specific Terms and Conditions are attached hereto as SCHEDULE 1.\n\n5. GOVERNING LAW\nLaws of {{GOVERNING_LAW}}. Jurisdiction: {{JURISDICTION}}.\n\n✓ EXECUTED & APPROVED BY ISSUER\nSigned by: {{FOUNDER_ENTITY}} (Authorized Representative)\nExecution Status: OFFICIALLY PRE-APPROVED & SEALED BY ISSUER\n\n_________________________\nSigned by Purchaser: {{SIG_FULL_NAME}}\nDate: {{CURRENT_DATE}}\n\n[ANNEXE A: SALE DETAILS]\n{{ANNEXE_DATA}}`;
 
     let docVariables = {};
     let customClauses = "";

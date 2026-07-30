@@ -71,29 +71,55 @@ if (empty($project_id)) {
             <h1 class="text-2xl font-bold text-gray-900 mb-2">Tell your Project's Story</h1>
             <p class="text-gray-600 text-sm mb-8">Provide the core narrative for your project. Showcase your unique value, introduce your team and partners, answer common questions, highlight key metrics, and link your social channels to build a compelling and trustworthy presence.</p>
 
-            <?php if ($page_error): ?>
+            <?php 
+            $session_error = $_SESSION['error_message'] ?? null;
+            if ($session_error) { unset($_SESSION['error_message']); }
+            $display_error = $page_error ?: $session_error;
+            ?>
+
+            <?php if ($display_error): ?>
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
                     <strong class="font-bold">Error!</strong>
-                    <span class="block sm:inline"><?php echo htmlspecialchars($page_error); ?></span>
+                    <span class="block sm:inline"><?php echo htmlspecialchars($display_error); ?></span>
                 </div>
-            <?php else: ?>
+            <?php endif; ?>
+
+            <?php if (!$page_error): ?>
                 <form id="storyForm" action="/backend/story_backend.php" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="project_id" value="<?php echo htmlspecialchars($project_id); ?>">
                     
                     <section class="form-section">
                         <h2 class="text-lg font-semibold text-gray-800">Sale Settings</h2>
+                        <p class="text-xs text-purple-700 bg-purple-50 p-2.5 rounded border border-purple-200 mt-2 mb-4">
+                            <i data-lucide="info" class="inline-block w-4 h-4 mr-1 align-text-bottom"></i>
+                            These settings apply specifically to <strong>this private sale room</strong> (not the overall multi-round project funding plan).
+                        </p>
                         <div class="mb-4 mt-4">
                             <label for="sale_name" class="form-label">Sale Name<span class="text-red-500">*</span></label>
                             <input type="text" id="sale_name" name="sale_name" class="form-input" required placeholder="e.g., Early Contributors Round" value="<?php echo htmlspecialchars($dbProjectData['sale_name'] ?? ''); ?>">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 mt-4">
                             <div>
-                                <label for="soft_cap_usd" class="form-label">Min Raise (Soft Cap) USD<span class="text-red-500">*</span></label>
+                                <label for="soft_cap_usd" class="form-label">Min Raise (Soft Cap) USD for this sale<span class="text-red-500">*</span></label>
                                 <input type="number" id="soft_cap_usd" name="soft_cap_usd" class="form-input" required placeholder="e.g., 50000" value="<?php echo htmlspecialchars($dbProjectData['soft_cap_usd'] ?? ''); ?>" min="0" step="any">
+                                <p class="text-xs text-gray-500 mt-1">Soft cap target for this sale room.</p>
                             </div>
                             <div>
-                                <label for="hard_cap_usd" class="form-label">Max Raise (Hard Cap) USD<span class="text-red-500">*</span></label>
+                                <label for="hard_cap_usd" class="form-label">Max Raise (Hard Cap) USD for this sale<span class="text-red-500">*</span></label>
                                 <input type="number" id="hard_cap_usd" name="hard_cap_usd" class="form-input" required placeholder="e.g., 200000" value="<?php echo htmlspecialchars($dbProjectData['hard_cap_usd'] ?? ''); ?>" min="0" step="any">
+                                <p class="text-xs text-gray-500 mt-1">Hard cap limit for this sale room.</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 mt-4">
+                            <div>
+                                <label for="min_investment_usd" class="form-label">Min Purchase per Investor USD</label>
+                                <input type="number" id="min_investment_usd" name="min_investment_usd" class="form-input" placeholder="e.g., 100" value="<?php echo htmlspecialchars($dbProjectData['min_investment_usd'] ?? ''); ?>" min="0" step="any">
+                                <p class="text-xs text-gray-500 mt-1">Minimum contribution allowed per ticket.</p>
+                            </div>
+                            <div>
+                                <label for="max_investment_usd" class="form-label">Max Purchase per Investor USD</label>
+                                <input type="number" id="max_investment_usd" name="max_investment_usd" class="form-input" placeholder="e.g., 10000" value="<?php echo htmlspecialchars($dbProjectData['max_investment_usd'] ?? ''); ?>" min="0" step="any">
+                                <p class="text-xs text-gray-500 mt-1">Maximum contribution allowed per ticket.</p>
                             </div>
                         </div>
                         <div class="mb-4 mt-4">
@@ -158,7 +184,17 @@ if (empty($project_id)) {
                          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mt-6">
                             <div>
                                 <label class="form-label">Teaser Video</label>
-                                <div class="dropzone" id="video_dropzone"><i data-lucide="video" class="w-8 h-8 text-gray-400 mb-2"></i><span class="font-semibold text-sm text-purple-600">Upload File</span><p class="text-xs text-gray-500 mt-1">MP4/WebM, Max 50MB</p><input type="file" name="video_file" class="hidden" accept="video/mp4, video/webm" data-existing-file="<?php echo htmlspecialchars($dbProjectData['video_file_path'] ?? ''); ?>"><div class="existing-file-name"></div></div>
+                                <div class="dropzone" id="video_dropzone">
+                                    <i data-lucide="video" class="w-8 h-8 text-gray-400 mb-2"></i>
+                                    <span class="font-semibold text-sm text-purple-600">Upload File</span>
+                                    <p class="text-xs text-gray-500 mt-1">MP4/WebM, Max 50MB (Teaser &lt; 50MB)</p>
+                                    <input type="file" name="video_file" class="hidden" accept="video/mp4, video/webm" data-existing-file="<?php echo htmlspecialchars($dbProjectData['video_file_path'] ?? ''); ?>">
+                                    <div class="existing-file-name"></div>
+                                </div>
+                                <p id="video_too_heavy_note" class="text-xs font-semibold text-red-600 mt-2 hidden bg-red-50 p-2 rounded border border-red-200 flex items-center gap-1.5">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500 shrink-0"></i>
+                                    <span>⚠️ File too heavy! Please upload a teaser video smaller than 50MB.</span>
+                                </p>
                             </div>
                              <div>
                                 <label class="form-label">Hero Image</label>
@@ -235,16 +271,63 @@ document.addEventListener('DOMContentLoaded', () => {
         
         function updateDisplay() {
             let fileName = '';
-            if (input.files.length > 0) { fileName = input.files[0].name; } 
-            else if (input.dataset.existingFile) { fileName = input.dataset.existingFile.split('/').pop(); }
+            const tooHeavyNote = document.getElementById('video_too_heavy_note');
+            if (input.files.length > 0) {
+                const file = input.files[0];
+                const fileSizeMB = file.size / (1024 * 1024);
+                let maxMB = 50;
+                if (input.name === 'hero_image_file') maxMB = 2;
+                if (input.name === 'whitepaper_file') maxMB = 10;
+                if (input.name === 'video_file') maxMB = 50;
+
+                if (fileSizeMB > maxMB) {
+                    if (input.name === 'video_file' && tooHeavyNote) {
+                        tooHeavyNote.classList.remove('hidden');
+                    } else {
+                        alert(`⚠️ File too heavy!\n"${file.name}" is ${fileSizeMB.toFixed(1)}MB.\nMaximum allowed size is ${maxMB}MB.`);
+                    }
+                    input.value = ''; // Reset input so file > 50MB CANNOT be submitted
+                    fileName = '';
+                } else {
+                    if (input.name === 'video_file' && tooHeavyNote) {
+                        tooHeavyNote.classList.add('hidden');
+                    }
+                    fileName = file.name + ' (' + fileSizeMB.toFixed(1) + 'MB)';
+                }
+            } 
+            else if (input.dataset.existingFile) { 
+                fileName = input.dataset.existingFile.split('/').pop(); 
+            }
             existingFileDiv.textContent = fileName;
         }
 
-        dropzoneElem.addEventListener('click', () => input.click());
+        dropzoneElem.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'INPUT') {
+                input.click();
+            }
+        });
         input.addEventListener('change', updateDisplay);
         updateDisplay();
     }
     document.querySelectorAll('.dropzone').forEach(setupDropzone);
+
+    // --- HTML5 Validation Guidance UX ---
+    const storyForm = document.getElementById('storyForm');
+    if (storyForm) {
+        let firstInvalidField = null;
+        storyForm.addEventListener('invalid', (e) => {
+            if (!firstInvalidField) {
+                firstInvalidField = e.target;
+                firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInvalidField.focus();
+                firstInvalidField.classList.add('border-red-500', 'bg-red-50');
+                setTimeout(() => {
+                    alert('⚠️ Please fill in all required fields (highlighted in red) before continuing.');
+                    firstInvalidField = null;
+                }, 300);
+            }
+        }, true);
+    }
 
     // --- Vault Type Toggle ---
     const vaultRadios = document.querySelectorAll('input[name="vault_type"]');

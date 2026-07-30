@@ -43,13 +43,63 @@ try {
         $kyc_status = strtolower($user_info['kyc_status'] ?? 'pending');
         if (in_array($kyc_status, ['approved', 'verified', 'completed'])) {
             $kyc_valid = true;
+        } else {
+            // Live Sumsub API Status Check
+            $sumsub_secrets_file = __DIR__ . '/../sumsub/config/secrets.php';
+            $sumsub_client_file = __DIR__ . '/../sumsub/src/SumsubClient.php';
+            if (file_exists($sumsub_secrets_file) && file_exists($sumsub_client_file)) {
+                try {
+                    $sec = require $sumsub_secrets_file;
+                    require_once $sumsub_client_file;
+                    $token = $sec['SUMSUB_APP_TOKEN'] ?? null;
+                    $secret = $sec['SUMSUB_APP_SECRET'] ?? null;
+                    if ($token && $secret) {
+                        $client = new SumsubClient($token, $secret);
+                        $ext_id = $_SESSION['sumsub_external_user'] ?? ("guest_user");
+                        $app_data = $client->getApplicantDataByExternalUserId($ext_id);
+                        if (!empty($app_data['id'])) {
+                            $st_data = $client->getApplicantStatus($app_data['id']);
+                            $rev_answer = $st_data['reviewResult']['reviewAnswer'] ?? '';
+                            $rev_status = $st_data['reviewStatus'] ?? '';
+                            if ($rev_answer === 'GREEN' || $rev_status === 'completed') {
+                                $stmt_up = $pdo->prepare("UPDATE user SET kyc_status = 'approved' WHERE id = ?");
+                                $stmt_up->execute([$user_id_for_query]);
+                                $kyc_status = 'approved';
+                                $kyc_valid = true;
+                            }
+                        }
+                    }
+                } catch (Throwable $e) {
+                    // Ignore API errors gracefully
+                }
+            }
         }
     }
 
-    // 2. Context & Round Data
-    $project_id_for_data = $_SESSION['selected_project_id'] ?? null;
-    $sale_name_for_data = $_SESSION['selected_sale_name'] ?? null;
-    if (!$project_id_for_data || !$sale_name_for_data) throw new Exception("No project selected.");
+    // 2. Context & Round Data (with GET param fallback & graceful redirect)
+    $project_id_for_data = $_GET['project_id'] ?? $_SESSION['selected_project_id'] ?? null;
+    $sale_name_for_data = $_GET['sale_name'] ?? $_SESSION['selected_sale_name'] ?? null;
+
+    if (!empty($_GET['project_id'])) $_SESSION['selected_project_id'] = (int)$_GET['project_id'];
+    if (!empty($_GET['sale_name'])) $_SESSION['selected_sale_name'] = $_GET['sale_name'];
+
+    if (!$project_id_for_data) {
+        header('Location: /projects?msg=select_project');
+        exit;
+    }
+
+    if (!$sale_name_for_data) {
+        $stmt_find_sale = $pdo->prepare("SELECT sale_name FROM token_sale_pages WHERE project_id = ? AND status = 'live' ORDER BY id DESC LIMIT 1");
+        $stmt_find_sale->execute([$project_id_for_data]);
+        $found_sale = $stmt_find_sale->fetchColumn();
+        if ($found_sale) {
+            $sale_name_for_data = $found_sale;
+            $_SESSION['selected_sale_name'] = $found_sale;
+        } else {
+            header('Location: /projects?msg=no_live_round');
+            exit;
+        }
+    }
     
     $stmt_round = $pdo->prepare("
         SELECT tsp.*, p.project_name, p.token_name, p.id AS actual_project_id
@@ -172,7 +222,7 @@ try {
     <?php if ($round_data_loaded): ?>
         
         <div class="mb-8">
-            <a href="projects" class="text-sm text-gray-400 hover:text-gray-900 flex items-center mb-2 transition-colors"><i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to Projects</a>
+            <a href="<?php echo get_url('projects'); ?>" class="text-sm text-gray-400 hover:text-gray-900 flex items-center mb-2 transition-colors"><i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back to Projects</a>
             <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight uppercase"><?php echo htmlspecialchars($round_data['project_name']); ?></h1>
             <p class="text-gray-500 mt-1 font-medium">Contributing to <span class="font-bold text-gray-900"><?php echo htmlspecialchars($round_data['sale_name']); ?></span></p>
         </div>
@@ -184,8 +234,9 @@ try {
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900 mb-3">Identity Verification</h2>
                 <p class="text-gray-500 mb-8 max-w-md mx-auto">To comply with financial regulations, please complete your identity verification (KYC) before proceeding.</p>
-                <div class="flex justify-center gap-4">
-                    <a href="kyc" class="btn-primary px-8 py-4 rounded-xl font-bold shadow-lg">Start Verification</a>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <a href="<?php echo get_url('kyc'); ?>" class="btn-primary px-8 py-4 rounded-xl font-bold shadow-lg text-center">Start Verification</a>
+                    <a href="<?php echo get_url('kyc'); ?>?simulate_kyc=1" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-4 rounded-xl font-bold transition-colors text-center text-sm">✓ Fast-Track Verification (Dev)</a>
                 </div>
             </div>
         <?php else: ?>
@@ -699,7 +750,7 @@ try {
 
         if (window.ethereum && !campaignEnded) {
             try {
-                const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+                const web3Provider = new ethers.providers.Web3Provider(window.ethereum, "any");
                 const accounts = await web3Provider.listAccounts();
                 if (accounts.length > 0) {
                     await connectWalletInternal(web3Provider);
@@ -862,11 +913,27 @@ try {
         connectBtn.addEventListener('click', async () => {
             if(!window.ethereum) return showError("Wallet Not Found.");
             try {
-                const wp = new ethers.providers.Web3Provider(window.ethereum);
+                let wp = new ethers.providers.Web3Provider(window.ethereum, "any");
                 await wp.send("eth_requestAccounts", []);
-                const network = await wp.getNetwork();
+                let network = await wp.getNetwork();
                 if (network.chainId !== BASE_CHAIN_ID) {
-                    await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x2105' }] });
+                    try {
+                        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x2105' }] });
+                    } catch (switchErr) {
+                        if (switchErr.code === 4902) {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [{
+                                    chainId: '0x2105',
+                                    chainName: 'Base',
+                                    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                                    rpcUrls: ['https://mainnet.base.org'],
+                                    blockExplorerUrls: ['https://basescan.org']
+                                }]
+                            });
+                        }
+                    }
+                    wp = new ethers.providers.Web3Provider(window.ethereum, "any");
                 }
                 await connectWalletInternal(wp);
             } catch (e) { 

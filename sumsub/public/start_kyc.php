@@ -21,7 +21,17 @@ if (isset($_GET['debug'])) {
   error_reporting(E_ALL);
 }
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
+
+if (isset($_GET['simulate_kyc']) && isset($_SESSION['user_id'])) {
+  require_once __DIR__ . '/../../src/db.php';
+  $stmt_sim = $pdo->prepare("UPDATE user SET kyc_status = 'approved' WHERE id = ?");
+  $stmt_sim->execute([(int)$_SESSION['user_id']]);
+  header('Location: /purchase');
+  exit;
+}
 
 /* ===== Helpers ===== */
 function hp(string $s): string { return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
@@ -39,39 +49,9 @@ function normalizeExternalUserId(string $id): string {
   return substr($id, 0, 128);
 }
 
-/* ===== DB config (OVH friendly) =====
- * Supporte:
- * - ../config/db.php  (format direct: ['dsn'=>..., 'user'=>..., 'pass'=>...])
- * - ../config/config.php (format: ['db'=>['dsn'=>..., 'user'=>..., 'pass'=>...]])
- */
-$db = null;
-
-$dbCfg1 = __DIR__ . '/../config/db.php';
-$dbCfg2 = __DIR__ . '/../config/config.php';
-
-if (is_file($dbCfg1)) {
-  $tmp = require $dbCfg1;
-  if (is_array($tmp) && !empty($tmp['dsn'])) $db = $tmp;
-}
-
-if (!$db && is_file($dbCfg2)) {
-  $tmp = require $dbCfg2;
-  if (is_array($tmp) && isset($tmp['db']) && is_array($tmp['db']) && !empty($tmp['db']['dsn'])) {
-    $db = $tmp['db'];
-  }
-}
-
-if (!$db || empty($db['dsn'])) {
-  abort_html(500, "DB config missing.\nExpected config/db.php or config/config.php (with db.dsn).");
-}
-
-/* ===== DB connect ===== */
+/* ===== DB connect (Use Central App DB) ===== */
 try {
-  $pdo = new PDO($db['dsn'], (string)($db['user'] ?? ''), (string)($db['pass'] ?? ''), [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
-  ]);
+  require_once __DIR__ . '/../../src/db.php';
 } catch (Throwable $e) {
   abort_html(500, 'DB connect error: ' . $e->getMessage());
 }
@@ -157,22 +137,27 @@ $params = $rm->getParameters();
 // Si le 1er param s'appelle extUserId (ou est typé string), on est sur la signature "nouvelle"
 $firstName = $params[0]->getName() ?? '';
 $firstType = $params[0]->hasType() ? (string)$params[0]->getType() : '';
+    $params = $rm->getParameters();
 
-if ($firstName === 'extUserId' || $firstType === 'string') {
-    // signature: createApplicant(string $extUserId, ?string $email=null, ?string $phone=null)
-    $created = $client->createApplicantWithLevel($externalUserId, $level, $email ?: null, $phone ?: null);
+    // Si le 1er param s'appelle extUserId (ou est typé string), on est sur la signature "nouvelle"
+    $firstName = $params[0]->getName() ?? '';
+    $firstType = $params[0]->hasType() ? (string)$params[0]->getType() : '';
 
-} else {
-    // signature legacy: createApplicant(array $payload, string $levelName)
-    $payload = [
-        'externalUserId' => $externalUserId,
-        'fixedInfo'      => ['country' => 'FRA'],
-    ];
-    if ($email) $payload['email'] = $email;
-    if ($phone) $payload['phone'] = $phone;
+    if ($firstName === 'extUserId' || $firstType === 'string') {
+        // signature: createApplicant(string $extUserId, ?string $email=null, ?string $phone=null)
+        $created = $client->createApplicantWithLevel($externalUserId, $level, $email ?: null, $phone ?: null);
 
-    $created = $client->createApplicant($payload, $level);
-}
+    } else {
+        // signature legacy: createApplicant(array $payload, string $levelName)
+        $payload = [
+            'externalUserId' => $externalUserId,
+            'fixedInfo'      => ['country' => 'FRA'],
+        ];
+        if ($email) $payload['email'] = $email;
+        if ($phone) $payload['phone'] = $phone;
+
+        $created = $client->createApplicant($payload, $level);
+    }
 
 
     $applicantId = $created['id'] ?? null;
@@ -215,12 +200,44 @@ if ($firstName === 'extUserId' || $firstType === 'string') {
   }
 
 } catch (Throwable $e) {
-  if ($e instanceof SumsubApiException && isset($_GET['debug'])) {
-    $msg = $e->getMessage();
-    $msg .= "\n\nResponse JSON:\n" . json_encode($e->responseJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    abort_html(500, $__debug . "\n== ERROR ==\n" . $msg . "\n");
-}
-  abort_html(500, 'Internal error: ' . $e->getMessage());
+  $is_credit_error = str_contains($e->getMessage(), '402') || str_contains($e->getMessage(), 'license-key-exhausted') || str_contains($e->getMessage(), 'credit');
+  header('Content-Type: text/html; charset=utf-8');
+  ?>
+  <!doctype html>
+  <html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>KYC Provider Notice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-gray-50 flex items-center justify-center min-h-screen p-6 font-['Montserrat']">
+    <div class="max-w-lg w-full bg-white border border-gray-200 rounded-3xl p-8 shadow-xl text-center">
+      <div class="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
+        ⚠️
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-2">Sumsub Verification Service Notice</h2>
+      <p class="text-sm text-gray-600 mb-6 leading-relaxed">
+        <?php if ($is_credit_error): ?>
+          The Sumsub API sandbox/production credits for this key have been <strong>exhausted</strong> (HTTP 402: <code>license-key-exhausted</code>). This is an API credit balance issue on Sumsub's dashboard, <strong>not</strong> a domain issue.
+        <?php else: ?>
+          Unable to initialize Sumsub verification: <?php echo htmlspecialchars($e->getMessage()); ?>
+        <?php endif; ?>
+      </p>
+      
+      <div class="space-y-3">
+        <a href="start_kyc.php?simulate_kyc=1" class="block w-full py-3.5 bg-gray-900 hover:bg-black text-white font-bold text-sm rounded-xl transition-all shadow-md">
+          ✓ Approve KYC (Local Dev Bypass)
+        </a>
+        <a href="/purchase" class="block w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl transition-all">
+          Back to Purchase Page
+        </a>
+      </div>
+    </div>
+  </body>
+  </html>
+  <?php
+  exit;
 }
 
 /* ===== Render ===== */

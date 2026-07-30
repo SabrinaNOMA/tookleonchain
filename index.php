@@ -25,15 +25,16 @@ if (isset($_SESSION['user_id'])) {
     // --- LOGIN SUCCESS HANDLER REDIRECT (FIXED) ---
     if (!empty($_SESSION['redirect_after_login'])) {
         $dest = $_SESSION['redirect_after_login'];
+        unset($_SESSION['redirect_after_login']);
         
-        // BUG FIX: Prevent redirecting to backend logic scripts which causes 405 errors
-        // If the destination contains '/backend/', clear it and stay on the default path.
-        if (strpos($dest, '/backend/') !== false) {
-            unset($_SESSION['redirect_after_login']);
-        } 
-        // Safety: Internal relative paths only (starts with / but not //)
-        elseif (strpos($dest, '/') === 0 && strpos($dest, '//') === false) {
-            unset($_SESSION['redirect_after_login']);
+        // Filter out non-navigational requests (backend scripts, devtools, static files)
+        $is_invalid_dest = (
+            strpos($dest, '/backend/') !== false ||
+            strpos($dest, 'well-known') !== false ||
+            preg_match('/\.(json|png|jpg|jpeg|gif|ico|svg|css|js)$/i', $dest)
+        );
+        
+        if (!$is_invalid_dest && strpos($dest, '/') === 0 && strpos($dest, '//') === false) {
             header('Location: ' . $dest);
             exit;
         }
@@ -135,7 +136,7 @@ if (!empty($project_folder) && strpos($request_path, $project_folder . '/') === 
 }
 
 $url_context = 'public'; 
-$page_key = $request_path;
+$page_key = strtolower($request_path);
 
 if (empty($page_key)) {
     $page_key = 'home';
@@ -151,6 +152,16 @@ if (empty($page_key)) {
 // --- HELPER: Construct Correct URL ---
 function get_url($path) {
     global $project_folder, $url_context;
+    
+    // Normalize path: strip leading slashes
+    $path = ltrim($path, '/');
+    
+    // Strip prefix if path already starts with founder/ or investor/
+    if (strpos($path, 'founder/') === 0) {
+        $path = substr($path, 8);
+    } elseif (strpos($path, 'investor/') === 0) {
+        $path = substr($path, 9);
+    }
     
     // Special public pages that don't need namespaces
     $public_pages = ['login', 'logout', 'privacy', 'terms', 'subscription', 'activate'];
@@ -171,7 +182,7 @@ function get_url($path) {
 
 
 // --- 3. PUBLIC, BACKEND & STANDALONE PAGE HANDLING ---
-$standalone_pages = ['settings', 'escrow'];
+$standalone_pages = ['escrow'];
 // MODIFIED: Added 'privacy' and 'terms' to public pages to allow access without login
 $public_pages = ['login', 'logout', 'privacy', 'terms', 'activate']; 
 
@@ -229,15 +240,15 @@ if (in_array($page_key, $public_pages) || in_array($page_key, $standalone_pages)
 
 // --- 4. AUTHENTICATION (for all remaining pages) ---
 if (!isset($_SESSION['user_id'])) {
-    // FIX: Use helper for redirect URL
-    $redirect_url = get_url($page_key);
-    
-    if (!empty($_SERVER['QUERY_STRING'])) {
-        $redirect_url .= '?' . $_SERVER['QUERY_STRING'];
+    // Only remember redirect destination if it's a valid app page route
+    if (!empty($page_key) && strpos($page_key, '.') === false && strpos($page_key, 'well-known') === false && strpos($page_key, 'backend') === false) {
+        $redirect_url = get_url($page_key);
+        if (!empty($_SERVER['QUERY_STRING'])) {
+            $redirect_url .= '?' . $_SERVER['QUERY_STRING'];
+        }
+        $_SESSION['redirect_after_login'] = $redirect_url;
     }
-    $_SESSION['redirect_after_login'] = $redirect_url;
     
-    // FIX: Use helper for location header
     header('Location: ' . get_url('login'));
     exit();
 }
@@ -266,21 +277,21 @@ if (!function_exists('has_access')) {
 
 // --- 5. PAGE & ACCESS DEFINITIONS (ACL) ---
 $pages = [
-    // Investor Pages
-    'portfolio'       => ['file' => 'pages/portfolio.php', 'backend' => 'backend/portfolio_backend.php', 'roles' => ['investor']],
-    'projects'        => ['file' => 'pages/projects.html',  'roles' => ['investor']], 
+    // Investor & Payment Flow Pages (Accessible to both Investors and Founders)
+    'portfolio'       => ['file' => 'pages/portfolio.php', 'backend' => 'backend/portfolio_backend.php', 'roles' => ['investor', 'founder']],
+    'projects'        => ['file' => 'pages/projects.html',  'roles' => ['investor', 'founder']], 
     'salepage'        => ['file' => 'pages/salepage.php', 'roles' => ['investor', 'founder'], 'nav_parent' => 'projects'],
-    'purchase'        => ['file' => 'pages/purchase.php', 'roles' => ['investor'], 'nav_parent' => 'projects'],
-    'kyc'             => ['file' => 'sumsub/public/start_kyc.php', 'roles' => ['investor'], 'nav_parent' => 'projects'],
-    'receivingwallet' => ['file' => 'pages/receivingwallet.php', 'roles' => ['investor'], 'nav_parent' => 'projects'], 
-    'payment'         => ['file' => 'pages/payment.php', 'roles' => ['investor'], 'nav_parent' => 'projects'],
-    'wallet'          => ['file' => 'pages/wallet.php', 'roles' => ['investor']],
-    'legal'           => ['file' => 'pages/legal.php', 'backend' => 'backend/legal_backend.php', 'roles' => ['investor']],
-    'edit-wallet'     => ['file' => 'pages/receivingwallet.php', 'roles' => ['investor'], 'nav_parent' => 'portfolio'], 
+    'purchase'        => ['file' => 'pages/purchase.php', 'roles' => ['investor', 'founder'], 'nav_parent' => 'projects'],
+    'kyc'             => ['file' => 'sumsub/public/start_kyc.php', 'roles' => ['investor', 'founder'], 'nav_parent' => 'projects'],
+    'receivingwallet' => ['file' => 'pages/receivingwallet.php', 'roles' => ['investor', 'founder'], 'nav_parent' => 'projects'], 
+    'payment'         => ['file' => 'pages/payment.php', 'roles' => ['investor', 'founder'], 'nav_parent' => 'projects'],
+    'wallet'          => ['file' => 'pages/wallet.php', 'roles' => ['investor', 'founder']],
+    'legal'           => ['file' => 'pages/legal.php', 'backend' => 'backend/legal_backend.php', 'roles' => ['investor', 'founder']],
+    'edit-wallet'     => ['file' => 'pages/receivingwallet.php', 'roles' => ['investor', 'founder'], 'nav_parent' => 'portfolio'], 
     'backerdashboard' => [
         'file' => 'pages/backerdashboard.php',
         'backend' => 'backend/backerdashboard_backend.php',
-        'roles' => ['investor'],
+        'roles' => ['investor', 'founder'],
         'nav_parent' => 'portfolio'
     ],
 
@@ -344,9 +355,10 @@ $page_data = [];
 if (isset($pages[$page_key])) {
     $page_config = $pages[$page_key];
 
-    // Access is granted if the current URL context is allowed for this page.
-    // If the URL has no context (public), and the page requires a role, deny access.
-    if (in_array($url_context, $page_config['roles'])) {
+    // Access is granted if either the URL context or the active session user_role is allowed for this page.
+    $active_role = ($url_context === 'public') ? ($_SESSION['user_role'] ?? 'investor') : $url_context;
+
+    if (in_array($active_role, $page_config['roles']) || in_array($url_context, $page_config['roles'])) {
         if (file_exists($page_config['file'])) {
             if (isset($page_config['backend']) && file_exists($page_config['backend'])) {
                 include $page_config['backend'];

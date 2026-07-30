@@ -489,8 +489,19 @@ async function fetchAndInitialize() {
                     window.history.replaceState({path: newUrl}, '', newUrl);
                 }
             } else if (baseData.initialData) {
-                dataToPrefill = baseData.initialData;
                 dbProjectDataGlobal = baseData.initialData; 
+            }
+
+            const prefillBtn = document.getElementById('prefill-button');
+            if (prefillBtn) {
+                prefillBtn.addEventListener('click', () => {
+                    if (dbProjectDataGlobal && Object.keys(dbProjectDataGlobal).length > 0) {
+                        applyPrefill(dbProjectDataGlobal);
+                        showToast("Loaded last sale data.");
+                    } else {
+                        showToast("No previous sale data found.", true);
+                    }
+                });
             }
 
             if (dataToPrefill) {

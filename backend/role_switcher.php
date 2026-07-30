@@ -37,10 +37,36 @@ if (!$input) {
     $input = $_POST;
 }
 
+$action = $input['action'] ?? 'switch_role';
 $newRole = $input['role'] ?? null;
 $token   = $input['csrf_token'] ?? null;
 // Allow frontend to specify where to go next (e.g., /purchase)
 $customRedirect = $input['redirect_url'] ?? null;
+
+// Handle Project Switching
+if ($action === 'switch_project' && !empty($input['project_id'])) {
+    $projectId = (int)$input['project_id'];
+    $_SESSION['active_project_id'] = $projectId;
+    $_SESSION['user_role'] = 'founder';
+    
+    // Fetch project name
+    $stmtP = $pdo->prepare("SELECT project_name FROM projet WHERE id = ? AND founder_id = ?");
+    $stmtP->execute([$projectId, $_SESSION['user_id']]);
+    $pName = $stmtP->fetchColumn();
+    if ($pName) {
+        $_SESSION['active_project_name'] = $pName;
+    }
+    echo json_encode(['success' => true, 'redirect' => '/dashboard']);
+    exit;
+}
+
+// Handle New Project Creation
+if ($action === 'create_project') {
+    $_SESSION['user_role'] = 'founder';
+    unset($_SESSION['active_project_id']);
+    echo json_encode(['success' => true, 'redirect' => '/setup']);
+    exit;
+}
 
 // --- 4. CSRF VALIDATION ---
 if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {

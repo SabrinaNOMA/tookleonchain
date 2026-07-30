@@ -41,35 +41,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 /**
  * Determines the user-facing status based on the definitive logic matrix.
  */
-function getInvestorStatus($investmentStatus, $paymentStatus, $saleStatus) {
+function getInvestorStatus($investmentStatus, $paymentStatus, $saleStatus, $hasPaymentTx = false) {
     $inv = strtolower($investmentStatus ?? '');
     $pay = strtolower($paymentStatus ?? '');
     $sale = strtolower($saleStatus ?? '');
+    $hasTx = (bool)$hasPaymentTx;
 
-    // --- ROBUST FIX: Catch-all for Pending States ---
-    // Matches: Investment (In Escrow OR Initiated) + Payment (Not Final) + Sale (Live OR Active)
+    // 1. Unpaid Draft Attempt (Agreement signed, no payment tx submitted)
+    if ($inv === 'initiated' && !$hasTx && $pay !== 'successful') {
+        return ['status' => 'Unpaid (Draft)', 'description' => 'Agreement signed. Blockchain payment has not been submitted yet.'];
+    }
+
+    // 2. Pending Blockchain Confirmation
     $is_pending_inv = in_array($inv, ['in_escrow', 'initiated', 'pending']);
     $is_live_sale = in_array($sale, ['live', 'scheduled', 'active', 'open']);
     $is_incomplete_payment = ($pay !== 'successful' && $pay !== 'failed');
 
-    if ($is_pending_inv && $is_incomplete_payment && $is_live_sale) {
-        return ['status' => 'Pending', 'description' => "Your payment is being processed. We'll notify you upon confirmation."];
+    if ($is_pending_inv && ($pay === 'pending' || ($hasTx && $is_incomplete_payment)) && $is_live_sale) {
+        return ['status' => 'Processing', 'description' => "Your payment is being confirmed on-chain."];
     }
 
     if (($inv === 'cancelled' || $inv === 'canceled') && $pay === 'failed') {
         return ['status' => 'Failed', 'description' => 'Your payment could not be processed.'];
     }
     
-    // Active / Paid (FIXED: Changed 'Payment Received' to 'Active')
-    if (in_array($inv, ['in_escrow', 'released_to_creator']) && $pay === 'successful' && $is_live_sale) {
+    // Active / Paid
+    if (in_array($inv, ['in_escrow', 'released_to_creator']) && ($pay === 'successful' || $hasTx) && $is_live_sale) {
         return ['status' => 'Active', 'description' => 'Payment received - campaign active.'];
     }
     
     // Success Flow
-    if ($inv === 'in_escrow' && $pay === 'successful' && $sale === 'ended_successful') {
+    if ($inv === 'in_escrow' && ($pay === 'successful' || $hasTx) && $sale === 'ended_successful') {
         return ['status' => 'Processing', 'description' => 'Sale successful. Preparing allocation.'];
     }
-    if ($inv === 'released_to_creator' && $pay === 'successful' && $sale === 'ended_successful') {
+    if ($inv === 'released_to_creator' && ($pay === 'successful' || $hasTx) && $sale === 'ended_successful') {
         return ['status' => 'Fulfilled', 'description' => 'Project funded. Tokens distributed.'];
     }
     
@@ -77,7 +82,6 @@ function getInvestorStatus($investmentStatus, $paymentStatus, $saleStatus) {
     if (in_array($inv, ['refund_pending', 'in_escrow']) && in_array($sale, ['ended_failed', 'canceled'])) {
         return ['status' => 'Refunding', 'description' => 'Sale failed. Refund available.'];
     }
-    // Allow 'successful' payment status if investment is 'returned_to_backer' (Refund complete)
     if ($inv === 'returned_to_backer' && ($pay === 'refunded' || $pay === 'successful')) {
         return ['status' => 'Refunded', 'description' => 'Contribution refunded to wallet.'];
     }
@@ -203,12 +207,15 @@ try {
 
     // --- Process investments ---
     foreach ($investments_raw as $investment) {
-        $statusInfo = getInvestorStatus($investment['investment_status'], $investment['payment_status'], $investment['sale_status']);
+        $hasTx = !empty($investment['payment_tx_hash']);
+        $statusInfo = getInvestorStatus($investment['investment_status'], $investment['payment_status'], $investment['sale_status'], $hasTx);
         $investment['investorStatus'] = $statusInfo['status'];
         $investment['investorDescription'] = $statusInfo['description'];
 
         if (strtolower($statusInfo['status']) === 'active') {
-             $investment['investorStatusClass'] = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+            $investment['investorStatusClass'] = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+        } elseif (strtolower($statusInfo['status']) === 'unpaid (draft)') {
+            $investment['investorStatusClass'] = 'bg-amber-50 text-amber-700 border border-amber-200 font-semibold';
         }
 
         if (!empty($investment['investor_wallet_address'])) {
@@ -242,11 +249,12 @@ try {
     if ($wallet_details) $page_data['fee_recipient_address'] = $wallet_details['claim_fee_address'];
 
     // --- Deployed Token Contract (Project Global) ---
-    $stmt_contract = $pdo->prepare("SELECT contract, network FROM deployed_token WHERE projet_id = :project_id AND selected_contract = 'yes' LIMIT 1");
+    $stmt_contract = $pdo->prepare("SELECT contract, network FROM deployed_token WHERE projet_id = :project_id AND contract IS NOT NULL AND contract != '' ORDER BY (selected_contract = 'yes') DESC, id DESC LIMIT 1");
     $stmt_contract->execute([':project_id' => $project_id]);
     $contract_details = $stmt_contract->fetch(PDO::FETCH_ASSOC);
     if ($contract_details && !empty($contract_details['contract'])) {
         $page_data['deployed_token']['contract'] = htmlspecialchars($contract_details['contract']);
+        $page_data['deployed_token']['network'] = htmlspecialchars($contract_details['network'] ?? 'Base');
     }
 
 } catch (Exception $e) {

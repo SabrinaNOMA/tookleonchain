@@ -166,39 +166,46 @@ try {
 
     if (!$sale) send_json_error('SALE_NOT_LIVE', 'Sale not active.');
 
-    // Prepare Snapshot
-    // 1. Get Base Content
+    // Prepare Snapshot & Signature Audit Stamp
     $raw_snapshot = $_POST['signed_agreement_snapshot'] ?? '';
     
-    // 2. Append Hash/Stamp if provided (matches PDF structure)
-    if (!empty($_POST['digital_agreement_hash'])) {
-        $hash = $_POST['digital_agreement_hash'];
-        $server_time = date('Y-m-d H:i:s T');
-        $ip = $_SERVER['REMOTE_ADDR'];
-        
-        $stamp = "\n\n" . str_repeat("_", 40) . "\n" . 
-                 "DIGITAL SIGNATURE VERIFICATION STAMP\n" . 
-                 "Hash (SHA-256): " . $hash . "\n" . 
-                 "Recorded At: " . $server_time . "\n" . 
-                 "IP Address: " . $ip . "\n" . 
-                 "Status: Sealed & Archived";
-                 
-        $raw_snapshot .= $stamp;
-    }
-    
-    // Fallback if empty (should not happen with modal)
+    $stmt_user = $pdo->prepare("SELECT first_name, last_name, email FROM user WHERE id = :user_id");
+    $stmt_user->execute(['user_id' => $user_id]);
+    $user_data = $stmt_user->fetch(PDO::FETCH_ASSOC);
+    $user_full_name = trim(($user_data['first_name'] ?? '') . ' ' . ($user_data['last_name'] ?? ''));
+    if (empty($user_full_name)) $user_full_name = "Authorized Investor";
+    $user_email = $user_data['email'] ?? 'N/A';
+
+    $hash = !empty($_POST['digital_agreement_hash']) ? $_POST['digital_agreement_hash'] : hash('sha256', $raw_snapshot . $user_id . time());
+    $signed_date = date('F j, Y \a\t H:i:s T');
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+
+    $audit_stamp_html = '
+    <div class="legal-audit-stamp" style="margin-top: 30px; padding: 20px; border: 2px solid #6d28d9; background-color: #f9f5ff; border-radius: 12px; font-family: sans-serif;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd6fe; padding-bottom: 10px; margin-bottom: 12px;">
+            <strong style="color: #5b21b6; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">✓ ELECTRONICALLY SIGNED & VERIFIED CONTRACT</strong>
+            <span style="font-size: 11px; font-family: monospace; background-color: #ede9fe; color: #5b21b6; padding: 3px 8px; border-radius: 4px; font-weight: bold;">Doc ID: SIGN-'.strtoupper(substr($hash, 0, 8)).'</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; color: #374151;">
+            <div>
+                <p style="margin: 4px 0;"><strong>Signed By (Investor):</strong> '.htmlspecialchars($user_full_name).' ('.htmlspecialchars($user_email).')</p>
+                <p style="margin: 4px 0;"><strong>Date & Time of Signature:</strong> '.htmlspecialchars($signed_date).'</p>
+                <p style="margin: 4px 0;"><strong>Signer Account ID:</strong> User #'.(int)$user_id.'</p>
+            </div>
+            <div>
+                <p style="margin: 4px 0;"><strong>IP Address:</strong> '.htmlspecialchars($ip).' (Verified Session)</p>
+                <p style="margin: 4px 0;"><strong>SHA-256 Signature Hash:</strong> <span style="font-family: monospace; font-size: 11px;">'.substr($hash, 0, 24).'...</span></p>
+                <p style="margin: 4px 0;"><strong>Signature Status:</strong> <span style="color: #15803d; font-weight: bold;">EXECUTED & BINDING</span></p>
+            </div>
+        </div>
+    </div>';
+
     if (empty($raw_snapshot)) {
-        $stmt_user = $pdo->prepare("SELECT first_name, last_name FROM user WHERE id = :user_id");
-        $stmt_user->execute(['user_id' => $user_id]);
-        $user_data = $stmt_user->fetch(PDO::FETCH_ASSOC);
-        $user_full_name = trim(($user_data['first_name'] ?? '') . ' ' . ($user_data['last_name'] ?? ''));
-        
-        $raw_snapshot = json_encode([
-            'signed_by' => $user_full_name, 
-            'date' => date('Y-m-d H:i:s'), 
-            'amount' => $amount_usd,
-            'ip' => $_SERVER['REMOTE_ADDR']
-        ]);
+        $raw_snapshot = '<div class="p-6 bg-white border rounded-lg"><h3 class="text-lg font-bold mb-2">Token Purchase Agreement</h3><p class="text-sm text-gray-600 mb-4">Commercial token purchase agreement between project issuer and investor.</p></div>';
+    }
+
+    if (!str_contains($raw_snapshot, 'ELECTRONICALLY SIGNED & VERIFIED CONTRACT')) {
+        $raw_snapshot .= $audit_stamp_html;
     }
 
     // DB Operations

@@ -80,29 +80,8 @@ if ($has_active_project) {
     Its logic is now in layout.php in the user profile dropdown.
 -->
 
-<!-- Project Context Display -->
-<div class="px-3 mt-4 mb-3">
-    <div class="px-2 py-1.5 bg-gray-50 rounded-md border border-gray-200">
-        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-             <?php 
-                if ($has_active_project) {
-                    echo 'Active Project';
-                } else {
-                    echo 'Founder Dashboard';
-                }
-             ?>
-        </span>
-        <h2 class="text-sm font-semibold text-gray-700 truncate">
-            <?php 
-                if ($has_active_project) {
-                    echo htmlspecialchars($active_project_for_nav['project_name']);
-                } else {
-                    echo 'No active project';
-                }
-            ?>
-        </h2>
-    </div>
-</div>
+<!-- Spacer -->
+<div class="h-2"></div>
 
 
 <!-- Persistent Management Navigation -->
@@ -128,5 +107,13 @@ if ($has_active_project) {
     
     render_nav_link('send', 'Distribution', '/distribute', 'distribution', $is_management_unlocked, $disabled_tooltip);
     render_nav_link('wallet', 'Wallets', '/projectwallet', 'projectwallet', $is_management_unlocked, $disabled_tooltip);
+    
+    // Account Section
+    ?>
+    <div class="pt-2 pb-1 px-3">
+        <div class="border-t border-gray-200"></div>
+    </div>
+    <?php
+    render_nav_link('user-cog', 'Settings', '/settings', 'settings', true);
     ?>
 </nav>

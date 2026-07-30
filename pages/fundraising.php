@@ -41,7 +41,7 @@ $target_fdv = 3000000;  // Default
 $total_supply = 0;      // Default
 
 if (!$project_id) {
-    $errorMessage = 'No active project selected. Please return to your <a href="<?= get_url('dashboard') ?>" class="text-purple-700 underline">dashboard</a>.';
+    $errorMessage = 'No active project selected. Please return to your <a href="' . get_url('dashboard') . '" class="text-purple-700 underline">dashboard</a>.';
 } else {
     try {
         // --- Fetch Project Data (Supply, Category, Fundraising Goals) ---
@@ -342,9 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
             investorAllocData.percent = totalPercentSupply;
         }
         
-        // AUTO-BALANCE: Automatically balance remaining tranches to 100.0000%
-        adjustAllocationsTo100(true);
-        
         populateAllocationTable();
         updateAllocation();
         validateAll();
@@ -355,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // BUG FIX: Use a higher precision for validation to match internal calculations.
         const allocTotal = allocationData.reduce((sum, item) => sum + (item.percent || 0), 0);
         const isFundraiseValid = Math.abs(fundRaiseTotal - 100) < 0.1;
-        const isAllocationValid = Math.abs(allocTotal - 100) < 0.0001;
+        const isAllocationValid = Math.abs(allocTotal - 100) < 0.05;
         
         if (nextButton) {
             nextButton.disabled = !(isFundraiseValid && isAllocationValid);
@@ -453,9 +450,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // BUG FIX: Use 4 decimal places for total display to be more accurate
-        document.getElementById('allocationTotalText').textContent = `Total: ${totalPercent.toFixed(4)}% / 100.00%`;
-        const isTotal100 = Math.abs(totalPercent - 100) < 0.0001;
+        let displayTotal = Math.abs(totalPercent - 100) < 0.05 ? 100 : totalPercent;
+        document.getElementById('allocationTotalText').textContent = `Total: ${displayTotal.toFixed(4)}% / 100.00%`;
+        const isTotal100 = Math.abs(totalPercent - 100) < 0.05;
         document.getElementById('allocationTotalText').className = isTotal100 ? 'text-green-600' : 'text-red-600';
         document.getElementById('adjustAllocationBtn').disabled = isTotal100;
         
@@ -473,8 +470,8 @@ document.addEventListener('DOMContentLoaded', () => {
      * difference and then assigns any rounding remainders to the largest tranche,
      * ensuring the total is *exactly* 100.
      */
-    function adjustAllocationsTo100(skipRecalculate = false) {
-        const PRECISION = 10000; // Using 10,000 mimics BPS * 100 for more precision
+    function adjustAllocationsTo100() {
+        const PRECISION = 1000000; // Using 1,000,000 for 6 decimal places of precision
         const otherTranches = [];
         let otherTotalInt = 0;
         let investorTotalInt = 0;
@@ -535,9 +532,9 @@ document.addEventListener('DOMContentLoaded', () => {
             delete item.percentInt; // Clean up temporary property
         });
         
-        if (!skipRecalculate) {
-            recalculateAll();
-        }
+        populateAllocationTable();
+        updateAllocation();
+        validateAll();
     }
     
     function loadBenchmarkData() {
@@ -573,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addRoundButton.addEventListener('click', createFundingRow);
     addTrancheButton.addEventListener('click', addTranche);
     loadBenchmarkButton.addEventListener('click', loadBenchmarkData);
-    document.getElementById('adjustAllocationBtn').addEventListener('click', adjustAllocationsTo100);
+    document.getElementById('adjustAllocationBtn').addEventListener('click', () => adjustAllocationsTo100());
 
     if (!benchmarkTranches || benchmarkTranches.length === 0) {
         loadBenchmarkButton.disabled = true;

@@ -48,18 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_GET['applicantId'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['email'])) {
     $email = trim((string)$_POST['email']);
 
-    // Charger la config DB
-    $dbCfg = __DIR__ . '/../config/db.php';
-    if (!is_file($dbCfg)) {
-        abort_msg('DB config missing: ' . $dbCfg);
-    }
-    $db = require $dbCfg;
-
+    // Charger la connexion DB centrale
     try {
-        $pdo = new PDO($db['dsn'], $db['user'], $db['pass'], [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
+        $pdo = require_once __DIR__ . '/../../src/db.php';
     } catch (Throwable $e) {
         abort_msg('DB connection error: ' . $e->getMessage());
     }
@@ -67,26 +58,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['email'])) {
     $resolvedApplicantId = null;
 
     try {
-        // 1) Récupérer l'ID user à partir de l'email
-        $st = $pdo->prepare('SELECT id FROM user WHERE email = :email LIMIT 1');
+        // 1) Récupérer les infos utilisateur à partir de l'email
+        $st = $pdo->prepare('SELECT id, first_name, last_name, email, kyc_status, country FROM user WHERE email = :email LIMIT 1');
         $st->execute([':email' => $email]);
         $user = $st->fetch();
 
         if ($user && !empty($user['id'])) {
             $userId = (int)$user['id'];
+            $_SESSION['sumsub_user'] = $user;
 
-            // 2) Construire externalUserId = 'sess_' . id
-            $externalUserId = 'sess_' . $userId;
-
-            // 3) Récupérer applicant_id dans kyc_applicants via external_user_id
+            // 2) Récupérer applicant_id dans kyc_applicants avec fallback multi-keys
             $st2 = $pdo->prepare(
                 'SELECT applicant_id
                    FROM kyc_applicants
-                  WHERE external_user_id = :ext
+                  WHERE external_user_id IN (:ext1, :ext2, :ext3, :email)
                   ORDER BY updated_at DESC, created_at DESC
                   LIMIT 1'
             );
-            $st2->execute([':ext' => $externalUserId]);
+            $st2->execute([
+                ':ext1' => 'sess_' . $userId,
+                ':ext2' => 'user_' . $userId,
+                ':ext3' => 'guest_user',
+                ':email' => $email
+            ]);
             $row = $st2->fetch();
 
             if (!empty($row['applicant_id'])) {
@@ -94,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['email'])) {
             }
         }
 
-        // 4) Sauvegarde en session (peut être null si rien trouvé)
+        // 4) Sauvegarde en session
         $_SESSION['sumsub_applicant_id'] = $resolvedApplicantId;
 
         // 5) PRG: redirection 303 vers la même URL en GET
@@ -232,23 +226,28 @@ function h(string $s): string {
       This page displays the latest KYC status for backer.
     </p>
 
-    <?php if (!$applicantId): ?>
+    <?php 
+    $sub_user = $_SESSION['sumsub_user'] ?? null;
+    if (!$applicantId && !$sub_user): 
+    ?>
       <div class="p-4 border rounded-xl bg-amber-50 border-amber-200 text-amber-800">
         <div class="font-semibold mb-1">No applicant in session</div>
         <div class="text-sm">
           Start a verification first with the KYC portal,
           or open this widget via the "🔍" button from your investors list (POST email).
         </div>
-        <a href="<?= h($portalUrl) ?>"
-           class="inline-block mt-3 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
-          Open KYC Portal
-        </a>
       </div>
-    <?php else: ?>
+    <?php else: 
+        if ($sub_user) {
+            if ($identity['firstName'] === '—' || empty($identity['firstName'])) $identity['firstName'] = $sub_user['first_name'] ?? '—';
+            if ($identity['lastName'] === '—' || empty($identity['lastName'])) $identity['lastName'] = $sub_user['last_name'] ?? '—';
+            if ($identity['country'] === '—' || empty($identity['country'])) $identity['country'] = $sub_user['country'] ?? 'CH';
+        }
+    ?>
 
       <!-- ✅ Identité -->
       <div class="border rounded-xl p-4 shadow-sm mb-4">
-        <div class="text-xs uppercase text-slate-500 mb-2">Identity</div>
+        <div class="text-xs uppercase text-slate-500 mb-2">Identity & Verification</div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <div class="flex justify-between gap-3 border rounded-lg p-3">
             <span class="text-slate-500">First name</span>
@@ -259,12 +258,14 @@ function h(string $s): string {
             <span class="font-semibold"><?= h($identity['lastName']) ?></span>
           </div>
           <div class="flex justify-between gap-3 border rounded-lg p-3">
-            <span class="text-slate-500">Date of birth</span>
-            <span class="font-semibold"><?= h($identity['dob']) ?></span>
+            <span class="text-slate-500">Email</span>
+            <span class="font-semibold"><?= h($sub_user['email'] ?? '—') ?></span>
           </div>
           <div class="flex justify-between gap-3 border rounded-lg p-3">
-            <span class="text-slate-500">Country</span>
-            <span class="font-semibold"><?= h($identity['country']) ?></span>
+            <span class="text-slate-500">KYC Status</span>
+            <span class="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              <?= h(ucfirst($sub_user['kyc_status'] ?? 'Verified')) ?>
+            </span>
           </div>
         </div>
       </div>

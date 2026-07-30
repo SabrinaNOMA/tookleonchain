@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         await fetchInitialData();
         saveButton?.addEventListener('click', saveDistributionData);
-        modalValidateBtn.addEventListener('click', () => { window.location.href = '<?= get_url('validate') ?>'; });
+        modalValidateBtn.addEventListener('click', () => { window.location.href = '<?= get_url('story') ?>'; });
     }
 
     // --- Data Fetching & Saving ---
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const allCurrentData = [...investorRoundsData, ...distributionData];
         let totalPercent = allCurrentData.reduce((sum, item) => sum + (item.percentSupply || 0), 0);
         
-        if (Math.abs(totalPercent - 100) > 0.01) {
+        if (Math.abs(totalPercent - 100) > 0.05) {
             showError('Total % Supply must be exactly 100%.');
             return;
         }
@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         row.innerHTML = `
             <td class="whitespace-nowrap py-2 pl-4 pr-3 text-sm sm:pl-6 lg:pl-8"><input type="text" value="${item.block}" class="standard-input ${isInvestor ? readonlyClass : ''}" ${isInvestor ? 'readonly' : ''} data-field="block"></td>
-            <td class="whitespace-nowrap px-3 py-2 text-sm"><input type="number" value="${(item.percentSupply || 0).toFixed(2)}" class="${commonInputClass} ${isInvestor ? readonlyClass : ''}" ${isInvestor ? 'readonly' : ''} data-field="percentSupply"></td>
+            <td class="whitespace-nowrap px-3 py-2 text-sm"><input type="number" step="0.000001" value="${(item.percentSupply || 0).toFixed(6)}" class="${commonInputClass} ${isInvestor ? readonlyClass : ''}" ${isInvestor ? 'readonly' : ''} data-field="percentSupply"></td>
             <td class="whitespace-nowrap px-3 py-2 text-sm"><input type="number" value="${item.unlockAtTGE || 0}" class="${commonInputClass}" data-field="unlockAtTGE"></td>
             <td class="whitespace-nowrap px-3 py-2 text-sm"><input type="number" value="${item.cliff || 0}" class="${commonInputClass}" data-field="cliff"></td>
             <td class="whitespace-nowrap px-3 py-2 text-sm"><input type="number" value="${item.vesting || 0}" class="${commonInputClass}" data-field="vesting"></td>
@@ -436,8 +436,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateDistributionTotals() {
         const totalsDiv = document.getElementById('distributionTotals'); 
-        const totalPercent = [...investorRoundsData, ...distributionData].reduce((sum, item) => sum + (item.percentSupply || 0), 0);
-        totalsDiv.innerHTML = `<div class="flex justify-between font-bold text-gray-900 text-base"><span>Total Distribution:</span><span class="${Math.abs(100 - totalPercent) < 0.01 ? 'text-green-600' : 'text-red-600'}">${totalPercent.toFixed(2)}% / 100%</span></div>`;
+        const allItems = [...investorRoundsData, ...distributionData];
+        let totalPercent = allItems.reduce((sum, item) => sum + (item.percentSupply || 0), 0);
+        
+        if (totalTokenSupply > 0) {
+            const totalTokensAllocated = allItems.reduce((sum, item) => {
+                return sum + (((item.percentSupply || 0) / 100) * totalTokenSupply);
+            }, 0);
+            const tokenRatio = (totalTokensAllocated / totalTokenSupply) * 100;
+            if (Math.abs(100 - tokenRatio) < 0.1) {
+                totalPercent = 100;
+            }
+        } else if (Math.abs(100 - totalPercent) < 0.1) {
+            totalPercent = 100;
+        }
+
+        const isGreen = Math.abs(100 - totalPercent) < 0.1;
+        totalsDiv.innerHTML = `<div class="flex justify-between font-bold text-gray-900 text-base"><span>Total Distribution:</span><span class="${isGreen ? 'text-green-600' : 'text-red-600'}">${totalPercent.toFixed(2)}% / 100.00%</span></div>`;
     }
     
     function updateMarketCapTgeDisplay() {

@@ -18,9 +18,10 @@ $pendingTokens = 0;
 $all_investments = array_merge($successful_investments, $other_investments);
 foreach ($all_investments as $inv) {
     $status = strtolower($inv['investorStatus'] ?? '');
+    $hasTx = !empty($inv['payment_tx_hash']) || strtolower($inv['payment_status'] ?? '') === 'successful';
     // Exclude refunded, failed, or canceled investments from total metrics
     if (!in_array($status, ['refunded', 'refunding', 'failed', 'canceled'])) {
-        if ($status === 'active') {
+        if ($status === 'active' || ($hasTx && $status !== 'unpaid (draft)')) {
             $activeContributed += (float)($inv['investment_amount'] ?? 0);
             $activeTokens += (float)($inv['token_quantity'] ?? 0);
         } else {
@@ -191,6 +192,24 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Project Dashboard</h1>
             <p class="text-gray-600 mt-1">Reviewing your position in <span class="font-semibold text-emerald-600"><?php echo htmlspecialchars($page_data['projectName'] ?? 'Unknown'); ?></span></p>
+            
+            <?php 
+            $tokenContract = $page_data['deployed_token']['contract'] ?? null;
+            if ($tokenContract): 
+            ?>
+            <div class="flex items-center gap-2 mt-2">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Token Contract:</span>
+                <div class="inline-flex items-center bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs font-mono text-gray-700 shadow-sm">
+                    <span class="font-bold text-emerald-700"><?php echo substr($tokenContract, 0, 6) . '...' . substr($tokenContract, -4); ?></span>
+                    <button onclick="navigator.clipboard.writeText('<?php echo $tokenContract; ?>'); alert('Token contract address copied!');" class="ml-2 text-gray-400 hover:text-emerald-600 transition-colors" title="Copy Address">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <a href="https://basescan.org/address/<?php echo $tokenContract; ?>" target="_blank" class="ml-1.5 text-gray-400 hover:text-emerald-600 transition-colors" title="View on BaseScan">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                    </a>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
         <div class="flex items-center gap-3">
             <?php
@@ -231,7 +250,14 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
                 <div class="stat-card">
                     <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Allocated Tokens</p>
                     <p class="text-2xl font-bold text-gray-900" id="allocated-tokens-display"><?php echo number_format($activeTokens, 0); ?></p>
-                    <?php if ($pendingTokens > 0): ?>
+                    <?php if ($tokenContract): ?>
+                        <p class="text-[10px] text-gray-500 mt-1 flex items-center gap-1 font-mono">
+                            <span>Contract: <strong class="text-emerald-700"><?php echo substr($tokenContract, 0, 6) . '...' . substr($tokenContract, -4); ?></strong></span>
+                            <button onclick="navigator.clipboard.writeText('<?php echo $tokenContract; ?>');" class="text-gray-400 hover:text-emerald-600 ml-1" title="Copy Address">
+                                <i data-lucide="copy" class="w-3 h-3"></i>
+                            </button>
+                        </p>
+                    <?php elseif ($pendingTokens > 0): ?>
                         <p class="text-[10px] text-gray-500 mt-1">Pending: <span class="font-bold text-gray-600"><?php echo number_format($pendingTokens, 0); ?></span></p>
                     <?php endif; ?>
                 </div>
@@ -355,7 +381,17 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
                         </div>
                     </div>
                     <div class="text-right relative z-10">
-                        <?php if ($canRefund): ?>
+                        <?php 
+                        $isUnpaidDraft = ($displayStatus === 'Unpaid (Draft)') || (empty($inv['payment_tx_hash']) && strtolower($inv['payment_status'] ?? '') !== 'successful' && strtolower($inv['investment_status'] ?? '') === 'initiated');
+                        ?>
+                        <?php if ($isUnpaidDraft): ?>
+                            <div class="flex flex-col items-end gap-1">
+                                <a href="/purchase?project_id=<?php echo $inv['project_id']; ?>&sale_name=<?php echo urlencode($inv['sale_name'] ?? ''); ?>" class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-lg shadow-sm transition-all">
+                                    Complete Payment →
+                                </a>
+                                <span class="text-[9px] text-amber-600 font-semibold">Payment Unconfirmed</span>
+                            </div>
+                        <?php elseif ($canRefund): ?>
                             <!-- Updated Refund Button: Polished Contrast Highlights -->
                             <button class="btn text-xs py-1.5 px-4 bg-gray-900 text-white hover:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-300 claim-refund-btn"
                                 data-investment-id="<?php echo $inv['id']; ?>"
@@ -377,12 +413,7 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
                             $isGnosisRouted = !empty($inv['gnosis_safe_address']);
                             $feeSettled = (int)($inv['fee_settled'] ?? 0);
                             ?>
-                            <?php if ($isGnosisRouted && !$feeSettled): ?>
-                                <div class="flex flex-col items-end gap-1">
-                                    <span class="text-[10px] text-slate-500 font-semibold uppercase">⏳ Finalizing Setup</span>
-                                    <span class="text-[9px] text-slate-400 text-right max-w-[140px] leading-tight">Token distribution will unlock shortly after post-sale setup.</span>
-                                </div>
-                            <?php elseif ($streamId): ?>
+                            <?php if ($streamId): ?>
                                 <button class="btn btn-ghost text-xs py-1.5 px-4 claim-vesting-btn font-bold rounded-lg"
                                     data-stream-id="<?php echo htmlspecialchars($streamId); ?>"
                                     data-token-decimals="18"
@@ -392,6 +423,11 @@ $fee_recipient_address = !empty($page_data['fee_recipient_address']) ? $page_dat
                                 </button>
                                 <div class="text-[9px] text-gray-400 mt-1 live-claimable-container hidden">
                                     Ready: <span class="live-claimable font-bold text-emerald-600">--</span>
+                                </div>
+                            <?php elseif ($isGnosisRouted && !$feeSettled): ?>
+                                <div class="flex flex-col items-end gap-1">
+                                    <span class="text-[10px] text-slate-500 font-semibold uppercase">⏳ Finalizing Setup</span>
+                                    <span class="text-[9px] text-slate-400 text-right max-w-[140px] leading-tight">Token distribution will unlock shortly after post-sale setup.</span>
                                 </div>
                             <?php else: ?>
                                 <span class="text-gray-300 text-[10px] font-bold uppercase italic block text-right">Awaiting Stream</span>

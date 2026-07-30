@@ -475,18 +475,52 @@ function get_active_or_latest_version(PDO $pdo, $project_id) {
         $result = $stmt_latest->fetch(PDO::FETCH_ASSOC);
     }
 
+    $transformed_data = ['core_params' => [], 'rounds' => [], 'allocations' => [], 'is_active' => 0];
+
     if ($result) {
         $decoded_data = json_decode($result['data'], true);
         if (json_last_error() === JSON_ERROR_NONE) {
             $transformed_data = transform_scenario_data($decoded_data);
             $transformed_data['is_active'] = $result['is_active'];
-            send_json_response($transformed_data);
         } else {
             send_json_response(['error' => 'Corrupted scenario data found for the latest version.'], 500);
         }
-    } else {
-        send_json_response(['core_params' => [], 'rounds' => [], 'allocations' => [], 'is_active' => 0], 200);
     }
+
+    // --- CRITICAL FALLBACK: If allocations are missing, fetch them from the database! ---
+    // This fixes the bug where validate_backend didn't save allocations to scenario_version JSON
+    if (empty($transformed_data['allocations'])) {
+        $stmt_tranches = $pdo->prepare("SELECT tranche_name, allocation_percent, tranche_type FROM tranche_token WHERE projet_id = ? ORDER BY FIELD(LOWER(tranche_type), 'investor', 'other'), id ASC");
+        $stmt_tranches->execute([$project_id]);
+        $existing_tranches = $stmt_tranches->fetchAll(PDO::FETCH_ASSOC);
+        if ($existing_tranches) {
+            $new_allocations = [];
+            foreach ($existing_tranches as $tr) {
+                // Skip investors tranche since rounds.php handles it dynamically
+                if (strtolower($tr['tranche_type']) === 'investor' || strtolower($tr['tranche_name']) === 'investors' || strtolower($tr['tranche_name']) === 'backers') {
+                    continue;
+                }
+                $new_allocations[] = [
+                    'tranche_name' => $tr['tranche_name'],
+                    'allocation_percent' => floatval($tr['allocation_percent']),
+                    'unlock_tge' => 0, 'cliff_months' => 0, 'vesting_months' => 0
+                ];
+            }
+            $transformed_data['allocations'] = $new_allocations;
+        }
+    }
+
+    // --- CRITICAL FALLBACK: If rounds are missing, fetch them from the database! ---
+    if (empty($transformed_data['rounds'])) {
+         $stmt_rounds = $pdo->prepare("SELECT * FROM round_token WHERE projet_id = ? ORDER BY id ASC");
+         $stmt_rounds->execute([$project_id]);
+         $existing_rounds = $stmt_rounds->fetchAll(PDO::FETCH_ASSOC);
+         if ($existing_rounds) {
+             $transformed_data['rounds'] = $existing_rounds;
+         }
+    }
+
+    send_json_response($transformed_data);
 }
 
 function get_investments_for_round(PDO $pdo, $project_id, $round_name) {

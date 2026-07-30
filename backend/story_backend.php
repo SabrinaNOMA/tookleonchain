@@ -12,27 +12,49 @@ require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/utils.php'; // Required for generateUniqueSaleToken
 
 function handleFileUpload($fileInfo, $project_id, $subDir, $prefix) {
-    if (isset($fileInfo['error']) && $fileInfo['error'] === UPLOAD_ERR_OK) {
-        $safe_project_id = preg_replace('/[^a-zA-Z0-9_-]/', '_', $project_id);
-        
-        $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/project_' . $safe_project_id . '/' . $subDir . '/';
-        if (!is_dir($uploadDir)) {
-            if (!mkdir($uploadDir, 0777, true)) {
-                return ['error' => "Failed to create directory: $uploadDir"];
-            }
-        }
-        $fileName = $prefix . '_' . time() . '_' . basename(preg_replace('/[^A-Za-z0-9.\-_]/', '', $fileInfo['name']));
-        $targetPath = $uploadDir . $fileName;
-        
-        if (move_uploaded_file($fileInfo['tmp_name'], $targetPath)) {
-            return 'project_' . $safe_project_id . '/' . $subDir . '/' . $fileName;
+    if (!isset($fileInfo['error']) || $fileInfo['error'] === UPLOAD_ERR_NO_FILE) {
+        return null; // No file uploaded, normal behavior
+    }
+
+    if ($fileInfo['error'] !== UPLOAD_ERR_OK) {
+        switch ($fileInfo['error']) {
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                return ['error' => 'File too heavy! Please upload a teaser video smaller than 50MB.'];
+            case UPLOAD_ERR_PARTIAL:
+                return ['error' => 'The file upload was interrupted. Please try again.'];
+            default:
+                return ['error' => 'File upload failed with error code: ' . $fileInfo['error']];
         }
     }
-    return null;
+
+    $safe_project_id = preg_replace('/[^a-zA-Z0-9_-]/', '_', $project_id);
+    $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/project_' . $safe_project_id . '/' . $subDir . '/';
+    if (!is_dir($uploadDir)) {
+        if (!mkdir($uploadDir, 0777, true)) {
+            return ['error' => "Failed to create upload directory on server."];
+        }
+    }
+
+    $fileName = $prefix . '_' . time() . '_' . basename(preg_replace('/[^A-Za-z0-9.\-_]/', '', $fileInfo['name']));
+    $targetPath = $uploadDir . $fileName;
+
+    if (move_uploaded_file($fileInfo['tmp_name'], $targetPath)) {
+        return 'project_' . $safe_project_id . '/' . $subDir . '/' . $fileName;
+    }
+
+    return ['error' => 'Failed to save uploaded file to destination directory.'];
 }
 
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: /founder/story');
+    exit;
+}
+
+// Catch post_max_size overflow (when $_POST is cleared by PHP due to large payload)
+if (empty($_POST) && isset($_SERVER['CONTENT_LENGTH']) && (int)$_SERVER['CONTENT_LENGTH'] > 0) {
+    $_SESSION['error_message'] = 'The uploaded files exceed the server maximum POST size limit. Please upload a smaller video file (under 50MB).';
     header('Location: /founder/story');
     exit;
 }
@@ -63,15 +85,33 @@ try {
     ];
 
     // Handle File Uploads (Videos/Whitepaper)
-    $dataToSave['video_file_path'] = handleFileUpload($_FILES['video_file'] ?? null, $project_id, 'videos', 'video') ?: ($existingData['video_file_path'] ?? null);
-    $dataToSave['whitepaper_file_path'] = handleFileUpload($_FILES['whitepaper_file'] ?? null, $project_id, 'docs', 'wp') ?: ($existingData['whitepaper_file_path'] ?? null);
+    $videoRes = handleFileUpload($_FILES['video_file'] ?? null, $project_id, 'videos', 'video');
+    if (is_array($videoRes) && isset($videoRes['error'])) {
+        $_SESSION['error_message'] = 'Teaser Video Upload Error: ' . $videoRes['error'];
+        header('Location: /founder/story');
+        exit;
+    }
+    $dataToSave['video_file_path'] = is_string($videoRes) ? $videoRes : ($existingData['video_file_path'] ?? null);
+
+    $wpRes = handleFileUpload($_FILES['whitepaper_file'] ?? null, $project_id, 'docs', 'wp');
+    if (is_array($wpRes) && isset($wpRes['error'])) {
+        $_SESSION['error_message'] = 'Whitepaper Upload Error: ' . $wpRes['error'];
+        header('Location: /founder/story');
+        exit;
+    }
+    $dataToSave['whitepaper_file_path'] = is_string($wpRes) ? $wpRes : ($existingData['whitepaper_file_path'] ?? null);
 
     // Handle Hero Image
     $generalImages = json_decode($existingData['general_images_json'] ?? '[]', true);
-    if(!is_array($generalImages)) $generalImages = [];
-    $heroPath = handleFileUpload($_FILES['hero_image_file'] ?? null, $project_id, 'images', 'hero');
-    if ($heroPath && !isset($heroPath['error'])) {
-        array_unshift($generalImages, $heroPath);
+    if (!is_array($generalImages)) $generalImages = [];
+    $heroRes = handleFileUpload($_FILES['hero_image_file'] ?? null, $project_id, 'images', 'hero');
+    if (is_array($heroRes) && isset($heroRes['error'])) {
+        $_SESSION['error_message'] = 'Hero Image Upload Error: ' . $heroRes['error'];
+        header('Location: /founder/story');
+        exit;
+    }
+    if (is_string($heroRes)) {
+        array_unshift($generalImages, $heroRes);
     }
     $dataToSave['general_images_json'] = json_encode(array_values(array_unique($generalImages)));
 
@@ -149,6 +189,7 @@ try {
         $sql = "UPDATE token_sale_pages SET 
                     sale_name = :sale_name, gnosis_safe_address = :gnosis_safe_address,
                     soft_cap_usd = :soft_cap_usd, hard_cap_usd = :hard_cap_usd,
+                    min_investment_usd = :min_investment_usd, max_investment_usd = :max_investment_usd,
                     project_description_story = :project_description_story, value_props_json = :value_props_json,
                     community_metrics_json = :community_metrics_json, socials_json = :socials_json, team_json = :team_json,
                     partners_json = :partners_json, faqs_json = :faqs_json, project_roadmap_json = :project_roadmap_json,
@@ -160,9 +201,9 @@ try {
         $token = generateUniqueSaleToken($pdo);
         
         $sql = "INSERT INTO token_sale_pages 
-                    (project_id, sale_url, sale_name, gnosis_safe_address, soft_cap_usd, hard_cap_usd, project_description_story, value_props_json, community_metrics_json, socials_json, team_json, partners_json, faqs_json, project_roadmap_json, video_file_path, whitepaper_file_path, general_images_json) 
+                    (project_id, sale_url, sale_name, gnosis_safe_address, soft_cap_usd, hard_cap_usd, min_investment_usd, max_investment_usd, project_description_story, value_props_json, community_metrics_json, socials_json, team_json, partners_json, faqs_json, project_roadmap_json, video_file_path, whitepaper_file_path, general_images_json) 
                 VALUES 
-                    (:project_id, :sale_url, :sale_name, :gnosis_safe_address, :soft_cap_usd, :hard_cap_usd, :project_description_story, :value_props_json, :community_metrics_json, :socials_json, :team_json, :partners_json, :faqs_json, :project_roadmap_json, :video_file_path, :whitepaper_file_path, :general_images_json)";
+                    (:project_id, :sale_url, :sale_name, :gnosis_safe_address, :soft_cap_usd, :hard_cap_usd, :min_investment_usd, :max_investment_usd, :project_description_story, :value_props_json, :community_metrics_json, :socials_json, :team_json, :partners_json, :faqs_json, :project_roadmap_json, :video_file_path, :whitepaper_file_path, :general_images_json)";
         
         // Add the token to the data array for the INSERT
         $dataToSave['sale_url'] = $token;
@@ -176,7 +217,7 @@ try {
     if (($_POST['vault_type'] ?? '') === 'gnosis') {
         $inputAddress = trim($_POST['gnosis_safe_address'] ?? '');
         if (!preg_match('/^0x[a-fA-F0-9]{40}$/', $inputAddress)) {
-            $_SESSION['page_error'] = 'Invalid Gnosis Safe Address format. Must be a 42-character Ethereum address starting with 0x.';
+            $_SESSION['error_message'] = 'Invalid Gnosis Safe Address format. Must be a 42-character Ethereum address starting with 0x.';
             header('Location: /founder/story');
             exit;
         }
@@ -184,11 +225,30 @@ try {
     }
     $dataToSave['gnosis_safe_address'] = $gnosisAddress;
     
-    $dataToSave['soft_cap_usd'] = !empty($_POST['soft_cap_usd']) ? (float)$_POST['soft_cap_usd'] : null;
-    $dataToSave['hard_cap_usd'] = !empty($_POST['hard_cap_usd']) ? (float)$_POST['hard_cap_usd'] : null;
+    function parseCurrencyInput($val) {
+        if ($val === null || $val === '') return null;
+        $val = trim((string)$val);
+        $val = preg_replace('/[^\d.,]/', '', $val);
+        if ($val === '') return null;
+        if (strpos($val, ',') !== false && strpos($val, '.') !== false) {
+            $val = str_replace(',', '', $val);
+        } elseif (strpos($val, ',') !== false) {
+            if (preg_match('/^\d+,\d{3}$/', $val)) {
+                $val = str_replace(',', '', $val);
+            } else {
+                $val = str_replace(',', '.', $val);
+            }
+        }
+        return is_numeric($val) ? (float)$val : null;
+    }
+
+    $dataToSave['soft_cap_usd'] = parseCurrencyInput($_POST['soft_cap_usd'] ?? null);
+    $dataToSave['hard_cap_usd'] = parseCurrencyInput($_POST['hard_cap_usd'] ?? null);
+    $dataToSave['min_investment_usd'] = parseCurrencyInput($_POST['min_investment_usd'] ?? null);
+    $dataToSave['max_investment_usd'] = parseCurrencyInput($_POST['max_investment_usd'] ?? null);
 
     if ($dataToSave['soft_cap_usd'] === null || $dataToSave['hard_cap_usd'] === null) {
-        $_SESSION['page_error'] = 'Minimum Raise and Maximum Raise are required.';
+        $_SESSION['error_message'] = 'Minimum Raise and Maximum Raise are required.';
         header('Location: /founder/story');
         exit;
     }
@@ -210,7 +270,7 @@ try {
     }
 
     $pdo->commit();
-    header('Location: /founder/approve');
+    header('Location: /founder/compliance');
     exit;
 
 } catch (Exception $e) {

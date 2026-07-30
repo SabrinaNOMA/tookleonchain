@@ -16,11 +16,29 @@ try {
         throw new Exception("Database connection is not available.");
     }
 
-    if (!isset($_SESSION['selected_project_id']) || !isset($_SESSION['selected_sale_name'])) {
-        throw new Exception('No project sale has been selected. Please return to the discovery page.');
+    $projectId = $_GET['project_id'] ?? $_SESSION['selected_project_id'] ?? null;
+    $saleName = $_GET['sale_name'] ?? $_SESSION['selected_sale_name'] ?? null;
+
+    if (!empty($_GET['project_id'])) $_SESSION['selected_project_id'] = (int)$_GET['project_id'];
+    if (!empty($_GET['sale_name'])) $_SESSION['selected_sale_name'] = $_GET['sale_name'];
+
+    if (!$projectId) {
+        header('Location: /projects?msg=select_project');
+        exit;
     }
-    $projectId = $_SESSION['selected_project_id'];
-    $saleName = $_SESSION['selected_sale_name'];
+
+    if (!$saleName) {
+        $stmt_find_sale = $pdo->prepare("SELECT sale_name FROM token_sale_pages WHERE project_id = ? AND status = 'live' ORDER BY id DESC LIMIT 1");
+        $stmt_find_sale->execute([$projectId]);
+        $found_sale = $stmt_find_sale->fetchColumn();
+        if ($found_sale) {
+            $saleName = $found_sale;
+            $_SESSION['selected_sale_name'] = $found_sale;
+        } else {
+            header('Location: /projects?msg=no_live_round');
+            exit;
+        }
+    }
 
     // 2. Fetch Project & Sale Data (Including scenario_version_id)
     // UPDATE: Removed "AND tsp.status = 'live'" from SQL to allow Founder Preview logic below

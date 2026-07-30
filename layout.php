@@ -156,6 +156,82 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
                 <!-- LOGO SIZE INCREASED: h-14 to h-20 -->
                 <a href="<?= get_url('dashboard') ?>"><img id="tookle-logo" src="" alt="Tookle Logo" class="h-20 w-auto"></a>
             </div>
+
+            <!-- === STRIPE-STYLE UNIFIED WORKSPACE & ROLE SWITCHER (INSTITUTIONAL GRADE) === -->
+            <div class="px-4 pb-3 flex-shrink-0 relative">
+                <button id="workspace-switcher-btn" type="button" class="w-full flex items-center justify-between px-3 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition-all shadow-sm group">
+                    <div class="flex items-center min-w-0 text-left">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-2.5 shrink-0 bg-gray-100 text-gray-700 border border-gray-200">
+                            <i data-lucide="<?= ($user_role_for_layout === 'founder') ? 'building' : 'briefcase' ?>" class="w-4 h-4 text-gray-700"></i>
+                        </div>
+                        <div class="truncate">
+                            <p class="text-xs font-bold text-gray-900 truncate">
+                                <?= ($user_role_for_layout === 'founder') ? htmlspecialchars($_SESSION['active_project_name'] ?? 'Founder Company') : 'Personal Portfolio' ?>
+                            </p>
+                            <p class="text-[11px] font-medium text-gray-500 truncate flex items-center">
+                                <span><?= ($user_role_for_layout === 'founder') ? 'Founder Workspace' : 'Backer Workspace' ?></span>
+                            </p>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 shrink-0 ml-1 group-hover:text-gray-600 transition-colors"></i>
+                </button>
+
+                <!-- UNIFIED DROPDOWN MENU (INSTITUTIONAL MONOCHROME) -->
+                <div id="workspace-switcher-menu" class="absolute top-full left-4 right-4 mt-1 hidden opacity-0 -translate-y-2 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 p-2 transition-all duration-200">
+                    
+                    <!-- SECTION 1: ROLE SWITCH -->
+                    <div class="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Role Mode</div>
+                    
+                    <a href="#" class="js-ws-action flex items-center px-3 py-2 text-xs rounded-lg transition-colors <?= ($user_role_for_layout === 'investor') ? 'bg-gray-100 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 font-medium' ?>" data-action="switch_role" data-role="investor">
+                        <i data-lucide="briefcase" class="w-4 h-4 mr-2 text-gray-600"></i>
+                        <span>Backer Workspace</span>
+                        <?php if ($user_role_for_layout === 'investor'): ?><i data-lucide="check" class="w-4 h-4 ml-auto text-gray-900"></i><?php endif; ?>
+                    </a>
+
+                    <?php if ($user_has_membership_for_layout): ?>
+                        <a href="#" class="js-ws-action flex items-center px-3 py-2 text-xs rounded-lg transition-colors <?= ($user_role_for_layout === 'founder') ? 'bg-gray-100 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 font-medium' ?>" data-action="switch_role" data-role="founder">
+                            <i data-lucide="zap" class="w-4 h-4 mr-2 text-gray-600"></i>
+                            <span>Founder Workspace</span>
+                            <?php if ($user_role_for_layout === 'founder'): ?><i data-lucide="check" class="w-4 h-4 ml-auto text-gray-900"></i><?php endif; ?>
+                        </a>
+                    <?php else: ?>
+                        <a href="<?= get_url('subscription') ?>" class="flex items-center px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 rounded-lg">
+                            <i data-lucide="sparkles" class="w-4 h-4 mr-2 text-gray-600"></i>
+                            <span>Upgrade to Founder</span>
+                        </a>
+                    <?php endif; ?>
+
+                    <!-- SECTION 2: MY COMPANIES (Only if Founder) -->
+                    <?php if (!empty($_SESSION['founder_projects'])): ?>
+                        <div class="my-1.5 h-px bg-gray-100"></div>
+                        <div class="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">My Companies</div>
+                        <?php foreach ($_SESSION['founder_projects'] as $proj): ?>
+                            <?php $isCurrentProj = (($_SESSION['active_project_id'] ?? null) == $proj['id']); ?>
+                            <a href="#" class="js-ws-action flex items-center px-3 py-2 text-xs rounded-lg transition-colors <?= $isCurrentProj ? 'bg-gray-100 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50 font-medium' ?>" data-action="switch_project" data-project-id="<?= $proj['id'] ?>">
+                                <i data-lucide="building" class="w-4 h-4 mr-2 text-gray-600"></i>
+                                <span class="truncate"><?= htmlspecialchars($proj['project_name']) ?></span>
+                                <?php if ($isCurrentProj): ?><i data-lucide="check" class="w-4 h-4 ml-auto text-gray-900"></i><?php endif; ?>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
+                    <!-- SECTION 3: TEAM MEMBERS & ACTIONS -->
+                    <div class="my-1.5 h-px bg-gray-100"></div>
+                    <div class="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Organization</div>
+
+                    <a href="#" id="team-members-trigger-btn" class="flex items-center px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 rounded-lg">
+                        <i data-lucide="users" class="w-4 h-4 mr-2 text-gray-500"></i>
+                        <span>Team Members</span>
+                        <span class="ml-auto text-[9px] font-medium bg-gray-100 text-gray-600 border border-gray-200 px-1.5 py-0.5 rounded-md">Under Creation</span>
+                    </a>
+
+                    <a href="#" class="js-ws-action flex items-center px-3 py-2 text-xs font-medium text-gray-900 hover:bg-gray-50 rounded-lg" data-action="create_project">
+                        <i data-lucide="plus-circle" class="w-4 h-4 mr-2 text-gray-700"></i>
+                        <span>Create New Company</span>
+                    </a>
+                </div>
+            </div>
+
             <div class="flex-grow overflow-y-auto px-4">
                 <nav class="space-y-1">
                   <?php
@@ -179,57 +255,10 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
                         <button id="user-menu-button" type="button" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
                             <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
                         </button>
-                        <div id="user-menu-dropdown" class="absolute bottom-full right-0 mb-2 hidden opacity-0 -translate-y-2 bg-white rounded-xl shadow-xl border z-50 w-56 p-2 transition-all duration-200">
-                            
-                            <!-- === NEW: ROLE SWITCHER START === -->
-                            <div class="px-4 py-2">
-                                <p class="text-xs font-medium text-gray-400 uppercase">Viewing as</p>
-                            </div>
-                            
-                            <?php if ($user_role_for_layout === 'founder'): ?>
-                                <!-- Active Role: Founder -->
-                                <!-- MOD: Changed text-purple-700 to text-gray-900 -->
-                                <div class="flex items-center px-4 py-2 text-sm font-semibold text-gray-900 bg-gray-100 rounded-md">
-                                    <i data-lucide="rocket" class="w-5 h-5 mr-3"></i>
-                                    <span>Founder</span>
-                                    <i data-lucide="check" class="w-5 h-5 ml-auto text-gray-900"></i>
-                                </div>
-                                <!-- Switch Link: Backer -->
-                                <!-- UPDATED: Added class 'js-role-switcher' and data-role attribute -->
-                                <a href="#" class="js-role-switcher flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md" data-role="investor">
-                                    <i data-lucide="briefcase" class="w-5 h-5 mr-3"></i>
-                                    <span>Backer</span>
-                                </a>
-                            <?php else: // User role is investor ?>
-                                <!-- Active Role: Backer -->
-                                <!-- MOD: Renamed "Investor" to "Backer" and changed text-green-700 to text-gray-900 -->
-                                <div class="flex items-center px-4 py-2 text-sm font-semibold text-gray-900 bg-gray-100 rounded-md">
-                                    <i data-lucide="briefcase" class="w-5 h-5 mr-3"></i>
-                                    <span>Backer</span>
-                                    <i data-lucide="check" class="w-5 h-5 ml-auto text-gray-900"></i>
-                                </div>
-                                <!-- Switch Link: Founder OR Subscribe CTA -->
-                                <?php if ($user_has_membership_for_layout): ?>
-                                    <a href="#" class="js-role-switcher flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md" data-role="founder">
-                                        <i data-lucide="rocket" class="w-5 h-5 mr-3"></i>
-                                        <span>Founder</span>
-                                    </a>
-                                <?php else: ?>
-                                    <a href="<?= get_url('subscription') ?>" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
-                                        <i data-lucide="rocket" class="w-5 h-5 mr-3"></i>
-                                        <span>Subscribe as Founder</span>
-                                    </a>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                            
-                            <div class="my-2 h-px bg-gray-100"></div>
-                            <!-- === NEW: ROLE SWITCHER END === -->
-
-                            <a href="<?= get_url('settings') ?>" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"><i data-lucide="user-cog" class="w-5 h-5 mr-3"></i> Settings</a>
-                            <a href="https://noma-2.gitbook.io/tookle/" target="_blank" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"><i data-lucide="help-circle" class="w-5 h-5 mr-3"></i> Help</a>
+                        <div id="user-menu-dropdown" class="absolute bottom-full right-0 mb-2 hidden opacity-0 -translate-y-2 bg-white rounded-xl shadow-xl border z-50 w-48 p-2 transition-all duration-200">
+                            <a href="https://noma-2.gitbook.io/tookle/" target="_blank" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"><i data-lucide="help-circle" class="w-5 h-5 mr-3 text-gray-500"></i> Help & Docs</a>
                             <div class="my-1 h-px bg-gray-100"></div>
-                            <!-- MOD: Changed text-red-600 hover:bg-red-50 to text-gray-700 hover:bg-gray-50 -->
-                            <a href="<?= get_url('logout') ?>" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"><i data-lucide="log-out" class="w-5 h-5 mr-3"></i> Logout</a>
+                            <a href="<?= get_url('logout') ?>" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"><i data-lucide="log-out" class="w-5 h-5 mr-3 text-gray-500"></i> Logout</a>
                         </div>
                     </div>
                 </div>
@@ -421,8 +450,6 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
                     setTimeout(() => dropdownMenu.classList.add('hidden'), 200);
                 } else {
                     dropdownMenu.classList.remove('hidden');
-                    // We need to re-run lucide.createIcons() *after* the menu is shown
-                    // to render the new icons inside it.
                     requestAnimationFrame(() => {
                         dropdownMenu.classList.remove('opacity-0', '-translate-y-2');
                         if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
@@ -438,6 +465,99 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
                 }
             });
         }
+
+        // --- STRIPE-STYLE UNIFIED WORKSPACE SWITCHER JS ---
+        const wsBtn = document.getElementById('workspace-switcher-btn');
+        const wsMenu = document.getElementById('workspace-switcher-menu');
+        if (wsBtn && wsMenu) {
+            const toggleWsMenu = () => {
+                const isOpen = !wsMenu.classList.contains('hidden');
+                if (isOpen) {
+                    wsMenu.classList.add('opacity-0', '-translate-y-2');
+                    setTimeout(() => wsMenu.classList.add('hidden'), 200);
+                } else {
+                    wsMenu.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        wsMenu.classList.remove('opacity-0', '-translate-y-2');
+                        if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                            lucide.createIcons();
+                        }
+                    });
+                }
+            };
+            wsBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleWsMenu(); });
+            document.addEventListener('click', (e) => {
+                if (!wsMenu.classList.contains('hidden') && !wsBtn.contains(e.target) && !wsMenu.contains(e.target)) {
+                    toggleWsMenu();
+                }
+            });
+        }
+
+        // --- WORKSPACE ACTIONS HANDLER ---
+        const wsActions = document.querySelectorAll('.js-ws-action');
+        wsActions.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const action = this.getAttribute('data-action');
+                const role = this.getAttribute('data-role');
+                const projectId = this.getAttribute('data-project-id');
+                const metaToken = document.querySelector('meta[name="csrf-token"]');
+                const csrfToken = metaToken ? metaToken.getAttribute('content') : '';
+
+                fetch('/backend/role_switcher.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: action,
+                        role: role,
+                        project_id: projectId,
+                        csrf_token: csrfToken
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = data.redirect;
+                    } else if (data.error === 'membership_required') {
+                        window.location.href = data.redirect;
+                    } else {
+                        alert('Error: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(err => console.error(err));
+            });
+        });
+
+        // --- BRANDED TEAM MEMBERS MODAL HANDLER ---
+        const teamTrigger = document.getElementById('team-members-trigger-btn');
+        const teamModal = document.getElementById('team-members-modal');
+        const teamModalBox = document.getElementById('team-members-modal-box');
+        const closeTeamBtn = document.getElementById('close-team-modal-btn');
+        const confirmTeamBtn = document.getElementById('confirm-team-modal-btn');
+
+        const openTeamModal = () => {
+            if (!teamModal) return;
+            teamModal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                teamModal.classList.remove('opacity-0');
+                if (teamModalBox) teamModalBox.classList.remove('scale-95');
+                if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                    lucide.createIcons();
+                }
+            });
+        };
+
+        const closeTeamModal = () => {
+            if (!teamModal) return;
+            teamModal.classList.add('opacity-0');
+            if (teamModalBox) teamModalBox.classList.add('scale-95');
+            setTimeout(() => teamModal.classList.add('hidden'), 200);
+        };
+
+        if (teamTrigger) teamTrigger.addEventListener('click', (e) => { e.preventDefault(); openTeamModal(); });
+        if (closeTeamBtn) closeTeamBtn.addEventListener('click', closeTeamModal);
+        if (confirmTeamBtn) confirmTeamBtn.addEventListener('click', closeTeamModal);
+        if (teamModal) teamModal.addEventListener('click', (e) => { if (e.target === teamModal) closeTeamModal(); });
 
         // --- NEW: Mobile Menu Toggle Logic ---
         const sidebar = document.getElementById('sidebar');
@@ -549,6 +669,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
-</script>
+<!-- BRANDED TEAM MEMBERS MODAL -->
+<div id="team-members-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 backdrop-blur-sm hidden opacity-0 transition-all duration-200">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden border border-gray-100 transform scale-95 transition-all duration-200" id="team-members-modal-box">
+        <div class="p-6">
+            <div class="flex items-center justify-between pb-4 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-800 border border-gray-200">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-gray-900">Team Members</h3>
+                        <p class="text-xs text-gray-500">Multi-User Organization Management</p>
+                    </div>
+                </div>
+                <button type="button" id="close-team-modal-btn" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="py-5 space-y-4">
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <span class="text-xs font-semibold text-gray-700">Status</span>
+                    <span class="text-[10px] font-bold bg-gray-200 text-gray-800 px-2 py-0.5 rounded-md border border-gray-300">Under Creation / Coming Soon</span>
+                </div>
+                
+                <p class="text-xs text-gray-600 leading-relaxed">
+                    This feature will allow organization founders to invite co-founders, financial controllers, and compliance officers with role-based access control and multi-signature authorization.
+                </p>
+            </div>
+
+            <div class="pt-3 border-t border-gray-100">
+                <button type="button" id="confirm-team-modal-btn" class="w-full py-2.5 px-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold text-xs rounded-xl shadow-sm transition-colors">
+                    Got it
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

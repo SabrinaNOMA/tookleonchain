@@ -23,6 +23,7 @@ function get_wizard_config() {
                 'token_name' => ['title' => 'Token & Supply', 'url' => '/tokenname'],
                 'token_supply' => ['title' => 'Supply & Inflation', 'url' => '/tokensupply'],
                 'fundraising' => ['title' => 'Fundraising Plan', 'url' => '/fundraising'],
+                'vesting' => ['title' => 'Vesting Schedule', 'url' => '/vesting'],
             ]
         ],
         'private_sale' => [
@@ -30,6 +31,7 @@ function get_wizard_config() {
             'icon' => 'rocket',
             'subSteps' => [
                 'story' => ['title' => 'Project Story', 'url' => '/story'],
+                'compliance' => ['title' => 'Legal & Compliance', 'url' => '/compliance'],
                 'approve' => ['title' => 'Review & Launch', 'url' => '/approve'],
             ]
         ]

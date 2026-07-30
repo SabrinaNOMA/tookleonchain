@@ -15,7 +15,7 @@ $project_id = $_SESSION['active_project_id'] ?? null;
 // --- DATA FETCHING & ERROR HANDLING ---
 $errorMessage = null;
 if (!$project_id || !$founder_id) {
-    $errorMessage = "No active project is selected. Please return to your <a href='<?= get_url('dashboard') ?>' class='text-purple-700 underline'>dashboard</a> and select a project to continue.";
+    $errorMessage = "No active project is selected. Please return to your <a href='" . get_url('dashboard') . "' class='text-purple-700 underline'>dashboard</a> and select a project to continue.";
 }
 ?>
 <style>

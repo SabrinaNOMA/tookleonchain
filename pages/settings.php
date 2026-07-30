@@ -454,8 +454,8 @@ $kycRawStatus = null;
         
         document.getElementById('invest-in-projects-btn')?.addEventListener('click', (e) => {
             e.preventDefault();
-            if (currentUserRole === 'investor') window.location.href = '<?= get_url('portfolio') ?>';
-            else switchRoleAndRedirect('investor', '/portfolio');
+            if (currentUserRole === 'investor') window.location.href = '<?= get_url('projects') ?>';
+            else switchRoleAndRedirect('investor', '/projects');
         });
 
         // === LOAD & SAVE FORM ===

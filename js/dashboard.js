@@ -444,59 +444,19 @@ document.addEventListener('DOMContentLoaded', () => {
             let optionsHtml = safeProjects.map(p => `<a href="#" data-project-id="${p.id}" class="project-switch-link block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">${p.project_name}</a>`).join('');
             optionsHtml += `<div class="my-1 h-px bg-gray-100"></div><a href="#" id="create-new-project-link" class="flex items-center px-4 py-2 text-sm font-semibold text-[var(--theme-primary)] hover:bg-gray-100 rounded-md"><i data-lucide="plus-circle" class="inline w-4 h-4 mr-2"></i>New Company</a>`;
             
-            // LOGIC UPDATE: Only show "New Private Sale" button if setup is complete (Operational Phase)
-            let showNewSaleBtn = false;
-            if (typeof dashboardData !== 'undefined' && dashboardData.active_project_details) {
-                const details = dashboardData.active_project_details;
-                showNewSaleBtn = isTrue(details.project_described) && 
-                                 isTrue(details.tokenomics_done) && 
-                                 isTrue(details.token_sale_page_ready);
-            }
-
-            const newSaleBtnHtml = showNewSaleBtn ? `
-                <a href="/sales" class="flex-shrink-0 inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200">
-                    <i data-lucide="plus" class="w-4 h-4 mr-2 text-gray-500"></i>New Private Sale
-                </a>
-            ` : '';
-
-            actionsContainer.className = "flex items-center gap-3"; 
-            actionsContainer.innerHTML = `
-                ${newSaleBtnHtml}
-                <div class="relative">
-                    <button type="button" id="project-selector-button" class="inline-flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200" style="min-width: 160px;">
-                        <span>My Companies</span>
-                        <i data-lucide="chevrons-up-down" class="w-4 h-4 mr-2 text-gray-400"></i>
-                    </button>
-                    <div id="project-selector-dropdown" class="absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-white p-2 shadow-lg ring-1 ring-black ring-opacity-5 hidden z-20 transition-all">
-                        ${optionsHtml}
-                    </div>
-                </div>
-            `;
-            
-            const button = actionsContainer.querySelector('#project-selector-button');
-            const dropdown = actionsContainer.querySelector('#project-selector-dropdown');
-            if (button && dropdown) {
-                button.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); });
-                document.addEventListener('click', (e) => { 
-                    if (!dropdown.classList.contains('hidden') && !button.contains(e.target)) dropdown.classList.add('hidden');
-                });
-                dropdown.addEventListener('click', (e) => {
-                    const link = e.target.closest('a');
-                    if (!link) return;
-                    e.preventDefault();
-                    if (link.id === 'create-new-project-link') handleCreateNewProject();
-                    else if (link.classList.contains('project-switch-link')) handleProjectSwitch(link.dataset.projectId);
-                });
-            }
+            actionsContainer.innerHTML = '';
         }
 
         const sectionHeader = document.createElement('div');
         sectionHeader.className = "mb-6";
         sectionHeader.innerHTML = `
-            <div class="mb-4">
+            <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
                     <span>Private Sales</span>
                 </h2>
+                <a href="/sales" class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black rounded-lg shadow-sm hover:shadow transition-all">
+                    <i data-lucide="plus" class="w-4 h-4 mr-2"></i>New Private Sale
+                </a>
             </div>
             <div class="flex items-center bg-gray-100 p-1 rounded-lg w-fit">
                 <button class="btn-filter-pill active" data-filter="all">All Sales</button>
@@ -528,6 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!sales || sales.length === 0) return '';
         
         const btnClass = "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm inline-flex items-center justify-center min-w-[80px]";
+        const btnPrimaryClass = "px-4 py-2 text-sm font-semibold text-white bg-gray-900 border border-gray-900 rounded-lg hover:bg-black transition-all shadow-sm inline-flex items-center justify-center min-w-[120px] cursor-pointer";
 
         const getStatusBadge = (status) => {
             const s = (status || 'draft').toLowerCase();
@@ -574,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
                      actionButtons += `<a href="/sales?sale_id=${sale.id}" class="${btnClass}">Edit</a>`;
                  } else {
                      // INTERNAL DRAFT -> SHOW START PRIVATE SALE BUTTON AND VIEW DETAILS
-                     actionButtons += `<button onclick="window.startPrivateSale('${saleJsonBase64}')" class="${btnClass}">Start Private Sale</button>`;
+                     actionButtons += `<button onclick="window.startPrivateSale('${saleJsonBase64}')" class="${btnPrimaryClass}">Start Private Sale</button>`;
                      // NEW: Added View Details button for self-hosted drafts
                      actionButtons += `<button onclick="window.openDetailsModal('${saleJsonBase64}')" class="${btnClass}">View Details</button>`;
                  }

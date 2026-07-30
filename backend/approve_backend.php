@@ -46,10 +46,15 @@ try {
         $stmt_vesting->execute([':project_id' => $project_id]);
         $vesting = $stmt_vesting->fetchAll(PDO::FETCH_ASSOC);
 
+        $stmt_allocations = $pdo->prepare("SELECT * FROM tranche_token WHERE projet_id = :project_id");
+        $stmt_allocations->execute([':project_id' => $project_id]);
+        $allocations = $stmt_allocations->fetchAll(PDO::FETCH_ASSOC);
+
         $version_payload = [
             'core_params' => $core_params,
             'rounds' => $rounds,
-            'vesting' => $vesting
+            'vesting' => $vesting,
+            'allocations' => $allocations
         ];
         
         $version_data_json = json_encode($version_payload);

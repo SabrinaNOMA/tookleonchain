@@ -67,6 +67,33 @@ try {
     $saleTerms = $projectData['sale_terms_json'] ?? [];
     $projectData['selectedRoundDetails'] = $saleTerms;
     
+    if (empty($projectData['selectedRoundDetails']) || empty($projectData['selectedRoundDetails']['round_name'])) {
+        $stmt_first_round = $pdo->prepare("
+            SELECT 
+                rt.round_name,
+                rt.round_price,
+                COALESCE(vt.percent_unlock_at_tge, 5) AS percent_unlock_at_tge,
+                COALESCE(vt.cliff_months, 4) AS cliff_months,
+                COALESCE(vt.vesting_months, 36) AS vesting_months
+            FROM round_token rt
+            LEFT JOIN vesting_token vt ON vt.projet_id = rt.projet_id AND vt.source_id = rt.id AND vt.source_type = 'round'
+            WHERE rt.projet_id = :project_id
+            ORDER BY rt.id ASC
+            LIMIT 1
+        ");
+        $stmt_first_round->execute([':project_id' => $current_project_id]);
+        $firstRound = $stmt_first_round->fetch(PDO::FETCH_ASSOC);
+        if ($firstRound) {
+            $projectData['selectedRoundDetails'] = array_merge([
+                'round_name' => $firstRound['round_name'],
+                'percent_unlock_at_tge' => (float)$firstRound['percent_unlock_at_tge'],
+                'cliff_months' => (int)$firstRound['cliff_months'],
+                'vesting_months' => (int)$firstRound['vesting_months'],
+                'round_price' => (float)$firstRound['round_price']
+            ], $projectData['selectedRoundDetails'] ?? []);
+        }
+    }
+
     if (isset($saleTerms['total_supply'])) {
         $projectData['supply_value'] = $saleTerms['total_supply'];
     }
@@ -78,22 +105,103 @@ try {
     $stmtFetchLabel->execute([':project_id' => $current_project_id]);
     $projectData['scenarioLabel'] = $stmtFetchLabel->fetchColumn() ?: 'Initial Version';
 
-    $stmt_vesting = $pdo->prepare("
-        SELECT
-            tt.tranche_name AS category,
-            tt.allocation_percent AS percentTotalSupply,
-            vt.percent_unlock_at_tge AS unlockAtTGE,
-            vt.cliff_months AS cliff,
-            vt.vesting_months AS vestingPeriod
-        FROM
-            tranche_token tt
-        LEFT JOIN
-            vesting_token vt ON tt.projet_id = vt.projet_id AND tt.tranche_name = vt.vesting_block_name
-        WHERE
-            tt.projet_id = :project_id
-    ");
-    $stmt_vesting->execute([':project_id' => $current_project_id]);
-    $vestingSchedules = $stmt_vesting->fetchAll(PDO::FETCH_ASSOC);
+    if (!function_exists('get_approve_vesting_schedules')) {
+        function get_approve_vesting_schedules(PDO $pdo, $project_id) {
+            $vesting_check_stmt = $pdo->prepare("SELECT COUNT(*) FROM vesting_token WHERE projet_id = ?");
+            $vesting_check_stmt->execute([$project_id]);
+            $vesting_exists = $vesting_check_stmt->fetchColumn() > 0;
+
+            $schedules = [];
+
+            if ($vesting_exists) {
+                $stmt_investor = $pdo->prepare("
+                    SELECT 
+                        rt.round_name AS category,
+                        rt.percent_round_supply AS percentTotalSupply,
+                        vt.percent_unlock_at_tge AS unlockAtTGE,
+                        vt.cliff_months AS cliff,
+                        vt.vesting_months AS vestingPeriod
+                    FROM round_token rt
+                    JOIN vesting_token vt ON vt.projet_id = rt.projet_id AND vt.source_id = rt.id AND vt.source_type = 'round'
+                    WHERE rt.projet_id = ?
+                ");
+                $stmt_investor->execute([$project_id]);
+                $schedules = array_merge($schedules, $stmt_investor->fetchAll(PDO::FETCH_ASSOC));
+
+                $stmt_other = $pdo->prepare("
+                    SELECT 
+                        tt.tranche_name AS category,
+                        tt.allocation_percent AS percentTotalSupply,
+                        vt.percent_unlock_at_tge AS unlockAtTGE,
+                        vt.cliff_months AS cliff,
+                        vt.vesting_months AS vestingPeriod
+                    FROM tranche_token tt
+                    JOIN vesting_token vt ON vt.projet_id = tt.projet_id AND vt.source_id = tt.id AND vt.source_type = 'tranche'
+                    WHERE tt.projet_id = ? AND tt.tranche_type = 'other'
+                ");
+                $stmt_other->execute([$project_id]);
+                $schedules = array_merge($schedules, $stmt_other->fetchAll(PDO::FETCH_ASSOC));
+            } else {
+                $blocks = [];
+                $rounds_stmt = $pdo->prepare("SELECT id, round_name, percent_round_supply FROM round_token WHERE projet_id = ? ORDER BY id");
+                $rounds_stmt->execute([$project_id]);
+                foreach ($rounds_stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $blocks[] = ['db_id' => $row['id'], 'name' => $row['round_name'], 'type' => 'round', 'percentSupply' => (float)$row['percent_round_supply']];
+                }
+
+                $other_stmt = $pdo->prepare("SELECT id, tranche_name, allocation_percent FROM tranche_token WHERE projet_id = ? AND tranche_type = 'other' ORDER BY id");
+                $other_stmt->execute([$project_id]);
+                foreach ($other_stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                    $blocks[] = ['db_id' => $row['id'], 'name' => $row['tranche_name'], 'type' => 'other', 'subtype' => $row['tranche_name'], 'percentSupply' => (float)$row['allocation_percent']];
+                }
+
+                $VestingBase = 36; $VestingMin = 12; $CliffBase = 4; $CliffMin = 0;
+                $UnlockBeforeLast = 5; $UnlockLast = 10; $UnlockIfPublic = 100;
+                $OTHER_VESTING_CLIFFS = [
+                    'team' => ['vesting' => 48, 'cliff' => 12], 'ecosystem' => ['vesting' => 42, 'cliff' => 0],
+                    'treasury' => ['vesting' => 39, 'cliff' => 0], 'miscellaneous' => ['vesting' => 36, 'cliff' => 0],
+                ];
+
+                $rounds = array_filter($blocks, fn($b) => $b['type'] === 'round');
+                $others = array_filter($blocks, fn($b) => $b['type'] === 'other');
+                $totalRounds = count($rounds);
+                $i = 0;
+                foreach ($rounds as &$round) {
+                    $isPublic = str_contains(strtolower($round['name']), 'public') || str_contains(strtolower($round['name']), 'ico') || str_contains(strtolower($round['name']), 'ido');
+                    if ($isPublic) {
+                        $round['vesting'] = 0; $round['cliff'] = 0; $round['unlockAtTGE'] = $UnlockIfPublic;
+                    } else {
+                        $round['vesting'] = max($VestingBase - $i * 6, $VestingMin);
+                        $round['cliff'] = max($CliffBase - $i, $CliffMin);
+                        $round['unlockAtTGE'] = ($i === $totalRounds - 1) ? $UnlockLast : $UnlockBeforeLast;
+                    }
+                    $schedules[] = [
+                        'category' => $round['name'],
+                        'percentTotalSupply' => $round['percentSupply'],
+                        'unlockAtTGE' => $round['unlockAtTGE'],
+                        'cliff' => $round['cliff'],
+                        'vestingPeriod' => $round['vesting']
+                    ];
+                    $i++;
+                }
+                foreach ($others as $block) {
+                    $subtype = strtolower($block['subtype'] ?? '');
+                    $config = $OTHER_VESTING_CLIFFS[$subtype] ?? ['vesting' => 36, 'cliff' => 0];
+                    $schedules[] = [
+                        'category' => $block['name'],
+                        'percentTotalSupply' => $block['percentSupply'],
+                        'unlockAtTGE' => 0,
+                        'cliff' => $config['cliff'],
+                        'vestingPeriod' => $config['vesting']
+                    ];
+                }
+            }
+
+            return $schedules;
+        }
+    }
+
+    $vestingSchedules = get_approve_vesting_schedules($pdo, $current_project_id);
     $projectData['detailedVestingSchedule'] = $vestingSchedules;
 
     $distributionData = ['labels' => [], 'data' => []];
@@ -140,10 +248,6 @@ try {
         'project_name' => 'projectName', 'token_ticker' => 'projectTicker', 'calculated_price_tge' => 'tokenPrice', 'valuation_tge_usd' => 'fdv',
         'supply_value' => 'totalSupply', 'type_supply' => 'supplyType', 'sale_launch_date' => 'launchDate',
         'sale_end_date' => 'saleEndDate', 
-        'hard_cap_usd' => 'targetRaise',
-        'soft_cap_usd' => 'softCap',
-        'min_investment_usd' => 'minPurchase',
-        'max_investment_usd' => 'maxPurchase',
         'selected_round_id' => 'selectedRoundId', 'video_file_path' => 'video_file_path',
         'project_description_story' => 'projectDescription', 'team_json' => 'teamData', 'partners_json' => 'partnerData', 'faqs_json' => 'faqData',
         'socials_json' => 'socialLinks', 'project_roadmap_json' => 'project_roadmap_items', 'value_props_json' => 'valueProps',
@@ -152,6 +256,11 @@ try {
     foreach($keyMapping as $oldKey => $newKey) {
         if(isset($projectData[$oldKey])) { $projectData[$newKey] = $projectData[$oldKey]; }
     }
+
+    $projectData['targetRaise'] = !empty($projectData['target_raise_usd']) ? $projectData['target_raise_usd'] : ($projectData['hard_cap_usd'] ?? 0);
+    $projectData['softCap'] = $projectData['soft_cap_usd'] ?? 0;
+    $projectData['minPurchase'] = !empty($projectData['min_investment_usd']) ? $projectData['min_investment_usd'] : 100;
+    $projectData['maxPurchase'] = !empty($projectData['max_investment_usd']) ? $projectData['max_investment_usd'] : ($projectData['hard_cap_usd'] ?? $projectData['targetRaise'] ?? 10000);
 
 } catch (Exception $e) {
     error_log("Approve Page Data Fetch Error: " . $e->getMessage());
@@ -321,9 +430,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const detailsTableBody = document.querySelector('#details tbody');
         
+        let currentRoundName = projectData.selectedRoundDetails?.round_name;
+        if (!currentRoundName && projectData.detailedVestingSchedule && projectData.detailedVestingSchedule.length > 0) {
+            currentRoundName = projectData.detailedVestingSchedule[0].category;
+        }
+
         let vestingText = "N/A";
         if (projectData.selectedRoundDetails && projectData.selectedRoundDetails.percent_unlock_at_tge !== undefined) {
              vestingText = `${projectData.selectedRoundDetails.percent_unlock_at_tge}% TGE, ${projectData.selectedRoundDetails.cliff_months}m cliff, ${projectData.selectedRoundDetails.vesting_months}m vesting`;
+        } else if (projectData.detailedVestingSchedule && projectData.detailedVestingSchedule.length > 0) {
+             const firstVesting = projectData.detailedVestingSchedule[0];
+             vestingText = `${firstVesting.unlockAtTGE}% TGE, ${firstVesting.cliff}m cliff, ${firstVesting.vestingPeriod}m vesting`;
         }
         
         const eligibility = [];
@@ -331,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (projectData.complianceSettings?.exclude_sanctioned) eligibility.push('Sanctioned Countries Excluded');
         
         detailsTableBody.innerHTML = `
-            <tr><td>Current Round</td><td>${projectData.selectedRoundDetails?.round_name || 'N/A'}</td></tr>
+            <tr><td>Current Round</td><td>${currentRoundName || 'Private Sale'}</td></tr>
             <tr><td>Sale Dates</td><td>${formatDate(projectData.launchDate)} - ${formatDate(projectData.saleEndDate)}</td></tr>
             <tr><td>Token Ticker</td><td>${projectData.projectTicker || 'N/A'}</td></tr>
             <tr><td>Token Price</td><td>${formatCurrency(projectData.tokenPrice, 6)}</td></tr>

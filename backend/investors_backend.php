@@ -131,11 +131,12 @@ function handle_get_request($pdo, $project_id) {
             i.id AS investment_id, i.user_id, i.amount_usd AS amount, i.investment_round AS roundName, i.sale_name AS saleName,
             i.token_quantity, i.reference_id AS investmentReference, i.status AS investment_status, 
             
-            -- ROBUST KYC FETCH: Get value from kyc_applicants table directly
+            -- ROBUST KYC FETCH: Get value from user table and kyc_applicants
             COALESCE(
+                NULLIF(u.kyc_status, ''),
                 (SELECT review_answer 
                  FROM kyc_applicants k 
-                 WHERE k.external_user_id = CONCAT('sess_', i.user_id) 
+                 WHERE k.external_user_id IN (CONCAT('user_', i.user_id), CONCAT('sess_', i.user_id), 'guest_user') 
                  ORDER BY k.created_at DESC 
                  LIMIT 1), 
                 'Not Started'

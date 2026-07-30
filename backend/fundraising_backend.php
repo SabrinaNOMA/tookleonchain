@@ -14,7 +14,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // --- Configuration & Dependencies ---
 require_once __DIR__ . '/../src/db.php';
 $form_page_url = '/fundraising';
-$next_page_url = '/story'; // Next step in 5-step wizard flow
+$next_page_url = '/vesting'; // Next step in wizard flow
 
 // --- Security and Initialization ---
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {

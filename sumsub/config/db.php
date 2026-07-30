@@ -1,6 +1,12 @@
 <?php
+/**
+ * Sumsub Central Database Configuration Provider
+ * Dynamically binds to the active environment config (Local / Preprod / Prod)
+ */
+require_once __DIR__ . '/../../config.php';
+
 return [
-  'dsn'  => 'mysql:host=bs2617458-001.eu.clouddb.ovh.net;port=35630;dbname=tookledev;charset=utf8mb4',
-  'user' => 'tookleuser3',
-  'pass' => 'G3RToNVgH2Hpl3',
+  'dsn'  => "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET,
+  'user' => DB_USER,
+  'pass' => DB_PASS,
 ];

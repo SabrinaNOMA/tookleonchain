@@ -24,7 +24,7 @@ $tokenData = null;
 $errorMessage = '';
 
 if (!$project_id) {
-    $errorMessage = 'No active project selected. Please return to your <a href="<?= get_url('dashboard') ?>" class="text-purple-700 underline">dashboard</a> to select a project.';
+    $errorMessage = 'No active project selected. Please return to your <a href="' . get_url('dashboard') . '" class="text-purple-700 underline">dashboard</a> to select a project.';
 } else {
     try {
         // --- Initialize Data Structure ---
