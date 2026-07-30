@@ -211,8 +211,8 @@
         </label>
       </div>
 
-      <!-- reCAPTCHA Container (Required for Email/Password form) -->
-      <div class="captcha-container">
+      <!-- reCAPTCHA Container (Shown ONLY on Register mode) -->
+      <div class="captcha-container" style="display: none;">
         <div class="g-recaptcha" data-sitekey="6LfswIwrAAAAABsemKnqo0lZd9rMjP7lnK9x6ali"></div>
       </div>
 
@@ -260,8 +260,9 @@
       if (captchaEl) captchaEl.style.display = 'none';
     }
 
-    // Captcha Validator for Email/Password form
+    // Captcha Validator for Email/Password form (Enforced ONLY on Register)
     function needCaptcha() {
+      if (isLoginMode) return 'login-mode-bypass';
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         return 'localhost-dev-bypass';
       }
@@ -281,6 +282,7 @@
       const nameSection = document.getElementById('name-section');
       const repeatSection = document.getElementById('repeat-password-section');
       const termsSection = document.getElementById('terms-section');
+      const captchaEl = document.querySelector('.captcha-container');
       const submitButton = document.getElementById('submit-button');
       const formTitle = document.getElementById('form-title');
 
@@ -297,6 +299,7 @@
           nameSection.style.display = 'none';
           repeatSection.style.display = 'none';
           if (termsSection) termsSection.style.display = 'none';
+          if (captchaEl) captchaEl.style.display = 'none';
         } else {
           formTitle.textContent = 'Create your Account';
           submitButton.textContent = 'Register';
@@ -305,6 +308,9 @@
           nameSection.style.display = 'block';
           repeatSection.style.display = 'block';
           if (termsSection) termsSection.style.display = 'block';
+          if (captchaEl && (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
+            captchaEl.style.display = 'flex';
+          }
         }
       });
     })();
