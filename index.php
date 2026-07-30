@@ -258,11 +258,18 @@ $user_role = $_SESSION['user_role'] ?? 'investor';
 
 // --- Special case for 'home' when logged in ---
 if ($page_key === 'home') {
-    if ($user_role === 'founder') {
+    // Determine redirect based strictly on paying membership status
+    $stmt = $pdo->prepare("SELECT has_membership FROM user WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $u = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($u && $u['has_membership'] == 1) {
+        $_SESSION['user_role'] = 'founder';
         header('Location: /founder/dashboard');
         exit;
     } else {
-        header('Location: /investor/portfolio');
+        $_SESSION['user_role'] = 'investor';
+        header('Location: /investor/projects');
         exit;
     }
 }

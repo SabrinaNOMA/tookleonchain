@@ -353,7 +353,7 @@
         try { j = JSON.parse(txt); } catch {}
 
         if (j && j.success) { 
-          location.href = '<?= get_url('settings') ?>'; 
+          location.href = '/'; 
           return; 
         }
 
@@ -395,7 +395,7 @@
             try { j = JSON.parse(t); } catch {}
 
             if (j && j.success) { 
-              location.href = '<?= get_url('settings') ?>'; 
+              location.href = '/'; 
               return; 
             }
             showMsg((j && j.error) ? j.error : 'Google Sign-In failed. Please try again.');
