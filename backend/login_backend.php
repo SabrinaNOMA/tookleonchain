@@ -47,7 +47,7 @@ use PHPMailer\PHPMailer\Exception;
 // Brevo SMTP Configuration (Enforced)
 $email_expediteur   = 'noreply@tookle.app'; 
 $smtp_username      = 'b3c1d2001@smtp-brevo.com';
-$mot_de_passe_email = base64_decode('eHNtdHBzaWItNzk1OTJhMGRlNjliNzEwYmIzMGU0NzYxYzRjMWQ4MzJmMjRiOTcyOGI0ZWNiNmNiYjhjOGIyOGFiZWM0ZmViLTBZZjlIZ2lCT1JwY0dSNHU=');
+$mot_de_passe_email = base64_decode('eHNtdHBzaWItNzk1OTJhMGRlNjliNzEwYmIzMGU0NzYxYzRjMWQ4MzJmMjRiZjk3MjhiNGVjYjZjYmI4YzhiMjhhYmVjNGZlYi0wWWY5SGdpQk9ScGNHUjR1');
 $serveur_smtp       = 'smtp-relay.brevo.com';
 $port_smtp          = 587;
 
