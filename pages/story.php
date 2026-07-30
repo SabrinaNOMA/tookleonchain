@@ -242,7 +242,16 @@ if (empty($project_id)) {
                     
                     <div class="flex justify-between items-center pt-6 mt-8">
                          <a href="<?= get_url('fundraising') ?>" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50">Back</a>
-                        <button type="submit" class="px-8 py-2.5 bg-gradient-to-r from-purple-700 to-cyan-500 text-white rounded-lg font-medium">Save and Continue</button>
+                        <button type="submit" id="submit-btn" class="px-8 py-2.5 bg-gradient-to-r from-purple-700 to-cyan-500 text-white rounded-lg font-medium flex items-center justify-center gap-2">
+                            <span>Save and Continue</span>
+                        </button>
+                    </div>
+
+                    <!-- Full Screen Loading Overlay -->
+                    <div id="loading-overlay" class="fixed inset-0 bg-white/90 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center">
+                        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600 mb-6 shadow-lg"></div>
+                        <h3 class="text-2xl font-bold text-gray-900 tracking-tight">Building Your Room...</h3>
+                        <p class="text-gray-500 mt-2 font-medium">Uploading media and saving project details. This may take a moment.</p>
                     </div>
                 </form>
             <?php endif; ?>
@@ -327,6 +336,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 300);
             }
         }, true);
+        
+        storyForm.addEventListener('submit', () => {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+            }
+        });
     }
 
     // --- Vault Type Toggle ---
