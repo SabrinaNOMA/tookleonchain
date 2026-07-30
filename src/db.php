@@ -23,6 +23,16 @@ $options = [
 // --- Create PDO Instance ---
 try {
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+    
+    // Auto-migrate missing column for smooth deployments
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM vesting_token LIKE 'percent_supply_vesting'");
+        if ($stmt->rowCount() == 0) {
+            $pdo->exec("ALTER TABLE vesting_token ADD COLUMN percent_supply_vesting DECIMAL(12,6) NULL AFTER vesting_block_name");
+        }
+    } catch (\PDOException $e) {
+        // Ignore errors if table doesn't exist yet
+    }
 } catch (\PDOException $e) {
     // In a real application, you would log this error and show a user-friendly message.
     throw new \PDOException($e->getMessage(), (int)$e->getCode());
