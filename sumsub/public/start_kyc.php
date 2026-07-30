@@ -259,9 +259,12 @@ if ($mode === 'iframe') {
     </style>
   </head>
   <body>
-    <header>
-      <strong>Sumsub KYC</strong>
-      <span style="opacity:.7; margin-left:12px;">user: <?= hp($externalUserId) ?></span>
+    <header style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <strong>Sumsub KYC</strong>
+        <span style="opacity:.7; margin-left:12px;">user: <?= hp($externalUserId) ?></span>
+      </div>
+      <a href="/purchase" style="background:#4f46e5; color:#fff; padding:8px 16px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:14px; box-shadow:0 2px 4px rgba(0,0,0,0.2);">← Return to Purchase</a>
     </header>
     <main>
       <?php if (isset($_GET['debug'])): ?>
