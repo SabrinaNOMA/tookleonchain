@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // --- CONFIGURATION ---
-$CDP_PROJECT_ID = '6f36302b-a2c4-44a6-9128-88886b78a809';
+$CDP_PROJECT_ID = '587b27c2-7d46-474e-9df6-34e7477095ab';
 $CDP_ENV = 'prod';
 
 // Ensure CSRF Token exists
@@ -933,7 +933,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let displayMessage = message;
         if (String(displayMessage).toLowerCase().includes('network error') || String(displayMessage).toLowerCase().includes('failed to fetch')) {
-            displayMessage = "Network Error (CORS): Coinbase CDP API blocked the request from http://localhost:8000. Please add http://localhost:8000 to the Allowed Domains list in your Coinbase Developer Portal settings.";
+            displayMessage = "Network Error (CORS): Coinbase CDP API blocked the request from " + window.location.origin + ". Please add " + window.location.origin + " to the Allowed Domains list in your Coinbase Developer Portal settings.";
         }
 
         document.getElementById('branded-modal-message').textContent = displayMessage;
