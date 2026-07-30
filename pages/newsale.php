@@ -176,8 +176,8 @@ $current_project_id = $project_uuid;
                  <h2 class="text-2xl font-bold text-gray-800">Create a New Sale</h2>
                  <p class="text-gray-600 mt-1">Fill out the details below to configure your new private sale.</p>
             </div>
-            <button type="button" id="prefill-button" class="btn-secondary mt-3 sm:mt-0 flex items-center justify-center px-3 py-1.5 rounded-md font-medium text-xs shadow-sm hover:shadow">
-                <i data-lucide="refresh-cw" class="w-3 h-3 mr-1.5"></i> Load Last Sale Data
+            <button type="button" id="prefill-button" class="mt-3 sm:mt-0 flex items-center justify-center px-4 py-2 rounded-lg font-bold text-sm bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-300 transition-colors shadow-sm">
+                <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> Load Last Sale Data
             </button>
         </div>
 
