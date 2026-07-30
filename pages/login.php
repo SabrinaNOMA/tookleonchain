@@ -23,8 +23,8 @@
   <!-- Logo Config -->
   <script src="/config_logo.js"></script>
 
-  <!-- reCAPTCHA -->
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <!-- reCAPTCHA (Forced English) -->
+  <script src="https://www.google.com/recaptcha/api.js?hl=en" async defer></script>
 
   <style>
     :root {
