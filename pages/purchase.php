@@ -56,9 +56,14 @@ try {
                     if ($token && $secret) {
                         $client = new SumsubClient($token, $secret);
                         $ext_id = $_SESSION['sumsub_external_user'] ?? ("user_" . $user_id_for_query);
-                        $app_data = $client->getApplicantByExternalUserId($ext_id);
-                        if (!empty($app_data['id'])) {
-                            $st_data = $client->getApplicantStatus($app_data['id']);
+                        
+                        // Fetch applicantId from local DB first to avoid 403 on ByExternalUserId endpoint
+                        $stmt_app = $pdo->prepare("SELECT applicant_id FROM kyc_applicants WHERE external_user_id = ? ORDER BY id DESC LIMIT 1");
+                        $stmt_app->execute([$ext_id]);
+                        $applicantId = $stmt_app->fetchColumn();
+                        
+                        if ($applicantId) {
+                            $st_data = $client->getApplicantStatus($applicantId);
                             $rev_answer = $st_data['reviewResult']['reviewAnswer'] ?? '';
                             $rev_status = $st_data['reviewStatus'] ?? '';
                             if ($rev_answer === 'GREEN' || $rev_status === 'completed') {
