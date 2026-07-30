@@ -708,15 +708,19 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('project-name-value').textContent = `Why ${projectName}?`;
         document.getElementById('sticky-project-name').textContent = projectName || 'Project';
 
-        const mediaParent = document.getElementById('media-placeholder').parentElement;
-        mediaParent.innerHTML = '';
-        if (projectDataGlobal.video_file_path) {
-            mediaParent.innerHTML = `<video controls autoplay muted loop playsinline class="w-full h-full object-cover"><source src="/uploads/${projectDataGlobal.video_file_path}"></video>`;
-        } else if (Array.isArray(projectDataGlobal.general_images_json) && projectDataGlobal.general_images_json[0]) {
-            mediaParent.innerHTML = `<img src="/uploads/${projectDataGlobal.general_images_json[0]}" class="w-full h-full object-cover">`;
-        } else {
-            mediaParent.innerHTML = `<div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">No Media</div>`;
+        const mediaPlaceholder = document.getElementById('media-placeholder');
+        if (mediaPlaceholder) {
+            const mediaParent = mediaPlaceholder.parentElement;
+            mediaParent.innerHTML = '';
+            if (projectDataGlobal.video_file_path) {
+                mediaParent.innerHTML = `<video controls autoplay muted loop playsinline class="w-full h-full object-cover"><source src="/uploads/${projectDataGlobal.video_file_path}"></video>`;
+            } else if (Array.isArray(projectDataGlobal.general_images_json) && projectDataGlobal.general_images_json[0]) {
+                mediaParent.innerHTML = `<img src="/uploads/${projectDataGlobal.general_images_json[0]}" class="w-full h-full object-cover">`;
+            } else {
+                mediaParent.innerHTML = `<div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">No Media</div>`;
+            }
         }
+
         
         const metricsGrid = document.getElementById('key-metrics-grid');
         const validMetrics = Array.isArray(communityStats)
