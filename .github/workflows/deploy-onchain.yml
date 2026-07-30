@@ -1,4 +1,4 @@
-name: Deploy to OVH Preprod
+name: Deploy to OVH Onchain
 
 on:
   push:
@@ -22,4 +22,4 @@ jobs:
         password: ${{ secrets.OVH_FTP_PASSWORD }}
         port: 22
         source: "./*"
-        target: "/home/wxejrxt/preprod"
+        target: "/home/wxejrxt/onchain"

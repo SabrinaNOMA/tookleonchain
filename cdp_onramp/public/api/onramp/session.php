@@ -41,7 +41,7 @@ $dotenv->safeLoad();
 // =====================================================
 $allowedOrigins = [
     'https://dev.tookle.app',
-    'https://preprod.tookle.app',
+    'https://onchain.tookle.app',
     'https://tookle.app',
 ];
 

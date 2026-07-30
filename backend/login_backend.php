@@ -147,7 +147,7 @@ try {
         $stmt->execute([$first, $last, $email, $hashed, $invite, $activation_token, $is_dev_env ? 1 : 0]);
 		
 	 // Mail dÃ¢â‚¬â„¢activation non requis si tu veux activer direct, sinon dÃƒÂ©commente :
-     $activation_link = "https://preprod.tookle.app/pages/activate.php?token=" . $activation_token ."&email=".$email;
+     $activation_link = "https://onchain.tookle.app/pages/activate.php?token=" . $activation_token ."&email=".$email;
 	 
 	 
 	    // --- Configuration du serveur SMTP (Ne pas toucher) ---

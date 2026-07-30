@@ -65,7 +65,7 @@ try {
   $upd->execute([$token, $expiresAt, (int)$userId]);
 
   // 4) Construit le lien vers reset_password.php
-  $resetLink = "https://preprod.tookle.app/pages/reset_password.php?token=" . urlencode($token)
+  $resetLink = "https://onchain.tookle.app/pages/reset_password.php?token=" . urlencode($token)
             . "&email=" . urlencode($email);
 
   // 5) Envoi mail (headers importants sur OVH)

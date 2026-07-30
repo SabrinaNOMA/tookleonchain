@@ -381,7 +381,7 @@
         return;
       }
       google.accounts.id.initialize({
-        client_id: '1027942193546-34todkfaofhbhh2iigj4dhhl1ufs26oc.apps.googleusercontent.com',
+        client_id: '233005776964-401k9f4qpqc2b76ejnsk60t083b1dpuh.apps.googleusercontent.com',
         callback: async (resp) => {
           try {
             const r = await fetch('/backend/login_backend.php', {
