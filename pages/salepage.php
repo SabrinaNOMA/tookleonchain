@@ -145,12 +145,31 @@ try {
 
                 // C. Build Vesting Schedules
                 if (!empty($snapshot['vesting']) && is_array($snapshot['vesting'])) {
+                    // Pre-map supplies from rounds and allocations for fallback
+                    $supplyMap = [];
+                    if (!empty($snapshot['rounds'])) {
+                        foreach ($snapshot['rounds'] as $r) {
+                            $supplyMap['round-' . $r['id']] = floatval($r['percent_round_supply'] ?? 0);
+                        }
+                    }
+                    if (!empty($snapshot['allocations'])) {
+                        foreach ($snapshot['allocations'] as $a) {
+                            $supplyMap['tranche-' . $a['id']] = floatval($a['allocation_percent'] ?? 0);
+                        }
+                    }
+
                     foreach ($snapshot['vesting'] as $item) {
                         $name = $item['vesting_block_name'] ?? $item['round_name'] ?? $item['tranche_name'] ?? 'Unknown';
                         
+                        $supply = floatval($item['percent_supply_vesting'] ?? 0);
+                        if ($supply <= 0 && isset($item['source_type'], $item['source_id'])) {
+                            $key = $item['source_type'] . '-' . $item['source_id'];
+                            $supply = $supplyMap[$key] ?? 0;
+                        }
+                        
                         $vestingSchedules[] = [
                             'category' => $name,
-                            'percentTotalSupply' => floatval($item['percent_supply_vesting'] ?? $item['percent_round_supply'] ?? 0),
+                            'percentTotalSupply' => $supply,
                             'unlockAtTGE' => floatval($item['percent_unlock_at_tge'] ?? $item['unlock_tge'] ?? 0),
                             'cliff' => intval($item['cliff_months'] ?? 0),
                             'vestingPeriod' => intval($item['vesting_months'] ?? 0)
