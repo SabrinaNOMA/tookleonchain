@@ -49,7 +49,7 @@ $email_expediteur   = 'noreply@tookle.app';
 $smtp_username      = 'b3c1d2001@smtp-brevo.com';
 $mot_de_passe_email = base64_decode('eHNtdHBzaWItNzk1OTJhMGRlNjliNzEwYmIzMGU0NzYxYzRjMWQ4MzJmMjRiZjk3MjhiNGVjYjZjYmI4YzhiMjhhYmVjNGZlYi0wWWY5SGdpQk9ScGNHUjR1');
 $serveur_smtp       = 'smtp-relay.brevo.com';
-$port_smtp          = 587;
+$port_smtp          = 465;
 
 // Mettez l'email oÃƒÂ¹ vous voulez RECEVOIR le test (ex: votre Gmail)
 //$email_destinataire = 'philippe@ifabe.fr';
@@ -162,8 +162,8 @@ try {
     $mail->SMTPAuth   = true;
     $mail->Username   = $smtp_username;
     $mail->Password   = $mot_de_passe_email;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // Port 587 TLS/STARTTLS
-    $mail->Port       = $port_smtp;
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // Port 465 SSL (OVH compatible)
+    $mail->Port       = 465;
     $mail->CharSet    = 'UTF-8';
 
     // --- Configuration de l'email ---
