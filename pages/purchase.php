@@ -55,8 +55,8 @@ try {
                     $secret = $sec['SUMSUB_APP_SECRET'] ?? null;
                     if ($token && $secret) {
                         $client = new SumsubClient($token, $secret);
-                        $ext_id = $_SESSION['sumsub_external_user'] ?? ("guest_user");
-                        $app_data = $client->getApplicantDataByExternalUserId($ext_id);
+                        $ext_id = $_SESSION['sumsub_external_user'] ?? ("user_" . $user_id_for_query);
+                        $app_data = $client->getApplicantByExternalUserId($ext_id);
                         if (!empty($app_data['id'])) {
                             $st_data = $client->getApplicantStatus($app_data['id']);
                             $rev_answer = $st_data['reviewResult']['reviewAnswer'] ?? '';
