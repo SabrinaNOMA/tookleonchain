@@ -47,19 +47,30 @@ try {
             // Live Sumsub API Status Check
             $sumsub_secrets_file = __DIR__ . '/../sumsub/config/secrets.php';
             $sumsub_client_file = __DIR__ . '/../sumsub/src/SumsubClient.php';
+            $autoload_file = __DIR__ . '/../sumsub/vendor/autoload.php';
+            
             if (file_exists($sumsub_secrets_file) && file_exists($sumsub_client_file)) {
                 try {
+                    if (file_exists($autoload_file)) {
+                        require_once $autoload_file;
+                    }
                     $sec = require $sumsub_secrets_file;
                     require_once $sumsub_client_file;
                     $token = $sec['SUMSUB_APP_TOKEN'] ?? null;
                     $secret = $sec['SUMSUB_APP_SECRET'] ?? null;
                     if ($token && $secret) {
                         $client = new SumsubClient($token, $secret);
-                        $ext_id = $_SESSION['sumsub_external_user'] ?? ("user_" . $user_id_for_query);
                         
-                        // Fetch applicantId from local DB first to avoid 403 on ByExternalUserId endpoint
-                        $stmt_app = $pdo->prepare("SELECT applicant_id FROM kyc_applicants WHERE external_user_id = ? ORDER BY id DESC LIMIT 1");
-                        $stmt_app->execute([$ext_id]);
+                        $possible_ext_ids = [
+                            $_SESSION['sumsub_external_user'] ?? null,
+                            "user_" . $user_id_for_query,
+                            "sess_" . $user_id_for_query
+                        ];
+                        $possible_ext_ids = array_filter(array_unique($possible_ext_ids));
+                        $in_clause = implode(',', array_fill(0, count($possible_ext_ids), '?'));
+
+                        $stmt_app = $pdo->prepare("SELECT applicant_id FROM kyc_applicants WHERE external_user_id IN ($in_clause) LIMIT 1");
+                        $stmt_app->execute(array_values($possible_ext_ids));
                         $applicantId = $stmt_app->fetchColumn();
                         
                         if ($applicantId) {
@@ -67,15 +78,15 @@ try {
                             $rev_answer = $st_data['reviewResult']['reviewAnswer'] ?? '';
                             $rev_status = $st_data['reviewStatus'] ?? '';
                             if ($rev_answer === 'GREEN' || $rev_status === 'completed') {
-                                $stmt_up = $pdo->prepare("UPDATE user SET kyc_status = 'COMPLETED' WHERE id = ?");
+                                $stmt_up = $pdo->prepare("UPDATE user SET kyc_status = 'Verified' WHERE id = ?");
                                 $stmt_up->execute([$user_id_for_query]);
-                                $kyc_status = 'completed';
+                                $kyc_status = 'verified';
                                 $kyc_valid = true;
                             }
                         }
                     }
                 } catch (Throwable $e) {
-                    // Ignore API errors gracefully
+                    // Ignore API errors gracefully in prod
                 }
             }
         }

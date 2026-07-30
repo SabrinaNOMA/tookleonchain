@@ -45,7 +45,7 @@ $customRedirect = $input['redirect_url'] ?? null;
 
 // Handle Project Switching
 if ($action === 'switch_project' && !empty($input['project_id'])) {
-    $projectId = (int)$input['project_id'];
+    $projectId = trim($input['project_id']);
     $_SESSION['active_project_id'] = $projectId;
     $_SESSION['user_role'] = 'founder';
     
@@ -56,6 +56,9 @@ if ($action === 'switch_project' && !empty($input['project_id'])) {
     if ($pName) {
         $_SESSION['active_project_name'] = $pName;
     }
+    
+    session_write_close();
+    
     echo json_encode(['success' => true, 'redirect' => '/dashboard']);
     exit;
 }

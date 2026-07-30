@@ -43,7 +43,7 @@ $kycRawStatus = null;
         font-family: 'Montserrat', sans-serif !important;
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: flex-start; /* Moved to left to be closer to navigation */
         padding: 2rem 1.5rem;
         width: 100%;
         box-sizing: border-box;
@@ -62,9 +62,9 @@ $kycRawStatus = null;
         margin-bottom: 2rem;
     }
 
-    /* CENTERED HEADER & TAGLINE */
+    /* LEFT-ALIGNED HEADER & TAGLINE */
     .settings-container h1 {
-        text-align: center !important;
+        text-align: left !important;
         font-size: 1.65rem;
         font-weight: 700;
         color: #1f2937;
@@ -74,7 +74,7 @@ $kycRawStatus = null;
     }
 
     .settings-container .tagline {
-        text-align: center !important;
+        text-align: left !important;
         font-size: 0.9rem;
         color: #6b7280;
         margin-top: 0;
@@ -151,7 +151,7 @@ $kycRawStatus = null;
 
     .action-buttons-container {
         display: flex;
-        justify-content: center !important;
+        justify-content: flex-start !important;
         gap: 1rem;
         margin-bottom: 2rem;
         flex-wrap: wrap;
@@ -255,7 +255,7 @@ $kycRawStatus = null;
             <a href="#" id="invest-in-projects-btn" class="btn-top-action">Discover Projects</a>
 
             <?php if (empty($kycApplicantId)): ?>
-                <a href="#" onclick="openKycModal(event)" id="check-kyc-btn" class="btn-top-action">Check KYC</a>
+                <a href="#" onclick="openKycModal(event)" id="check-kyc-btn" class="btn-top-action">Verify my Identity</a>
             <?php else: ?>
                 <span id="kyc-badge-span" class="<?= htmlspecialchars($kycSummary['class']) ?>">
                     <?= htmlspecialchars($kycSummary['label']) ?>

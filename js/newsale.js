@@ -1054,16 +1054,36 @@ document.addEventListener('DOMContentLoaded', () => {
 // Dropzone Helpers
 function renderDropzoneFile(dropzone, file = null, filePath = null) {
     const input = dropzone.querySelector('input[type="file"]');
-    dropzone.innerHTML = '';
-    dropzone.appendChild(input);
+    
+    // Remove all children EXCEPT the input to preserve the files array
+    Array.from(dropzone.childNodes).forEach(child => {
+        if (child !== input) dropzone.removeChild(child);
+    });
+
     let fileName = file ? file.name : (filePath ? filePath.split('/').pop() : null);
+    
     if (!fileName) {
-            dropzone.classList.remove('has-file', 'bg-purple-50', 'border-purple-200');
-            dropzone.innerHTML += `<div class="text-sm font-medium text-gray-600">Upload</div><div class="existing-file-name text-xs text-gray-400 mt-1"></div>`;
-            return;
+        dropzone.classList.remove('has-file', 'bg-purple-50', 'border-purple-200');
+        
+        const uploadTxt = document.createElement('div');
+        uploadTxt.className = 'text-sm font-medium text-gray-600';
+        uploadTxt.textContent = 'Upload';
+        
+        const existingTxt = document.createElement('div');
+        existingTxt.className = 'existing-file-name text-xs text-gray-400 mt-1';
+        
+        dropzone.appendChild(uploadTxt);
+        dropzone.appendChild(existingTxt);
+        return;
     }
+    
     dropzone.classList.add('has-file', 'bg-purple-50', 'border-purple-200');
-    dropzone.innerHTML += `<div class="flex flex-col items-center justify-center pointer-events-none p-4"><i data-lucide="file" class="w-10 h-10 text-purple-500 mb-3"></i><span class="text-xs text-gray-700 font-medium truncate block">${fileName}</span></div>`;
+    
+    const container = document.createElement('div');
+    container.className = 'flex flex-col items-center justify-center pointer-events-none p-4';
+    container.innerHTML = `<i data-lucide="file" class="w-10 h-10 text-purple-500 mb-3"></i><span class="text-xs text-gray-700 font-medium truncate block">${fileName}</span>`;
+    
+    dropzone.appendChild(container);
     if(typeof lucide !== 'undefined') lucide.createIcons({ nodes: [dropzone] });
 }
 function setupDropzone(el) {

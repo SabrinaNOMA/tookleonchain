@@ -70,7 +70,8 @@ function handleFileUpload($fileInfo, $uploadMainDir, $dbStorageBasePath, $upload
         $destinationAbsolute = $targetDirAbsolute . $newFileName;
 
         if (move_uploaded_file($fileTmpName, $destinationAbsolute)) {
-            return ['path' => rtrim($dbStorageBasePath, '/') . '/' . rtrim($uploadSubDir, '/') . '/' . $newFileName];
+            $prefix = !empty($dbStorageBasePath) ? rtrim($dbStorageBasePath, '/') . '/' : '';
+            return ['path' => $prefix . trim($uploadSubDir, '/') . '/' . $newFileName];
         } else {
             return ['error' => "Error uploading $fileNamePrefix (file: $fileName): Failed to move uploaded file."];
         }
@@ -590,7 +591,7 @@ if ($requestMethod == "GET") {
 
                 // File Uploads
                 $upload_dir = __DIR__ . '/../uploads/';
-                $db_base_path = '/uploads';
+                $db_base_path = '';
                 $projectIdSafe = preg_replace('/[^a-zA-Z0-9_-]/', '_', $projectUuid);
 
                 $videoResult = handleFileUpload($_FILES['video_file'] ?? [], $upload_dir, $db_base_path, $projectIdSafe . '/sale_media', 'video', ['video/mp4', 'video/quicktime', 'video/webm', 'video/ogg']);

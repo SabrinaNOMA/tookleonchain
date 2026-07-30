@@ -244,48 +244,83 @@ $firstType = $params[0]->hasType() ? (string)$params[0]->getType() : '';
 if ($mode === 'iframe') {
   ?>
   <!doctype html>
-  <html lang="fr">
+  <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>KYC — Sumsub</title>
+    <title>Verification — TOOKLE</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background:#0b1020; color:#fff;}
-      header { padding: 16px 20px; background:#121a33; }
-      main { padding: 16px 20px; }
-      iframe { width: 100%; height: 86vh; border: 0; background:#fff; border-radius: 12px; }
-      pre { white-space: pre-wrap; background:#050814; padding:12px; border-radius: 12px; overflow:auto; }
-      a { color:#9fb4ff; }
+      body { 
+        font-family: 'Montserrat', sans-serif; 
+        margin: 0; 
+        background: rgba(17, 24, 39, 0.75); 
+        backdrop-filter: blur(4px);
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        height: 100vh; 
+        overflow: hidden; 
+      }
+      .kyc-window { 
+        width: 100%; 
+        max-width: 600px; 
+        height: 85vh; 
+        background: #ffffff; 
+        border-radius: 0.75rem; 
+        border: 1px solid #e5e7eb; 
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); 
+        position: relative; 
+        overflow: hidden; 
+      }
+      .kyc-window iframe { 
+        width: 100%; 
+        height: 100%; 
+        border: none; 
+      }
+      .kyc-close-btn { 
+        position: absolute; 
+        top: 12px; 
+        right: 12px; 
+        background: rgba(0,0,0,0.08); 
+        color: #374151; 
+        width: 32px; 
+        height: 32px; 
+        border-radius: 50%; 
+        border: none; 
+        cursor: pointer; 
+        font-size: 18px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        z-index: 1000;
+        text-decoration: none;
+      }
+      .kyc-close-btn:hover { background: rgba(0,0,0,0.15); }
+      pre { white-space: pre-wrap; background:#050814; color:#fff; padding:12px; border-radius: 12px; overflow:auto; position: absolute; z-index: 2000; top: 0; }
     </style>
   </head>
   <body>
-    <header style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <strong>Sumsub KYC</strong>
-        <span style="opacity:.7; margin-left:12px;">user: <?= hp($externalUserId) ?></span>
-      </div>
-      <a href="/purchase" style="background:#4f46e5; color:#fff; padding:8px 16px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:14px; box-shadow:0 2px 4px rgba(0,0,0,0.2);">← Return to Purchase</a>
-    </header>
-    <main>
-      <?php if (isset($_GET['debug'])): ?>
-        <pre><?= hp($__debug) ?></pre>
-      <?php endif; ?>
+    <?php if (isset($_GET['debug'])): ?>
+      <pre><?= hp($__debug) ?></pre>
+    <?php endif; ?>
+    
+    <div class="kyc-window">
+      <a href="/purchase" target="_parent" class="kyc-close-btn" title="Close">&times;</a>
       <iframe src="<?= hp($websdkUrl) ?>" allow="camera; microphone; fullscreen"></iframe>
-      
-      <script>
-      window.addEventListener('message', function(e) {
-          try {
-              var data = JSON.parse(e.data);
-              // Listen for completion or status change events
-              if (data && (data.type === 'idCheck.onApplicantSubmitted' || data.type === 'idCheck.onApplicantStatusChanged')) {
-                  window.location.href = '/purchase';
-              }
-          } catch (err) {
-              // Ignore invalid JSON or unrelated messages
-          }
-      });
-      </script>
-    </main>
+    </div>
+    
+    <script>
+    window.addEventListener('message', function(e) {
+        try {
+            var data = JSON.parse(e.data);
+            if (data && (data.type === 'idCheck.onApplicantSubmitted' || data.type === 'idCheck.onApplicantStatusChanged')) {
+                window.parent.location.href = '/purchase';
+            }
+        } catch (err) {
+        }
+    });
+    </script>
   </body>
   </html>
   <?php
