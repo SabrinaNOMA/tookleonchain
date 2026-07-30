@@ -39,8 +39,6 @@ Thumbs.db
 .idea/
 .user.ini
 
-# Uploaded media (videos are too large for Git)
-uploads/**/*.mp4
-uploads/**/*.webm
-uploads/**/*.avi
-uploads/**/*.mov
+# Uploaded media (user content should not be tracked by Git)
+uploads/*
+!uploads/.gitkeep
