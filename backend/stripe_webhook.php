@@ -57,16 +57,24 @@ if (json_last_error() !== JSON_ERROR_NONE) {
 if ($event['type'] === 'checkout.session.completed') {
     $session = $event['data']['object'];
     
-    // On récupère l'ID utilisateur passé dans le lien
-    $user_id = $session['client_reference_id'] ?? null;
+    // VÉRIFICATION DE SÉCURITÉ : Est-ce bien le paiement pour l'abonnement Tookle ?
+    // ID du Payment Link attendu (depuis l'URL Stripe du dashboard)
+    $expected_payment_link = 'plink_1Se1DkD6gJIEGoRpBflGKvTq';
+    
+    if (isset($session['payment_link']) && $session['payment_link'] === $expected_payment_link) {
+        // On récupère l'ID utilisateur passé dans le lien
+        $user_id = $session['client_reference_id'] ?? null;
 
-    if ($user_id) {
-        // Mise à jour de l'utilisateur pour lui donner les droits Founder
-        $stmt = $pdo->prepare("UPDATE user SET has_membership = 1 WHERE id = ?");
-        $stmt->execute([(int)$user_id]);
-        error_log("Webhook Stripe: Membership activé pour user_id " . $user_id);
+        if ($user_id) {
+            // Mise à jour de l'utilisateur pour lui donner les droits Founder
+            $stmt = $pdo->prepare("UPDATE user SET has_membership = 1 WHERE id = ?");
+            $stmt->execute([(int)$user_id]);
+            error_log("Webhook Stripe: Membership activé pour user_id " . $user_id);
+        } else {
+            error_log("Webhook Stripe: Paiement réussi mais pas de client_reference_id trouvé.");
+        }
     } else {
-        error_log("Webhook Stripe: Paiement réussi mais pas de client_reference_id trouvé.");
+        error_log("Webhook Stripe: Paiement ignoré (Payment Link différent: " . ($session['payment_link'] ?? 'aucun') . ").");
     }
 }
 
