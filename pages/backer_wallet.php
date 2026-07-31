@@ -565,11 +565,29 @@ try {
                 <span class="text-[10px] font-bold uppercase tracking-wider text-green-600 bg-green-50 border border-green-100 px-2 py-1 rounded">Connected</span>
             </div>
 
-            <div class="coinbase-address-display mb-6">
-                <span id="saved-wallet-address" class="font-mono text-xs text-gray-600 break-all"><?php echo htmlspecialchars($existingCoinbaseWallet ?? ''); ?></span>
-                <button type="button" class="text-indigo-600 hover:text-indigo-800" onclick="copySavedAddress()">
-                    <i data-lucide="copy" class="w-4 h-4"></i>
-                </button>
+            <div class="coinbase-address-display mb-6 flex items-center justify-between gap-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <span id="saved-wallet-address" class="font-mono text-xs text-gray-600 break-all" data-full="<?php echo htmlspecialchars($existingCoinbaseWallet ?? ''); ?>">
+                    <?php echo empty($existingCoinbaseWallet) ? '' : '••••••••••••••••••••••••••••••••••••••••••'; ?>
+                </span>
+                <div class="flex items-center gap-3">
+                    <button type="button" class="text-gray-400 hover:text-gray-600" onclick="
+                        const el = document.getElementById('saved-wallet-address');
+                        const icon = this.querySelector('i');
+                        if (el.textContent.includes('•')) {
+                            el.textContent = el.getAttribute('data-full');
+                            icon.setAttribute('data-lucide', 'eye-off');
+                        } else {
+                            el.textContent = '••••••••••••••••••••••••••••••••••••••••••';
+                            icon.setAttribute('data-lucide', 'eye');
+                        }
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    ">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                    <button type="button" class="text-indigo-600 hover:text-indigo-800" onclick="copySavedAddress()">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="h-px bg-gray-100 w-full mb-6"></div>
@@ -730,7 +748,10 @@ try {
 
 <!-- UNIVERSAL BRANDED MODAL (Used for Alerts, Success AND OTP Input) -->
 <div id="branded-modal" class="modal-overlay">
-    <div class="branded-modal-content relative">
+    <div class="branded-modal-content relative max-w-sm rounded-2xl shadow-xl p-8 text-center border border-gray-100">
+        <button type="button" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600" onclick="document.getElementById('branded-modal').classList.remove('show')">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
         <div class="flex items-center justify-center gap-2 mb-4">
              <div class="w-7 h-7 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-purple-600/30">T</div>
              <span class="text-xs font-bold tracking-widest uppercase text-gray-900">TOOKLE</span>
@@ -786,7 +807,7 @@ try {
             </button>
         </div>
 
-        <div class="mt-6 pt-4 border-t border-gray-100 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+        <div class="mt-6 pt-4 border-t border-gray-100 flex items-center justify-center gap-1.5 text-xs text-gray-400" id="branded-modal-coinbase-security">
             <i data-lucide="lock" class="w-3.5 h-3.5 text-purple-600"></i>
             <span>Secured by Coinbase MPC Threshold Cryptography</span>
         </div>
@@ -943,8 +964,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const step2Area = document.getElementById('step-2-area');
     
     // Show Branded Modal Logic
-    function showModal(message, isError = null) { // CHANGED: Default is now null (auto-detect)
-        // Handle Objects/JSON (Fixes your raw JSON display issue)
+    function showModal(message, isError = null, isCoinbase = true) {
         if (typeof message === 'object' && message !== null) {
             if (message.message) message = message.message; // Extract readable message
             else message = JSON.stringify(message);
@@ -988,6 +1008,13 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault(); 
             modal.classList.remove('show'); 
         };
+        const xBtn = document.getElementById('branded-modal-x-close');
+        if (xBtn) xBtn.onclick = () => modal.classList.remove('show');
+
+        const coinbaseSec = document.getElementById('branded-modal-coinbase-security');
+        if (coinbaseSec) {
+            coinbaseSec.style.display = isCoinbase ? 'flex' : 'none';
+        }
         
         if (isError) {
              // ERROR STATE: Red
@@ -1248,7 +1275,31 @@ document.addEventListener('DOMContentLoaded', function() {
         walletItem.className = 'wallet-item grid md:grid-cols-[1fr,1fr,1fr,auto] gap-4 items-center py-4 border-b border-gray-100';
         
         const labelInput = document.createElement('input'); labelInput.type = 'text'; labelInput.name = 'walletName[]'; labelInput.className = 'form-input border rounded p-2 w-full'; labelInput.value = wallet.label || ''; 
-        const addressInput = document.createElement('input'); addressInput.type = 'text'; addressInput.name = 'walletAddress[]'; addressInput.className = 'form-input border rounded p-2 w-full'; addressInput.value = wallet.wallet_address || '';
+        
+        const addressContainer = document.createElement('div');
+        addressContainer.className = 'relative w-full';
+        const addressInput = document.createElement('input'); 
+        addressInput.type = 'password'; 
+        addressInput.name = 'walletAddress[]'; 
+        addressInput.className = 'form-input border rounded p-2 w-full pr-10'; 
+        addressInput.value = wallet.wallet_address || '';
+        
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'absolute right-2 top-2.5 text-gray-400 hover:text-gray-600';
+        toggleBtn.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i>';
+        toggleBtn.onclick = () => {
+            if (addressInput.type === 'password') {
+                addressInput.type = 'text';
+                toggleBtn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i>';
+            } else {
+                addressInput.type = 'password';
+                toggleBtn.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i>';
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+        addressContainer.appendChild(addressInput);
+        addressContainer.appendChild(toggleBtn);
         
         if (!isNew) { labelInput.readOnly = true; addressInput.readOnly = true; labelInput.className += ' bg-white'; addressInput.className += ' bg-white'; }
 
@@ -1264,7 +1315,7 @@ document.addEventListener('DOMContentLoaded', function() {
         removeButton.innerHTML = '<i data-lucide="trash-2" class="w-5 h-5"></i>';
         removeButton.addEventListener('click', () => { walletItem.remove(); saveChangesButton.classList.remove('hidden'); });
 
-        walletItem.append(labelInput, addressInput, networkElement, removeButton);
+        walletItem.append(labelInput, addressContainer, networkElement, removeButton);
         walletList.appendChild(walletItem);
         lucide.createIcons();
     }
@@ -1280,7 +1331,7 @@ document.addEventListener('DOMContentLoaded', function() {
     walletForm.addEventListener('submit', (e) => {
         e.preventDefault();
         fetch('/backend/wallet_save.php', { method: 'POST', body: new FormData(walletForm) })
-        .then(r => r.json()).then(d => { showModal(d.success ? 'Saved!' : 'Error'); if(d.success) { saveChangesButton.classList.add('hidden'); fetchWallets(); } });
+        .then(r => r.json()).then(d => { showModal(d.success ? 'Saved!' : 'Error', !d.success, false); if(d.success) { saveChangesButton.classList.add('hidden'); fetchWallets(); } });
     });
 
     fetchWallets();
