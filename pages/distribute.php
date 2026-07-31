@@ -123,57 +123,91 @@ if (!$page_error) {
         </div>
     <?php else: ?>
         <header class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Distribution</h1>
-            <p class="mt-2 text-base text-gray-500">Manage on-chain actions for your project. Deploy new token contracts and distribute tokens to investors from this hub.</p>
+            <h1 class="text-3xl font-bold text-gray-900">Distribution Hub</h1>
+            <p class="mt-2 text-base text-gray-500">Seamlessly create your token and distribute it to the investors and advisors who backed your project.</p>
         </header>
 
+        <!-- Value Proposition / Benefits Banner -->
+        <div class="bg-slate-50 rounded-xl p-5 mb-8 border border-slate-200 shadow-sm">
+            <div class="flex items-start">
+                <div class="bg-white p-2 rounded-lg border border-slate-200 mr-4 flex-shrink-0 shadow-sm">
+                    <i data-lucide="shield-check" class="w-6 h-6 text-slate-700"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-900 mb-1">On-Chain Automation & Security</h3>
+                    <p class="text-slate-600 text-sm mb-3">
+                        Deploy audited smart contracts and distribute tokens directly to your investors. Everything is executed 100% on-chain through our non-custodial MPC infrastructure, ensuring maximum security and transparency without manual engineering overhead.
+                    </p>
+                    <div class="flex gap-4 mt-2">
+                        <div class="flex items-center text-xs text-slate-700 font-semibold bg-white px-3 py-1.5 rounded border border-slate-200">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 mr-1.5 text-slate-500"></i> Audited Contracts
+                        </div>
+                        <div class="flex items-center text-xs text-slate-700 font-semibold bg-white px-3 py-1.5 rounded border border-slate-200">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 mr-1.5 text-slate-500"></i> Non-Custodial
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <?php /*
         <?php if (!empty($unpaidSales)): 
             $saleId = $unpaidSales[0]['id'];
             $feeToken = $unpaidSales[0]['payment_token'] ?? '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
             $totalRaised = (float)($unpaidSales[0]['total_raised'] ?? 0);
             $feeAmount = $totalRaised * 0.035; // 3.5% fee
         ?>
-        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between mb-8 shadow-sm">
-            <div class="flex items-center gap-3">
-                <i data-lucide="info" class="w-5 h-5 text-amber-600"></i>
-                <p class="text-amber-800 text-sm font-medium">Outstanding protocol fee for <b><?php echo htmlspecialchars($unpaidSales[0]['sale_name']); ?></b>. Token distribution is locked until settled.</p>
-            </div>
-            <button id="pay-fee-btn" onclick="payProtocolFee(<?php echo $saleId; ?>, '<?php echo $feeToken; ?>', <?php echo $feeAmount; ?>)" class="btn bg-amber-500 hover:bg-amber-600 text-white text-sm py-1.5 px-4 rounded shadow-sm transition-colors">
-                Pay Fee ($<?php echo number_format($feeAmount, 2); ?>)
-            </button>
+        <div class="bg-white border border-slate-300 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between mb-8 shadow-sm">
+            ...
         </div>
         <?php endif; ?>
+        */ ?>
 
         <div id="app-container" class="relative">
             <div id="main-actions-view">
-                <div class="mb-10 content-panel">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-6">Onchain Actions</h3>
+                <div class="mb-10 content-panel bg-transparent p-0 border-none shadow-none">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div id="start-deploy-card" class="card-hover-effect flex flex-col items-center text-center cursor-pointer p-6 border rounded-lg bg-gray-50 hover:bg-white hover:shadow-md transition-all">
-                            <div class="p-3 rounded-lg mb-4 bg-purple-100 text-purple-700"><i data-lucide="plus-circle" class="w-10 h-10"></i></div>
-                            <h4 class="text-lg font-bold">Deploy Your Token</h4>
-                            <p class="text-gray-500 text-sm mt-2 flex-grow">Deploy your token contract to the blockchain based on your project settings.</p>
-                            <span class="mt-6 w-full text-center btn btn-primary py-2">Start Deploying</span>
+                        <div id="start-deploy-card" class="card-hover-effect flex flex-col items-start text-left cursor-pointer p-6 border border-slate-300 rounded bg-white hover:border-slate-500 hover:shadow-md transition-all group">
+                            <div class="mb-4 text-slate-800"><i data-lucide="plus-circle" class="w-6 h-6"></i></div>
+                            <h4 class="text-base font-bold text-slate-900 tracking-tight">Create Token</h4>
+                            <p class="text-slate-500 text-sm mt-1">Create your custom token onchain.</p>
+                            <div class="flex flex-wrap gap-2 mt-4 flex-grow content-start">
+                                <span class="bg-white border border-slate-200 text-slate-600 text-[10px] font-bold uppercase px-2 py-1 rounded-sm">100% Ownership</span>
+                                <span class="bg-white border border-slate-200 text-slate-600 text-[10px] font-bold uppercase px-2 py-1 rounded-sm">No Coding</span>
+                            </div>
+                            <span class="mt-6 w-full text-center btn bg-slate-900 text-white hover:bg-slate-800 py-2 rounded-sm font-semibold shadow-sm text-sm">Start Creating</span>
                         </div>
-                        <div id="distribute-card" class="card-hover-effect flex flex-col items-center text-center cursor-pointer p-6 border rounded-lg bg-gray-50 hover:bg-white hover:shadow-md transition-all">
-                            <div class="p-3 rounded-lg mb-4 bg-cyan-100 text-cyan-600"><i data-lucide="send" class="w-10 h-10"></i></div>
-                            <h4 id="distribute-card-title" class="text-lg font-bold">Distribute Tokens</h4>
-                            <p id="distribute-card-text" class="text-gray-500 text-sm mt-2 flex-grow">Distribute tokens from your designated contract to investors.</p>
-                            <span id="distribute-card-button" class="mt-6 w-full text-center btn text-white py-2 bg-cyan-500 hover:bg-cyan-600">Configure Distribution</span>
+                        <div id="distribute-card" class="card-hover-effect flex flex-col items-start text-left cursor-pointer p-6 border border-slate-300 rounded bg-white hover:border-slate-500 hover:shadow-md transition-all group">
+                            <div class="mb-4 text-slate-800"><i data-lucide="send" class="w-6 h-6"></i></div>
+                            <h4 id="distribute-card-title" class="text-base font-bold text-slate-900 tracking-tight">Distribute Tokens</h4>
+                            <p id="distribute-card-text" class="text-slate-500 text-sm mt-1">Execute safe token distribution from your contract.</p>
+                            <div class="flex flex-wrap gap-2 mt-4 flex-grow content-start">
+                                <span class="bg-white border border-slate-200 text-slate-600 text-[10px] font-bold uppercase px-2 py-1 rounded-sm">Audited Contract</span>
+                                <span class="bg-white border border-slate-200 text-slate-600 text-[10px] font-bold uppercase px-2 py-1 rounded-sm">Instant Execution</span>
+                            </div>
+                            <span id="distribute-card-button" class="mt-6 w-full text-center btn bg-slate-900 text-white hover:bg-slate-800 py-2 rounded-sm font-semibold shadow-sm text-sm">Configure</span>
                         </div>
-                        <div id="airdrop-card" class="relative overflow-hidden card-hover-effect flex flex-col items-center text-center cursor-not-allowed p-6 border rounded-lg bg-gray-50 opacity-70">
-                            <div class="coming-soon-banner">SOON</div>
-                            <div class="p-3 rounded-lg mb-4 bg-gray-100 text-gray-600"><i data-lucide="gift" class="w-10 h-10"></i></div>
-                            <h4 class="text-lg font-bold">Airdrop Tokens</h4>
-                            <p class="text-gray-500 text-sm mt-2 flex-grow">Airdrop tokens to a large list of community members or early supporters simultaneously.</p>
-                            <span class="mt-6 w-full text-center btn bg-gray-600 text-white py-2 cursor-not-allowed">Start Airdrop</span>
+                        <div id="airdrop-card" class="relative overflow-hidden flex flex-col items-start text-left cursor-not-allowed p-6 border border-slate-200 rounded bg-slate-50/50 opacity-80">
+                            <div class="absolute top-4 right-4 text-slate-400 text-[10px] font-bold uppercase tracking-widest">Soon</div>
+                            <div class="mb-4 text-slate-400"><i data-lucide="gift" class="w-6 h-6"></i></div>
+                            <h4 class="text-base font-bold text-slate-400 tracking-tight">Airdrop Tokens</h4>
+                            <p class="text-slate-400 text-sm mt-1">Batch airdrop tokens to community members efficiently.</p>
+                            <div class="flex flex-wrap gap-2 mt-4 flex-grow content-start opacity-70">
+                                <span class="bg-transparent border border-slate-200 text-slate-400 text-[10px] font-bold uppercase px-2 py-1 rounded-sm">Gas Efficient</span>
+                                <span class="bg-transparent border border-slate-200 text-slate-400 text-[10px] font-bold uppercase px-2 py-1 rounded-sm">Bulk Transfer</span>
+                            </div>
+                            <span class="mt-6 w-full text-center btn bg-transparent border border-slate-200 text-slate-400 py-2 rounded-sm font-semibold cursor-not-allowed text-sm">Start Airdrop</span>
                         </div>
-                        <div id="list-token-card" class="relative overflow-hidden card-hover-effect flex flex-col items-center text-center cursor-not-allowed p-6 border rounded-lg bg-gray-50 opacity-70">
-                            <div class="coming-soon-banner">SOON</div>
-                            <div class="p-3 rounded-lg mb-4 bg-gray-100 text-gray-600"><i data-lucide="layers" class="w-10 h-10"></i></div>
-                            <h4 class="text-lg font-bold">List Your Token</h4>
-                            <p class="text-gray-500 text-sm mt-2 flex-grow">List your token on decentralized and centralized exchanges to enable public trading.</p>
-                            <span class="mt-6 w-full text-center btn bg-gray-600 text-white py-2 cursor-not-allowed">Start Listing</span>
+                        <div id="list-token-card" class="relative overflow-hidden flex flex-col items-start text-left cursor-not-allowed p-6 border border-slate-200 rounded bg-slate-50/50 opacity-80">
+                            <div class="absolute top-4 right-4 text-slate-400 text-[10px] font-bold uppercase tracking-widest">Soon</div>
+                            <div class="mb-4 text-slate-400"><i data-lucide="layers" class="w-6 h-6"></i></div>
+                            <h4 class="text-base font-bold text-slate-400 tracking-tight">List Your Token</h4>
+                            <p class="text-slate-400 text-sm mt-1">Enable public trading on decentralized exchanges.</p>
+                            <div class="flex flex-wrap gap-2 mt-4 flex-grow content-start opacity-70">
+                                <span class="bg-transparent border border-slate-200 text-slate-400 text-[10px] font-bold uppercase px-2 py-1 rounded-sm">DEX Integration</span>
+                                <span class="bg-transparent border border-slate-200 text-slate-400 text-[10px] font-bold uppercase px-2 py-1 rounded-sm">OTC Trading</span>
+                            </div>
+                            <span class="mt-6 w-full text-center btn bg-transparent border border-slate-200 text-slate-400 py-2 rounded-sm font-semibold cursor-not-allowed text-sm">Start Listing</span>
                         </div>
                     </div>
                 </div>
@@ -576,19 +610,19 @@ if (!$page_error) {
             if (deployedTokens && deployedTokens.length > 0) {
                 noTokensMessage.classList.add('hidden');
                 deployedTokens.forEach(token => {
-                    const isSelected = token.id === selectedTokenId;
+                    const isSelected = parseInt(token.id, 10) === parseInt(selectedTokenId, 10);
                     const snapshot = JSON.parse(token.snapshot_data || '{}');
                     const basescanUrl = `https://basescan.org/address/${token.contract}`;
-                    const cardClasses = isSelected ? 'border-purple-500 border-2 shadow-lg' : 'border-gray-300 border'; 
+                    const cardClasses = isSelected ? 'border-gray-900 border-2 shadow-lg' : 'border-gray-300 border'; 
                     const buttonHtml = isSelected ? `<button class="btn bg-gray-200 text-gray-500 cursor-not-allowed w-full md:w-auto" disabled><i data-lucide="check-circle"></i> Selected</button>` : `<button data-action="select" data-id="${token.id}" class="btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 w-full md:w-auto">Select for Distribution</button>`;
                     const deleteButtonHtml = !isSelected ? `<button data-action="delete" data-id="${token.id}" class="btn bg-transparent text-gray-500 hover:text-red-600 hover:bg-red-50 w-full md:w-auto mt-2"><i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Delete</button>` : '';
-                    const versionLabelHtml = token.version_label ? `<span class="text-xs bg-purple-100 text-purple-700 font-semibold px-2 py-1 rounded-full">${token.version_label}</span>` : '';
-                    const card = `<div class="content-panel !p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative ${cardClasses}">${isSelected ? '<div class="absolute top-0 right-4 -mt-3 px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-full shadow-md">SELECTED</div>' : ''}<div><div class="flex items-center gap-3"><h4 class="text-lg font-bold">${snapshot.token_name}</h4><span class="font-mono bg-gray-100 px-2 py-1 rounded-md text-sm">${snapshot.token_symbol}</span>${versionLabelHtml}</div><div class="flex items-center gap-2 mt-2"><p class="text-sm text-gray-600 font-mono break-all"><span class="font-semibold text-gray-800">Contract:</span> ${token.contract}</p><button data-action="copy" data-address="${token.contract}" class="p-1 text-gray-400 hover:text-purple-600" title="Copy Address"><i data-lucide="copy" class="w-4 h-4"></i></button></div><a href="${basescanUrl}" target="_blank" class="text-sm text-purple-600 hover:underline font-mono flex items-center gap-1 mt-1">View on BaseScan <i data-lucide="external-link" class="w-3 h-3"></i></a></div><div class="mt-4 md:mt-0 flex-shrink-0 flex flex-col items-center">${buttonHtml}${deleteButtonHtml}</div></div>`;
+                    const versionLabelHtml = token.version_label ? `<span class="text-xs bg-gray-200 text-gray-800 font-bold px-2 py-1 rounded-full">${token.version_label}</span>` : '';
+                    const card = `<div class="content-panel !p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative ${cardClasses}">${isSelected ? '<div class="absolute top-0 right-4 -mt-3 px-3 py-1 bg-gray-900 text-white text-xs font-bold rounded-full shadow-md">SELECTED</div>' : ''}<div><div class="flex items-center gap-3"><h4 class="text-lg font-bold">${snapshot.token_name}</h4><span class="font-mono bg-gray-100 px-2 py-1 rounded-md text-sm">${snapshot.token_symbol}</span>${versionLabelHtml}</div><div class="flex items-center gap-2 mt-2"><p class="text-sm text-gray-600 font-mono break-all"><span class="font-semibold text-gray-800">Contract:</span> ${token.contract}</p><button data-action="copy" data-address="${token.contract}" class="p-1 text-gray-400 hover:text-gray-900" title="Copy Address"><i data-lucide="copy" class="w-4 h-4"></i></button></div><a href="${basescanUrl}" target="_blank" class="text-sm text-gray-900 hover:underline font-bold flex items-center gap-1 mt-1">View on BaseScan <i data-lucide="external-link" class="w-3 h-3"></i></a></div><div class="mt-4 md:mt-0 flex-shrink-0 flex flex-col items-center">${buttonHtml}${deleteButtonHtml}</div></div>`;
                     deployedTokenList.innerHTML += card;
                 });
             } else {
                 noTokensMessage.classList.remove('hidden');
-                noTokensMessage.innerHTML = `<div class="text-center p-12 bg-gray-50 border-2 border-dashed rounded-lg"><i data-lucide="shield-off" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i><h3 class="text-xl font-bold">No Tokens Deployed Yet</h3><p class="text-gray-500">Use the "Deploy New Token" action to get started.</p></div>`;
+                noTokensMessage.innerHTML = `<div class="text-center p-12 bg-white border border-gray-200 rounded-xl shadow-sm"><i data-lucide="box" class="w-12 h-12 mx-auto text-gray-300 mb-4"></i><h3 class="text-lg font-bold text-gray-900 mb-1">No Smart Contracts Deployed</h3><p class="text-sm text-gray-500">Your project's on-chain presence has not been established yet. Use the "Deploy Token" module to initialize your smart contract.</p></div>`;
             }
             lucide.createIcons();
         }

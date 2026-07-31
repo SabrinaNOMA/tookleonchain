@@ -450,18 +450,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const sectionHeader = document.createElement('div');
         sectionHeader.className = "mb-6";
         sectionHeader.innerHTML = `
-            <div class="mb-4 flex items-center justify-between">
+            <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
                     <span>Private Sales</span>
                 </h2>
-                <a href="/sales" class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black rounded-lg shadow-sm hover:shadow transition-all">
+                <a href="/sales" class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-gray-900 hover:bg-black rounded-lg shadow-sm hover:shadow transition-all w-full sm:w-auto">
                     <i data-lucide="plus" class="w-4 h-4 mr-2"></i>New Private Sale
                 </a>
             </div>
-            <div class="flex items-center bg-gray-100 p-1 rounded-lg w-fit">
-                <button class="btn-filter-pill active" data-filter="all">All Sales</button>
-                <button class="btn-filter-pill" data-filter="tookle">Self-Hosted</button>
-                <button class="btn-filter-pill" data-filter="external">External</button>
+            <div class="flex items-center bg-gray-100 p-1 rounded-lg w-full sm:w-fit overflow-x-auto">
+                <button class="btn-filter-pill active whitespace-nowrap" data-filter="all">All Sales</button>
+                <button class="btn-filter-pill whitespace-nowrap" data-filter="tookle">Self-Hosted</button>
+                <button class="btn-filter-pill whitespace-nowrap" data-filter="external">External</button>
             </div>
         `;
         
@@ -487,8 +487,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function createSalesCards(sales) {
         if (!sales || sales.length === 0) return '';
         
-        const btnClass = "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm inline-flex items-center justify-center min-w-[80px]";
-        const btnPrimaryClass = "px-4 py-2 text-sm font-semibold text-white bg-gray-900 border border-gray-900 rounded-lg hover:bg-black transition-all shadow-sm inline-flex items-center justify-center min-w-[120px] cursor-pointer";
+        const btnClass = "px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm inline-flex items-center justify-center min-w-[80px] w-full sm:w-auto";
+        const btnPrimaryClass = "px-4 py-2 text-sm font-semibold text-white bg-gray-900 border border-gray-900 rounded-lg hover:bg-black transition-all shadow-sm inline-flex items-center justify-center min-w-[120px] cursor-pointer w-full sm:w-auto";
 
         const getStatusBadge = (status) => {
             const s = (status || 'draft').toLowerCase();
@@ -579,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  if (raised === 0) {
                       const mainLabel = timeLabel || 'No funds raised';
                       metricHtml = `
-                        <div class="flex items-baseline gap-1.5">
+                        <div class="flex flex-wrap items-baseline gap-1.5">
                             <span class="text-lg font-bold text-gray-900 tabular-nums">${mainLabel}</span>
                             <span class="text-sm text-gray-500 font-medium">to raise ${goalStr}</span>
                         </div>`;
@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
                       if (timeLabel) subLabel += ` • ${timeLabel}`;
                       
                       metricHtml = `
-                        <div class="flex items-baseline gap-1.5">
+                        <div class="flex flex-wrap items-baseline gap-1.5">
                             <span class="text-lg font-bold text-gray-900 tabular-nums">${raisedStr}</span>
                             <span class="text-sm text-gray-500 font-medium">${subLabel}</span>
                         </div>`;
@@ -602,7 +602,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  }
 
                  centerContent = `
-                     <div class="flex items-baseline justify-between mb-2">
+                     <div class="flex flex-col md:flex-row md:items-baseline justify-between mb-2 gap-1 md:gap-0">
                         ${metricHtml}
                         <span class="text-xs text-gray-500 font-medium tabular-nums">${investorsText}</span>
                      </div>
@@ -611,14 +611,14 @@ document.addEventListener('DOMContentLoaded', () => {
              }
 
              return `
-            <div class="sale-card-list-item bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-6" data-platform="${(sale.hosting || 'tookle').toLowerCase()}">
-                <div class="flex items-center gap-4 min-w-[240px]">
+            <div class="sale-card-list-item bg-white border border-gray-200 rounded-xl p-4 md:p-6 hover:shadow-md transition-shadow flex flex-col items-start md:flex-row md:items-center justify-between gap-4 md:gap-6 w-full" data-platform="${(sale.hosting || 'tookle').toLowerCase()}">
+                <div class="flex items-center justify-start gap-4 w-full md:w-auto md:min-w-[240px]">
                     <div class="h-12 w-12 rounded-lg border border-gray-100 bg-gray-50 flex-shrink-0 overflow-hidden flex items-center justify-center">
                         <img src="${logoSrc}" alt="" class="h-full w-full object-contain">
                     </div>
-                    <div class="flex flex-col">
+                    <div class="flex flex-col items-start text-left">
                         <span class="text-base font-semibold text-gray-900 tracking-tight">${sale.sale_name || 'Untitled Sale'}</span>
-                        <div class="flex items-center gap-2 mt-1 text-sm text-gray-500 font-medium flex-wrap">
+                        <div class="flex items-center justify-start gap-2 mt-1 text-sm text-gray-500 font-medium flex-wrap">
                             <span>${sale.round || 'Private Round'}</span>
                             <span class="text-gray-300">•</span>
                             ${getStatusBadge(status)}
@@ -637,10 +637,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </div>
-                <div class="flex-1 flex flex-col justify-center max-w-lg min-h-[48px]">
-                     ${centerContent}
+                
+                <div class="flex-1 w-full md:px-4 text-left mt-2 md:mt-0">
+                    ${centerContent}
                 </div>
-                <div class="flex items-center justify-end gap-3 min-w-[200px]">
+                
+                <div class="flex flex-row flex-wrap items-center justify-end gap-2 shrink-0 w-full md:w-auto mt-4 md:mt-0">
                     ${actionButtons}
                 </div>
             </div>`;
@@ -689,14 +691,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function createOperationalView(project) {
         if (metricsContainer) {
-            metricsContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <div class="text-sm font-medium text-gray-500">Total Funds Raised</div>
-                    <div class="text-3xl font-bold text-gray-900 mt-1">${formatCurrency(project?.metrics?.total_raised || 0)}</div>
+            metricsContainer.innerHTML = `<div class="grid grid-cols-2 gap-3 md:gap-6">
+                <div class="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-xs md:text-sm font-medium text-gray-500">Total Funds Raised</div>
+                    <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">${formatCurrency(project?.metrics?.total_raised || 0)}</div>
                 </div>
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <div class="text-sm font-medium text-gray-500">Total Backers</div>
-                    <div class="text-3xl font-bold text-gray-900 mt-1">${project?.metrics?.unique_investors || 0}</div>
+                <div class="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="text-xs md:text-sm font-medium text-gray-500">Total Backers</div>
+                    <div class="text-2xl md:text-3xl font-bold text-gray-900 mt-1">${project?.metrics?.unique_investors || 0}</div>
                 </div>
             </div>`;
         }

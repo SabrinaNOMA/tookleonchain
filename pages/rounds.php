@@ -35,8 +35,17 @@ if (!$current_project_id) {
     .tookle-button-secondary { background-color: #fff; color: #374151; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); border-color: #d1d5db; }
     .tookle-button-secondary:hover:not(:disabled) { background-color: #f9fafb; }
     .tookle-button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .data-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .data-table th, .data-table td { vertical-align: middle; padding: 0.75rem; border: 1px solid var(--border-color); text-align: left; word-wrap: break-word; }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th, .data-table td { vertical-align: middle; padding: 0.75rem; border: 1px solid var(--border-color); text-align: left; }
+    
+    @media (max-width: 1023px) {
+        .data-table { min-width: max-content; }
+        .data-table th, .data-table td { white-space: nowrap; }
+    }
+    @media (min-width: 1024px) {
+        .data-table { table-layout: fixed; }
+        .data-table th, .data-table td { word-wrap: break-word; white-space: normal; }
+    }
     .data-table td .modern-input { padding: 0.25rem 0.5rem; font-size: 0.8125rem; }
     .data-table thead th { background-color: #f9fafb; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; font-size: 0.75rem; }
     .data-table tfoot td { font-weight: 600; background-color: #f9fafb; }
@@ -178,18 +187,18 @@ if (!$current_project_id) {
                 </div>
                 <div class="overflow-x-auto">
                     <table id="roundsTable" class="data-table">
-                        <colgroup>
+                        <colgroup class="hidden lg:table-column-group">
                             <col style="width: 15%;"><col style="width: 8%;"><col style="width: 8%;"><col style="width: 11%;"><col style="width: 11%;"><col style="width: 9%;"><col style="width: 8%;"><col style="width: 7%;"><col style="width: 7%;"><col style="width: 12%;"><col style="width: 8%;"><col style="width: 6%;">
                         </colgroup>
                         <thead>
                             <tr>
-                                <th>Round Name</th><th>% Total Raise</th><th>% Discount</th><th class="bg-gray-200">Target Raise ($)</th><th class="bg-gray-200">Actual Raised ($)</th><th class="bg-gray-200">Token Price ($)</th><th>% TGE Unlock</th><th>Cliff (m)</th><th>Vesting (m)</th><th class="bg-gray-200"># Tokens</th><th class="bg-gray-200">% Supply</th><th>Actions</th>
+                                <th>Round Name</th><th class="hidden xl:table-cell">% Total Raise</th><th class="hidden xl:table-cell">% Discount</th><th class="bg-gray-200">Target Raise ($)</th><th class="bg-gray-200 hidden xl:table-cell">Actual Raised ($)</th><th class="bg-gray-200">Token Price ($)</th><th class="hidden md:table-cell">% TGE Unlock</th><th class="hidden md:table-cell">Cliff (m)</th><th class="hidden md:table-cell">Vesting (m)</th><th class="bg-gray-200"># Tokens</th><th class="bg-gray-200 hidden md:table-cell">% Supply</th><th>Actions</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
                         <tfoot>
                             <tr class="border-t-2">
-                                <td class="font-semibold">Total</td><td id="totalRaisePercentCell" class="text-right font-semibold">0%</td><td></td> <td id="totalAmountRaisedCell" class="text-right font-semibold">$0</td><td id="totalActualRaisedCell" class="text-right font-semibold">$0</td><td></td><td colspan="3"></td><td id="totalTokensCell" class="text-right font-semibold">0</td><td id="totalSupplyPercentCell" class="text-right font-semibold">0.00%</td><td></td> 
+                                <td class="font-semibold">Total</td><td id="totalRaisePercentCell" class="text-right font-semibold hidden xl:table-cell">0%</td><td class="hidden xl:table-cell"></td> <td id="totalAmountRaisedCell" class="text-right font-semibold">$0</td><td id="totalActualRaisedCell" class="text-right font-semibold hidden xl:table-cell">$0</td><td></td><td colspan="3" class="hidden md:table-cell"></td><td id="totalTokensCell" class="text-right font-semibold">0</td><td id="totalSupplyPercentCell" class="text-right font-semibold hidden md:table-cell">0.00%</td><td></td> 
                             </tr>
                         </tfoot>
                     </table>
@@ -204,12 +213,12 @@ if (!$current_project_id) {
                 <p class="text-sm text-gray-500 -mt-4 mb-4">Define allocations for Team, Treasury, Ecosystem, etc. Other allocations are derived from the Fundraising Rounds table above.</p>
                 <div class="overflow-x-auto">
                     <table id="allocationTable" class="data-table">
-                         <colgroup>
+                         <colgroup class="hidden lg:table-column-group">
                             <col style="width: 30%;"><col style="width: 15%;"><col style="width: 15%;"><col style="width: 10%;"><col style="width: 10%;"><col style="width: 10%;"><col style="width: 10%;">
                         </colgroup>
                         <thead>
                             <tr>
-                                <th>Tranche Name / Category</th><th>% Allocation</th><th>Amount Tokens</th><th>% TGE Unlock</th><th>Cliff (months)</th><th>Vesting (months)</th><th>Actions</th>
+                                <th>Tranche Name / Category</th><th class="hidden md:table-cell">% Allocation</th><th>Amount Tokens</th><th class="hidden md:table-cell">% TGE Unlock</th><th class="hidden md:table-cell">Cliff (months)</th><th class="hidden md:table-cell">Vesting (months)</th><th>Actions</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -222,7 +231,7 @@ if (!$current_project_id) {
                                         <button type="button" id="adjustAllocationBtn" class="tookle-button tookle-button-secondary !p-1 !text-xs" title="Adjust tranches to 100%">Adjust</button>
                                     </div>
                                 </td>
-                                <td colspan="5"></td>
+                                <td colspan="2" class="hidden md:table-cell"></td><td colspan="4"></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -488,7 +497,7 @@ if (!$current_project_id) {
         dom.allocationTableBody.innerHTML = '';
         const investorRow = dom.allocationTableBody.insertRow();
         investorRow.id = 'investor-tranche-row';
-        investorRow.innerHTML = `<td><input type="text" class="modern-input" value="Investors" readonly></td><td><input type="number" class="modern-input" data-col="percentage" value="0.00" readonly></td><td class="text-right text-gray-600 bg-gray-50">0</td><td><input type="number" class="modern-input" data-col="tge_unlock" value="0" readonly></td><td><input type="number" class="modern-input" data-col="cliff" readonly></td><td><input type="number" class="modern-input" data-col="vesting" readonly></td><td class="text-center"></td>`;
+        investorRow.innerHTML = `<td><input type="text" class="modern-input" value="Investors" readonly></td><td class="hidden md:table-cell"><input type="number" class="modern-input" data-col="percentage" value="0.00" readonly></td><td class="text-right text-gray-600 bg-gray-50">0</td><td class="hidden md:table-cell"><input type="number" class="modern-input" data-col="tge_unlock" value="0" readonly></td><td class="hidden md:table-cell"><input type="number" class="modern-input" data-col="cliff" readonly></td><td class="hidden md:table-cell"><input type="number" class="modern-input" data-col="vesting" readonly></td><td class="text-center"></td>`;
         if (allocations) {
             allocations.forEach(allocData => {
                 const nameLower = (allocData.tranche_name || '').trim().toLowerCase();
@@ -811,7 +820,7 @@ if (!$current_project_id) {
     async function addRound(data = {}, renderIcons = true) { 
         const newRow = dom.roundsTableBody.insertRow();
         newRow.setAttribute('data-round-name', data.round_name || '');
-        newRow.innerHTML = `<td><input type="text" class="modern-input" data-col="name" value="${data.round_name || ''}"></td><td><div class="relative"><input type="number" min="0" class="modern-input" data-col="percent_raise" value="${data.percent_total_raise || ''}"></div></td><td><input type="number" min="0" class="modern-input" data-col="percent_discount" value="${data.percent_discount || ''}"></td><td class="text-right text-gray-600 bg-gray-50 output-amount">$0</td><td class="text-right text-gray-600 bg-gray-50 output-actual-raised">$0</td><td class="text-right text-gray-600 bg-gray-50 output-price">$0.00</td><td><input type="number" min="0" max="100" class="modern-input" data-col="tge_unlock" value="${data.unlock_tge || 0}"></td><td><input type="number" min="0" class="modern-input" data-col="cliff" value="${data.cliff_months || ''}"></td><td><input type="number" min="0" class="modern-input" data-col="vesting" value="${data.vesting_months || ''}"></td><td class="text-right text-gray-600 bg-gray-50 output-tokens">0</td><td class="text-right text-gray-600 bg-gray-50 output-supply-percent">0.00%</td><td class="text-center actions-cell"><button type="button" onclick="deleteRow(this)" class="delete-row-btn"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
+        newRow.innerHTML = `<td><input type="text" class="modern-input" data-col="name" value="${data.round_name || ''}"></td><td class="hidden xl:table-cell"><div class="relative"><input type="number" min="0" class="modern-input" data-col="percent_raise" value="${data.percent_total_raise || ''}"></div></td><td class="hidden xl:table-cell"><input type="number" min="0" class="modern-input" data-col="percent_discount" value="${data.percent_discount || ''}"></td><td class="text-right text-gray-600 bg-gray-50 output-amount">$0</td><td class="text-right text-gray-600 bg-gray-50 output-actual-raised hidden xl:table-cell">$0</td><td class="text-right text-gray-600 bg-gray-50 output-price">$0.00</td><td class="hidden md:table-cell"><input type="number" min="0" max="100" class="modern-input" data-col="tge_unlock" value="${data.unlock_tge || 0}"></td><td class="hidden md:table-cell"><input type="number" min="0" class="modern-input" data-col="cliff" value="${data.cliff_months || ''}"></td><td class="hidden md:table-cell"><input type="number" min="0" class="modern-input" data-col="vesting" value="${data.vesting_months || ''}"></td><td class="text-right text-gray-600 bg-gray-50 output-tokens">0</td><td class="text-right text-gray-600 bg-gray-50 output-supply-percent hidden md:table-cell">0.00%</td><td class="text-center actions-cell"><button type="button" onclick="deleteRow(this)" class="delete-row-btn"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
         newRow.querySelector('input[data-col="name"]').addEventListener('blur', (e) => { if (e.target.value && isRoundNameDuplicate(e.target.value, e.target.closest('tr'))) { showCustomAlert('Duplicate Name', `A fundraising round named "${e.target.value}" already exists.`); e.target.value = ''; } });
         newRow.querySelectorAll('input').forEach(input => input.addEventListener('input', async () => { setDirty(true); await updateAllCalculations(); }));
         setupVestingRulesForRow(newRow); // Apply vesting rules
@@ -819,7 +828,7 @@ if (!$current_project_id) {
     }
     function addTranche(data = {}, renderIcons = true) { 
         const newRow = dom.allocationTableBody.insertRow();
-        newRow.innerHTML = `<td><input type="text" class="modern-input" data-col="name" value="${data.tranche_name || ''}"></td><td><input type="number" min="0" class="modern-input" data-col="percentage" value="${data.allocation_percent || ''}"></td><td class="text-right text-gray-600 bg-gray-50">0</td><td><input type="number" min="0" max="100" class="modern-input" data-col="tge_unlock" value="${data.unlock_tge || 0}"></td><td><input type="number" min="0" class="modern-input" data-col="cliff" value="${data.cliff_months || ''}"></td><td><input type="number" min="0" class="modern-input" data-col="vesting" value="${data.vesting_months || ''}"></td><td class="text-center"><button type="button" onclick="deleteRow(this)" class="delete-row-btn"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
+        newRow.innerHTML = `<td><input type="text" class="modern-input" data-col="name" value="${data.tranche_name || ''}"></td><td class="hidden md:table-cell"><input type="number" min="0" class="modern-input" data-col="percentage" value="${data.allocation_percent || ''}"></td><td class="text-right text-gray-600 bg-gray-50">0</td><td class="hidden md:table-cell"><input type="number" min="0" max="100" class="modern-input" data-col="tge_unlock" value="${data.unlock_tge || 0}"></td><td class="hidden md:table-cell"><input type="number" min="0" class="modern-input" data-col="cliff" value="${data.cliff_months || ''}"></td><td class="hidden md:table-cell"><input type="number" min="0" class="modern-input" data-col="vesting" value="${data.vesting_months || ''}"></td><td class="text-center"><button type="button" onclick="deleteRow(this)" class="delete-row-btn"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
         newRow.querySelector('input[data-col="name"]').addEventListener('blur', (e) => { const nameValue = e.target.value.trim().toLowerCase(); if (nameValue === 'investor' || nameValue === 'investors') { showCustomAlert('Invalid Name', 'The "Investors" category is automatically calculated.'); e.target.value = ''; } });
         newRow.querySelectorAll('input').forEach(input => input.addEventListener('input', () => { setDirty(true); updateAllCalculations(); }));
         setupVestingRulesForRow(newRow); // Apply vesting rules

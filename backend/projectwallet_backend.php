@@ -87,7 +87,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $stmt = $pdo->prepare("SELECT label, wallet_address, network, note FROM project_wallet WHERE projet_id = ?");
+        $stmt = $pdo->prepare("
+            SELECT pw.label, pw.wallet_address, pw.network, pw.note, 
+                   (SELECT tsp.sale_name FROM token_sale_pages tsp WHERE tsp.project_id = pw.projet_id AND LOWER(tsp.gnosis_safe_address) = LOWER(pw.wallet_address) LIMIT 1) as token_sale_name
+            FROM project_wallet pw 
+            WHERE pw.projet_id = ?
+        ");
         $stmt->execute([$project_id]);
         $wallets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

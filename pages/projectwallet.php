@@ -110,48 +110,59 @@ if (!$project_id || !$founder_id) {
         <p class="mt-2 text-base text-gray-500">Manage the official crypto wallets for this specific project.</p>
     </header>
 
-    <div class="info-box bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 mb-8 rounded-lg shadow-md">
+    <div class="bg-white border border-gray-200 p-5 mb-8 rounded-xl shadow-sm">
         <div class="flex items-start">
-            <i data-lucide="alert-triangle" class="w-6 h-6 mr-3 mt-1 flex-shrink-0"></i>
+            <div class="bg-gray-100 p-2 rounded-lg mr-4 flex-shrink-0">
+                <i data-lucide="shield-check" class="w-6 h-6 text-gray-900"></i>
+            </div>
             <div>
-                <p class="font-bold text-lg mb-1">Critical Information</p>
-                <p class="mb-2"><strong>This address will be used for the vault where funds will be received.</strong></p>
-                <p class="mb-2">Please be extremely careful when writing or pasting the address. Funds sent to the wrong address cannot be recovered.</p>
-                <ul class="text-sm mt-2">
-                    <li>Double-check every character against your wallet source.</li>
-                    <li>Ensure the network selected matches the address format.</li>
-                </ul>
+                <h3 class="font-bold text-lg text-gray-900 mb-1">Secure Project Treasury</h3>
+                <p class="text-gray-600 mb-3 text-sm">
+                    Register the official wallets for your project. These wallets are used to securely receive funds from your private token sales.
+                </p>
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs text-gray-700">
+                    <div class="flex items-center mb-1 text-gray-900">
+                        <i data-lucide="info" class="w-4 h-4 mr-1.5"></i>
+                        <span class="font-bold">Important Guidelines:</span>
+                    </div>
+                    <ul class="list-disc pl-5 space-y-1 mt-2">
+                        <li>Always double-check your address. Blockchain transactions are irreversible.</li>
+                        <li><strong>Recommendation:</strong> Use a multi-sig wallet (like Gnosis Safe) for enhanced institutional security.</li>
+                        <li>Wallets currently linked to an active token sale are locked and cannot be edited or removed.</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="bg-white rounded-lg shadow-md border border-gray-100 p-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
         <form id="wallet-form">
             <div id="wallet-list">
                  <!-- Updated Grid: Added Token Sale column (1.5fr), removed Delete column -->
                  <div class="wallet-list-header hidden md:grid" style="grid-template-columns: 1fr 2fr 1fr 1.5fr; gap: 1rem; align-items: center; padding: 0 0.5rem 0.5rem 0.5rem; border-bottom: 1px solid var(--border-color);">
-                    <span class="text-xs font-semibold uppercase text-gray-500">Label</span>
-                    <span class="text-xs font-semibold uppercase text-gray-500">Wallet Address</span>
-                    <span class="text-xs font-semibold uppercase text-gray-500">Network</span>
-                    <span class="text-xs font-semibold uppercase text-gray-500">Token Sale Usage</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500">Label</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500">Wallet Address</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500">Network</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500">Token Sale Usage</span>
                  </div>
                  <!-- Wallet items will be dynamically inserted here -->
             </div>
            
             <div class="mt-6 pt-6 border-t border-gray-200 flex justify-between items-center">
-                <button type="button" id="add-wallet-button" class="btn btn-secondary text-sm"><i data-lucide="plus" class="w-4 h-4 mr-2"></i>Add New Wallet</button>
-                <button type="submit" id="save-changes-button" class="btn btn-primary hidden shadow-md">Save Changes</button>
+                <button type="button" id="add-wallet-button" class="btn btn-neutral text-sm font-semibold shadow-sm"><i data-lucide="plus" class="w-4 h-4 mr-2"></i>Add New Wallet</button>
+                <button type="submit" id="save-changes-button" class="btn bg-gray-900 text-white hover:bg-black hidden shadow-sm px-6">Save Changes</button>
             </div>
         </form>
     </div>
+    
     <?php endif; ?>
 </main>
 
 <!-- Modal structure for notifications -->
 <div id="custom-modal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease;">
-    <div class="modal-content" style="background-color: white; padding: 2rem; border-radius: 0.75rem; max-width: 400px; width: 90%; text-align: center;">
-        <p id="modal-message" class="mb-4"></p>
-        <button id="modal-close-button" class="btn btn-primary">OK</button>
+    <div class="modal-content" style="background-color: white; padding: 2rem; border-radius: 1rem; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+        <p id="modal-message" class="mb-6 text-gray-700 font-medium"></p>
+        <button id="modal-close-button" class="btn bg-gray-900 text-white hover:bg-black px-8">OK</button>
     </div>
 </div>
 
@@ -181,29 +192,57 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     function createWalletRow(wallet = {}) {
+        const isUsed = !!wallet.token_sale_name;
         const walletItem = document.createElement('div');
-        // Updated Grid: Matching header columns (1fr 2fr 1fr 1.5fr)
-        walletItem.className = 'wallet-item grid md:grid-cols-[1fr,2fr,1fr,1.5fr] gap-4 items-start py-4 border-b border-gray-50';
+        walletItem.className = `wallet-item grid md:grid-cols-[1fr,2fr,1fr,1.5fr] gap-4 items-start py-5 border-b border-gray-100 ${isUsed ? 'bg-slate-50/50 rounded-lg px-2 -mx-2 mb-2 border-none ring-1 ring-slate-100' : ''}`;
 
         // Helper to create an input
         const createInput = (name, placeholder, value, isAddress = false) => {
             const container = document.createElement('div');
-            container.className = 'input-group';
+            container.className = isAddress ? 'input-group relative' : 'input-group';
             
             const input = document.createElement('input');
-            input.type = 'text';
+            input.type = isAddress ? 'password' : 'text';
             input.name = name;
             input.placeholder = placeholder;
-            input.className = 'clean-input';
+            input.className = isAddress ? 'clean-input pr-10 font-mono text-sm tracking-widest' : 'clean-input font-medium';
             input.value = value;
+            if (isAddress) input.autocomplete = 'new-password'; // Prevent aggressive autofill
             
-            input.addEventListener('input', () => saveChangesButton.classList.remove('hidden'));
+            if (isUsed) {
+                input.readOnly = true;
+                input.classList.add('bg-transparent', 'text-gray-500', 'cursor-not-allowed', 'border-transparent');
+                input.classList.remove('clean-input');
+            } else {
+                input.addEventListener('input', () => saveChangesButton.classList.remove('hidden'));
+            }
             
             container.appendChild(input);
 
             if (isAddress) {
+                // Eye button toggle
+                const eyeBtn = document.createElement('button');
+                eyeBtn.type = 'button';
+                eyeBtn.className = 'absolute right-3 top-[10px] text-gray-400 hover:text-gray-600 focus:outline-none bg-transparent';
+                eyeBtn.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i>';
+                
+                eyeBtn.addEventListener('click', () => {
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        input.classList.remove('tracking-widest');
+                        eyeBtn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i>';
+                    } else {
+                        input.type = 'password';
+                        input.classList.add('tracking-widest');
+                        eyeBtn.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i>';
+                    }
+                    if (window.lucide) window.lucide.createIcons();
+                });
+                
+                container.appendChild(eyeBtn);
+
                 const msg = document.createElement('span');
-                msg.className = 'validation-msg';
+                msg.className = 'validation-msg block mt-1';
                 container.appendChild(msg);
             }
 
@@ -224,8 +263,18 @@ document.addEventListener('DOMContentLoaded', function() {
         networkContainer.className = 'input-group';
         const networkElement = document.createElement('select');
         networkElement.name = 'walletNetwork[]';
-        networkElement.className = 'clean-input';
+        networkElement.className = isUsed ? 'bg-transparent text-gray-500 cursor-not-allowed border-none font-medium appearance-none pl-0' : 'clean-input font-medium';
         
+        if (isUsed) {
+            networkElement.disabled = true;
+            // Add hidden input so it still submits
+            const hiddenNetwork = document.createElement('input');
+            hiddenNetwork.type = 'hidden';
+            hiddenNetwork.name = 'walletNetwork[]';
+            hiddenNetwork.value = wallet.network || 'base';
+            networkContainer.appendChild(hiddenNetwork);
+        }
+
         networks.forEach(net => {
             const option = document.createElement('option');
             option.value = net.value;
@@ -237,20 +286,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         networkContainer.appendChild(networkElement);
 
-        // --- NEW: Token Sale Usage Column (Non-modifiable) ---
+        // --- Token Sale Usage Column ---
         const usageContainer = document.createElement('div');
-        usageContainer.className = 'input-group';
+        usageContainer.className = 'input-group flex flex-row items-center justify-between gap-2 h-full';
         const usageText = document.createElement('div');
-        usageText.className = 'readonly-text truncate';
+        usageText.className = 'readonly-text truncate flex items-center h-full border-none pt-0 pb-0';
         
         // Display usage if exists, otherwise "Unused"
-        if (wallet.token_sale_name) {
-             usageText.innerHTML = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">${wallet.token_sale_name}</span>`;
+        if (isUsed) {
+             usageText.innerHTML = `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200 shadow-sm"><i data-lucide="lock" class="w-3 h-3 mr-1.5 text-gray-500"></i>${wallet.token_sale_name}</span>`;
         } else {
-             usageText.textContent = 'Unused';
-             usageText.classList.add('text-gray-400', 'italic');
+             usageText.innerHTML = `<span class="inline-flex items-center text-gray-400 italic text-sm">Unused</span>`;
         }
         usageContainer.appendChild(usageText);
+        
+        // If unused, add a remove button that clears the row
+        if (!isUsed) {
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'text-gray-300 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50';
+            removeBtn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i>';
+            removeBtn.title = "Remove wallet";
+            removeBtn.addEventListener('click', () => {
+                walletItem.remove();
+                saveChangesButton.classList.remove('hidden');
+            });
+            usageContainer.appendChild(removeBtn);
+        }
 
         // --- VALIDATION LOGIC ---
         const validateAddress = () => {

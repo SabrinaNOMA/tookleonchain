@@ -68,30 +68,35 @@ try {
   $resetLink = "https://onchain.tookle.app/pages/reset_password.php?token=" . urlencode($token)
             . "&email=" . urlencode($email);
 
-  // 5) Envoi mail (headers importants sur OVH)
-  $subject = "Password Reset - Tookle";
-  $body = "Hello,\n\n"
-        . "Click this link to reset your password:\n\n"
-        . $resetLink . "\n\n"
-        . "This link expires in 1 hour.\n\n"
-        . "If you did not request this, you can ignore this email.\n";
+  // 5) Envoi mail (OVH SMTP via PHPMailer)
+  require_once __DIR__ . '/../phpmailer/PHPMailer.php';
+  require_once __DIR__ . '/../phpmailer/SMTP.php';
+  require_once __DIR__ . '/../phpmailer/Exception.php'; // Just in case
 
-  // IMPORTANT: mets une adresse du domaine dev.tookle.app (ou ton domaine OVH)
-  $from = "no-reply@support.tookle.app";
+  $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+  try {
+      $mail->isSMTP();
+      $mail->Host       = 'smtp-relay.brevo.com';
+      $mail->SMTPAuth   = true;
+      $mail->Username   = 'b3c1d2001@smtp-brevo.com';
+      $mail->Password   = base64_decode('eHNtdHBzaWItNzk1OTJhMGRlNjliNzEwYmIzMGU0NzYxYzRjMWQ4MzJmMjRiZjk3MjhiNGVjYjZjYmI4YzhiMjhhYmVjNGZlYi0wWWY5SGdpQk9ScGNHUjR1');
+      $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+      $mail->Port       = 465;
+      $mail->CharSet    = 'UTF-8';
 
-  $headers = [];
-  $headers[] = "From: Tookle <{$from}>";
-  $headers[] = "Reply-To: {$from}";
-  $headers[] = "MIME-Version: 1.0";
-  $headers[] = "Content-Type: text/plain; charset=UTF-8";
+      $mail->setFrom('noreply@tookle.app', 'Tookle Support');
+      $mail->addAddress($email);
 
-  $sent = @mail($email, $subject, $body, implode("\r\n", $headers));
+      $mail->Subject = "Password Reset - Tookle";
+      $mail->Body = "Hello,\n\n"
+            . "Click this link to reset your password:\n\n"
+            . $resetLink . "\n\n"
+            . "This link expires in 1 hour.\n\n"
+            . "If you did not request this, you can ignore this email.\n";
 
-  if (!$sent) {
-    $last = error_get_last();
-    error_log("[forgot_password] mail() failed email={$email} last_error=" . json_encode($last));
-    // On renvoie quand même OK générique (sinon l'UX montre une erreur même si le token est bien créé)
-    ok_generic();
+      $mail->send();
+  } catch (Exception $e) {
+      error_log("[forgot_password] PHPMailer failed for {$email}. Error: " . $mail->ErrorInfo);
   }
 
   ok_generic();

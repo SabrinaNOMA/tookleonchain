@@ -220,7 +220,7 @@ try {
 
     /* OTP Input */
     #branded-modal-input {
-        font-family: 'Outfit', 'Inter', monospace;
+        font-family: 'Montserrat', sans-serif;
         letter-spacing: 0.6rem;
         font-size: 1.5rem;
         font-weight: 700;
@@ -290,7 +290,7 @@ try {
                     <div class="mb-5">
                         <h2 class="text-base font-semibold text-gray-800 flex items-center gap-2">
                             <span>Optional Services</span>
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-purple-600 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-full">Additional</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-600 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">Additional</span>
                         </h2>
                         <p class="text-xs text-gray-500 mt-1">
                             Access additional non-custodial utilities or fund your connected wallets.
@@ -301,7 +301,7 @@ try {
                         <!-- Service 1: Embedded Wallet -->
                         <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-200 transition-all group">
                             <div class="flex items-center gap-3.5">
-                                <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 shrink-0 group-hover:scale-105 transition-transform">
+                                <div class="w-10 h-10 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-700 shrink-0 group-hover:scale-105 transition-transform">
                                     <i data-lucide="zap" class="w-5 h-5"></i>
                                 </div>
                                 <div>
@@ -322,18 +322,17 @@ try {
                         <!-- Service 2: Fund Wallet -->
                         <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-200 transition-all group">
                             <div class="flex items-center gap-3.5">
-                                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                                <div class="w-10 h-10 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-700 shrink-0 group-hover:scale-105 transition-transform">
                                     <i data-lucide="credit-card" class="w-5 h-5"></i>
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-2">
                                         <h3 class="text-xs font-semibold text-gray-900">Fiat On-Ramp</h3>
-                                        <span class="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">Being Integrated</span>
                                     </div>
                                     <p class="text-[11px] text-gray-500 mt-0.5">Fund your wallet with fiat currency</p>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-neutral text-xs px-3.5 py-2 whitespace-nowrap open-onramp-modal-btn">
+                            <button type="button" class="btn btn-neutral text-xs px-3.5 py-2 whitespace-nowrap open-onramp-trigger">
                                 Fund Wallet
                             </button>
                         </div>
@@ -603,6 +602,10 @@ try {
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <div class="mt-6 pt-4 border-t border-gray-100 flex items-center justify-center gap-1.5 text-xs text-gray-900 font-bold uppercase tracking-wider">
+            <span>Powered by Coinbase</span>
         </div>
     </div>
 </div>

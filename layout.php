@@ -283,12 +283,12 @@ $active_project_name_for_layout = $_SESSION['active_project_name'] ?? 'New Proje
                 <button id="mobile-menu-open-button" type="button" class="p-2 text-gray-700 rounded-full hover:bg-gray-100">
                     <i data-lucide="menu" class="w-6 h-6"></i>
                 </button>
-                <!-- INCREASED MOBILE LOGO SIZE: h-14 to h-16 -->
-                <a href="<?= get_url('dashboard') ?>"><img id="tookle-logo-mobile" src="" alt="Tookle Logo" class="h-16 w-auto"></a>
-                <!-- Mobile user settings icon -->
-                <a href="<?= get_url('settings') ?>" class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
-                    <i data-lucide="user-cog" class="w-6 h-6"></i>
+                <!-- INCREASED MOBILE LOGO SIZE -->
+                <a href="<?= get_url('dashboard') ?>" class="flex-1 flex justify-center">
+                    <img id="tookle-logo-mobile" src="" alt="Tookle Logo" class="h-20 w-auto">
                 </a>
+                <!-- Empty div to balance flex layout and keep logo centered -->
+                <div class="w-10 h-10"></div>
             </header>
             
             <!-- 

@@ -26,8 +26,8 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
 <main class="flex-1 p-10 overflow-y-auto">
     <header class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900 font-montserrat tracking-tight">Configure Vesting Schedules</h1>
-            <p class="text-purple-600 font-semibold">Project: <?php echo htmlspecialchars($project_name); ?></p>
+            <h1 class="text-3xl font-bold text-gray-900 font-montserrat tracking-tight">Distribute Tokens</h1>
+            <p class="text-gray-600 font-semibold">Project: <?php echo htmlspecialchars($project_name); ?></p>
         </div>
         <div id="wallet-info-container" class="flex-shrink-0">
             <!-- Wallet info will be populated here by script after an action requires connection -->
@@ -43,8 +43,8 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
         <details class="group">
             <summary class="flex items-center justify-between p-5 cursor-pointer list-none bg-white hover:bg-gray-50 transition-colors">
                 <div class="flex items-center">
-                    <div class="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center mr-3">
-                        <i data-lucide="info" class="w-4 h-4 text-purple-600"></i>
+                    <div class="w-8 h-8 rounded-sm bg-gray-100 flex items-center justify-center mr-3">
+                        <i data-lucide="info" class="w-4 h-4 text-gray-900"></i>
                     </div>
                     <h2 class="text-lg font-semibold text-gray-800">
                         Vesting Protocol Intelligence
@@ -55,7 +55,7 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
                 </div>
             </summary>
             <div class="px-5 pb-5 pt-0 text-sm text-gray-600 space-y-4 border-t border-gray-50 mt-2 pt-4">
-                 <p><strong>Secure Streaming:</strong> We utilize the <a href="https://sablier.com/" target="_blank" class="text-purple-600 hover:underline font-medium">Sablier V2 Protocol</a>. Tokens are locked in a secure smart contract and released linearly to your investors' wallets.</p>
+                 <p><strong>Secure Streaming:</strong> We utilize the <a href="https://sablier.com/" target="_blank" class="text-gray-900 hover:underline font-medium">Sablier V2 Protocol</a>. Tokens are locked in a secure smart contract and released linearly to your investors' wallets.</p>
                  <p><strong>Gas Efficiency:</strong> By selecting multiple recipients, you can utilize <code>batch()</code> execution, consolidating up to 50 recipients into a single gas-efficient transaction.</p>
                  <p><strong>Clawback Policy:</strong> All streams are created as <em>Cancellable</em>. This grants the project owner the right to terminate future vesting if an agreement is breached, while protecting tokens already earned by the recipient.</p>
             </div>
@@ -83,7 +83,7 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
             </div>
             <div class="metric-group mt-6">
                 <div class="metric-item"><h3>Token Name</h3><p id="token-name-value" class="text-gray-900">-</p></div>
-                <div class="metric-item"><h3>Ticker</h3><p id="token-ticker-value" class="text-purple-600 font-bold">-</p></div>
+                <div class="metric-item"><h3>Ticker</h3><p id="token-ticker-value" class="text-gray-900 font-bold">-</p></div>
                 <div class="metric-item"><h3>Total Supply</h3><p id="token-supply-value" class="text-gray-900">-</p></div>
                 <div class="metric-item"><h3>To Be Distributed</h3><p id="tokens-to-distribute-value" class="text-gray-900">0</p></div>
                 <div class="metric-item"><h3>Network</h3><p class="flex items-center gap-1.5 font-semibold text-gray-900"><span class="w-2 h-2 rounded-full bg-gray-400"></span> Base</p></div>
@@ -99,10 +99,10 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
             <div id="create-content" class="tab-content active">
                 <div class="table-toolbar bg-white p-4 rounded-xl border border-gray-100 mb-6 flex justify-between items-center">
                     <div class="contract-info">
-                        <div class="address-line bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 flex items-center shadow-sm">
+                        <div class="address-line bg-gray-50 px-3 py-2 rounded-sm border border-gray-100 flex items-center shadow-sm">
                             <span class="label text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mr-3">Token Contract</span>
                             <span id="contract-address-display" class="font-mono text-xs text-gray-600 font-medium tracking-tight">Not set</span>
-                            <button class="copy-btn ml-3 text-gray-400 hover:text-purple-600 transition-colors" title="Copy Address" id="copy-address-btn" style="display: none;">
+                            <button class="copy-btn ml-3 text-gray-400 hover:text-gray-900 transition-colors" title="Copy Address" id="copy-address-btn" style="display: none;">
                                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
@@ -110,8 +110,8 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
                             Verify on BaseScan <i data-lucide="external-link" class="w-3 h-3 ml-1"></i>
                         </a>
                     </div>
-                    <button id="batch-create-btn" class="btn-secondary flex items-center gap-2 group shadow-sm" style="display: none;" disabled>
-                        <i data-lucide="zap" class="w-4 h-4 group-hover:fill-purple-600 transition-all"></i>
+                    <button id="batch-create-btn" class="btn-secondary flex items-center gap-2 group shadow-sm rounded-sm" style="display: none;" disabled>
+                        <i data-lucide="zap" class="w-4 h-4 group-hover:fill-gray-900 transition-all"></i>
                         <span class="btn-text">Batch Create Selected (<span id="batch-selected-count">0</span>)</span>
                     </button>
                 </div>
@@ -120,7 +120,7 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
                         <thead>
                             <tr>
                                 <th style="padding: 1rem 0.5rem; width: 2.5rem; text-align: center;">
-                                    <input type="checkbox" id="select-all-checkbox" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer">
+                                    <input type="checkbox" id="select-all-checkbox" class="h-4 w-4 rounded-sm border-gray-300 text-gray-900 focus:ring-gray-900 cursor-pointer">
                                 </th>
                                 <th>Investor Name</th>
                                 <th>Round</th>
@@ -170,7 +170,7 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
     
     :root {
-        --brand-purple: #7C5DFA; --brand-purple-light: #9277FF; --background-color: #F8F9FA;
+        --brand-purple: #0F172A; --brand-purple-light: #334155; --background-color: #F8F9FA;
         --card-background: #FFFFFF; --text-primary: #0C0E16; --text-secondary: #888EB0;
         --text-light: #FFFFFF; --border-color: #EBEDF2; --danger-color: #EC5757;
         --danger-color-light: #FF9797; --font-family-main: 'Montserrat', sans-serif;
@@ -188,7 +188,7 @@ $project_name = $_SESSION['active_project_name'] ?? 'N/A'; // Assuming project n
     .hub-tab { padding: 1.5rem 0.5rem; border: none; background: none; cursor: pointer; font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); position: relative; border-bottom: 3px solid transparent; transition: all 0.25s ease; }
     .hub-tab.active { color: var(--brand-purple); border-bottom-color: var(--brand-purple); }
     
-    .tab-count-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 7px; background: #EFEBFD; color: var(--brand-purple); font-size: 0.75rem; font-weight: 800; margin-left: 10px; }
+    .tab-count-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 4px; background: #F1F5F9; color: var(--brand-purple); font-size: 0.75rem; font-weight: 800; margin-left: 10px; }
     .tab-count-pill.gray { background: #F3F4F6; color: #6B7280; }
     
     .hub-content-area { padding: 2.5rem; }
