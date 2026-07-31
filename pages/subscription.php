@@ -109,7 +109,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? '';
                                 >
                             </div>
                             <div class="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">
-                                I agree to the <a href="#" class="text-indigo-600 font-semibold hover:underline">Terms of Service</a> and <a href="#" class="text-indigo-600 font-semibold hover:underline">Subscription Agreement</a>.
+                                I agree to the <a href="/pages/terms.php" target="_blank" class="text-indigo-600 font-semibold hover:underline">Terms of Service</a> and <a href="/pages/subscription_agreement.php" target="_blank" class="text-indigo-600 font-semibold hover:underline">Subscription Agreement</a>.
                             </div>
                         </label>
                     </div>
@@ -187,7 +187,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? '';
                         <i data-lucide="help-circle" class="faq-icon w-5 h-5 text-slate-400 transition-transform"></i>
                     </button>
                     <div class="faq-content hidden px-6 pb-4 text-slate-600 text-sm leading-relaxed border-t border-slate-100 pt-4">
-                        You will be redirected to our secure payment portal to settle the setup fee. Once processed, you will receive a countersigned copy of the Subscription Agreement via email, and our team will begin your environment configuration.
+                        You will be redirected to our secure payment portal to settle the setup fee. Once processed, our team will begin your environment configuration.
                     </div>
                 </div>
 

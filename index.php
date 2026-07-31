@@ -164,7 +164,7 @@ function get_url($path) {
     }
     
     // Special public pages that don't need namespaces
-    $public_pages = ['login', 'logout', 'privacy', 'terms', 'subscription', 'activate'];
+    $public_pages = ['login', 'logout', 'privacy', 'terms', 'subscription', 'activate', 'forgot_password', 'reset_password'];
     if (in_array($path, $public_pages)) {
         return '/' . $path;
     }
@@ -184,7 +184,7 @@ function get_url($path) {
 // --- 3. PUBLIC, BACKEND & STANDALONE PAGE HANDLING ---
 $standalone_pages = ['escrow'];
 // MODIFIED: Added 'privacy' and 'terms' to public pages to allow access without login
-$public_pages = ['login', 'logout', 'privacy', 'terms', 'activate']; 
+$public_pages = ['login', 'logout', 'privacy', 'terms', 'activate', 'forgot_password', 'reset_password'];
 
 // --- 3.A PUBLIC SALE PAGE ROUTE (no login) ---
 if (preg_match('#^p/([A-Za-z0-9]{6,64})$#', $page_key, $m)) {

@@ -33,16 +33,50 @@ function render_form(string $email, string $token, string $error = '', string $s
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Reset password - Tookle</title>
         <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <script src="/config_logo.js"></script>
+        <style>
+            body { font-family: 'Montserrat', sans-serif; background-color: #F8FAFC; }
+            .auth-card {
+                width: 100%; max-width: 420px; padding: 2rem 2.5rem;
+                border-radius: 1rem; background-color: #ffffff;
+                box-shadow: 0 0 0 3px rgba(142, 82, 255, 0.15);
+            }
+            .btn-submit {
+                width: 100%; padding: 0.85rem 1rem; border-radius: 0.6rem;
+                font-weight: 600; color: #ffffff; border: none; cursor: pointer;
+                background: linear-gradient(135deg, #8e52ff 0%, #6366f1 100%);
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
+            }
+            .btn-submit:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(142, 82, 255, 0.25);
+            }
+            .input-standard {
+                width: 100%; padding: 0.65rem 0.8rem; border-radius: 0.5rem;
+                border: 1px solid #D1D5DB; font-size: 0.95rem; color: #1F2937;
+                background-color: #F9FAFB; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            }
+            .input-standard:focus {
+                outline: none; border-color: #8e52ff; background-color: #ffffff;
+                box-shadow: 0 0 0 3px rgba(142, 82, 255, 0.2);
+            }
+        </style>
     </head>
-    <body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-50 p-6">
-        <div class="w-full max-w-md bg-white rounded-xl shadow p-6">
-            <h1 class="text-xl font-bold mb-4 text-center">Reset your password</h1>
+    <body class="min-h-screen flex items-center justify-center p-6">
+        <div class="auth-card">
+            <!-- Brand Logo -->
+            <div class="mb-5 text-center">
+              <img id="logo" alt="Tookle Logo" class="h-20 w-auto mx-auto">
+            </div>
+
+            <h1 class="text-xl font-bold mb-6 text-center text-gray-900">Reset your password</h1>
 
             <?php if ($error): ?>
-                <div class="mb-4 text-red-600 text-sm text-center"><?= h($error) ?></div>
+                <div class="mb-4 text-red-600 text-sm text-center font-medium bg-red-50 p-3 rounded-lg"><?= h($error) ?></div>
             <?php endif; ?>
             <?php if ($success): ?>
-                <div class="mb-4 text-green-600 text-sm text-center"><?= h($success) ?></div>
+                <div class="mb-4 text-green-600 text-sm text-center font-medium bg-green-50 p-3 rounded-lg"><?= h($success) ?></div>
             <?php endif; ?>
 
             <form method="post" class="space-y-4" autocomplete="off">
@@ -50,24 +84,34 @@ function render_form(string $email, string $token, string $error = '', string $s
                 <input type="hidden" name="token" value="<?= h($token) ?>">
 
                 <div>
-                    <label class="block text-sm font-medium mb-1">New password</label>
-                    <input type="password" name="password" class="w-full border rounded-lg px-3 py-2" required minlength="8">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">New password</label>
+                    <input type="password" name="password" class="input-standard" required minlength="8" placeholder="••••••••">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium mb-1">Repeat new password</label>
-                    <input type="password" name="password2" class="w-full border rounded-lg px-3 py-2" required minlength="8">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Repeat new password</label>
+                    <input type="password" name="password2" class="input-standard" required minlength="8" placeholder="••••••••">
                 </div>
 
-                <button type="submit" class="w-full py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-500 via-indigo-500 to-cyan-500">
-                    Update password
-                </button>
+                <div class="pt-2">
+                    <button type="submit" class="btn-submit">
+                        Update password
+                    </button>
+                </div>
             </form>
 
-            <div class="mt-4 text-center text-sm">
-                <a href="<?= get_url('login') ?>" class="text-purple-600 hover:underline">Back to login</a>
+            <div class="mt-6 text-center text-sm">
+                <a href="/login" class="text-indigo-600 font-medium hover:underline">Back to login</a>
             </div>
         </div>
+        <script>
+            // Appliquer le config_logo.js
+            if (typeof getLogoUrl === 'function') {
+                document.getElementById('logo').src = getLogoUrl();
+            } else {
+                document.getElementById('logo').src = '/favicon.png';
+            }
+        </script>
     </body>
     </html>
     <?php

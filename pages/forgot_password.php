@@ -64,8 +64,8 @@ try {
   $upd = $pdo->prepare("UPDATE user SET reset_token = ?, reset_expires = ? WHERE id = ?");
   $upd->execute([$token, $expiresAt, (int)$userId]);
 
-  // 4) Construit le lien vers reset_password.php
-  $resetLink = "https://onchain.tookle.app/pages/reset_password.php?token=" . urlencode($token)
+  // 4) Construit le lien vers reset_password (via routeur)
+  $resetLink = "https://onchain.tookle.app/reset_password?token=" . urlencode($token)
             . "&email=" . urlencode($email);
 
   // 5) Envoi mail (OVH SMTP via PHPMailer)
