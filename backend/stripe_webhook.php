@@ -12,7 +12,12 @@ if (file_exists(__DIR__ . '/../config.php')) {
 }
 
 // Clé secrète du webhook Stripe
-$endpoint_secret = defined('STRIPE_WEBHOOK_SECRET') ? STRIPE_WEBHOOK_SECRET : 'whsec_g1x346XaqAGHckQJ15bOoDYpBunmSEPT';
+if (!defined('STRIPE_WEBHOOK_SECRET')) {
+    http_response_code(500);
+    echo "Configuration server error.";
+    exit;
+}
+$endpoint_secret = STRIPE_WEBHOOK_SECRET;
 
 $payload = @file_get_contents('php://input');
 $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
