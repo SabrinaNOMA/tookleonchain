@@ -94,7 +94,7 @@ $csrf_token = $_SESSION['csrf_token'] ?? '';
 
                 <!-- Form Start -->
                 <!-- UPDATED: Action removed to handle via JS redirect -->
-                <form id="subscription-form" onsubmit="event.preventDefault(); window.location.href='https://buy.stripe.com/9B614mh2A0MTaU561o4c801';">
+                <form id="subscription-form" onsubmit="event.preventDefault(); window.location.href='https://buy.stripe.com/9B614mh2A0MTaU561o4c801?client_reference_id=<?php echo $_SESSION[\'user_id\'] ?? \'\'; ?>';">
                     <!-- Security Token (Not strictly needed for redirect but good practice if logic changes) -->
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     
